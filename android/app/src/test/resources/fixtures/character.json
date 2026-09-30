@@ -1,0 +1,88 @@
+{
+  "attributes": [
+    {
+      "id": "strength",
+      "modifier": 0,
+      "name": "力量",
+      "value": 10
+    },
+    {
+      "id": "agility",
+      "modifier": 0,
+      "name": "敏捷",
+      "value": 11
+    },
+    {
+      "id": "intelligence",
+      "modifier": 1,
+      "name": "智力",
+      "value": 12
+    },
+    {
+      "id": "charisma",
+      "modifier": 1,
+      "name": "魅力",
+      "value": 12
+    },
+    {
+      "id": "resolve",
+      "modifier": 0,
+      "name": "意志",
+      "value": 10
+    }
+  ],
+  "conditions": [],
+  "gold": 13,
+  "name": "阿澈",
+  "role": "初到边境的冒险者",
+  "skills": [
+    {
+      "id": "persuasion",
+      "modifier": 4,
+      "name": "说服",
+      "value": 3
+    },
+    {
+      "id": "intimidation",
+      "modifier": 2,
+      "name": "威吓",
+      "value": 2
+    },
+    {
+      "id": "deception",
+      "modifier": 3,
+      "name": "欺瞒",
+      "value": 2
+    },
+    {
+      "id": "perception",
+      "modifier": 4,
+      "name": "察觉",
+      "value": 3
+    },
+    {
+      "id": "insight",
+      "modifier": 3,
+      "name": "洞悉",
+      "value": 2
+    },
+    {
+      "id": "performance",
+      "modifier": 2,
+      "name": "表演",
+      "value": 1
+    },
+    {
+      "id": "stealth",
+      "modifier": 2,
+      "name": "潜行",
+      "value": 2
+    },
+    {
+      "id": "athletics",
+      "modifier": 1,
+      "name": "运动",
+      "value": 1
+    }
+  ]
+}

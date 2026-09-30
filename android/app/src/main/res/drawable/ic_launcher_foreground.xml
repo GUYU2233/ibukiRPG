@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- 酒杯杯身 -->
+    <path android:fillColor="@color/ic_fg"
+        android:pathData="M36,40 L64,40 L64,74 Q64,78 60,78 L40,78 Q36,78 36,74 Z" />
+    <!-- 把手 -->
+    <path android:fillColor="#00000000" android:strokeColor="@color/ic_fg" android:strokeWidth="5"
+        android:pathData="M64,47 L70,47 Q75,47 75,52 L75,62 Q75,67 70,67 L64,67" />
+    <!-- 泡沫 -->
+    <path android:fillColor="@color/ic_fg"
+        android:pathData="M34,40 Q34,32 41,32 Q44,27 50,29 Q55,26 59,30 Q66,30 66,37 L66,40 Z" />
+    <!-- 杯身木纹 -->
+    <path android:fillColor="@color/ic_bg" android:pathData="M43,46 L46,46 L46,72 L43,72 Z" />
+    <path android:fillColor="@color/ic_bg" android:pathData="M54,46 L57,46 L57,72 L54,72 Z" />
+</vector>

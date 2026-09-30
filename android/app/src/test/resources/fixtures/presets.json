@@ -1,0 +1,26 @@
+[
+  {
+    "base_url": "",
+    "kind": "offline",
+    "label": "离线模式（无需联网）",
+    "model": ""
+  },
+  {
+    "base_url": "https://api.deepseek.com",
+    "kind": "deepseek",
+    "label": "DeepSeek",
+    "model": "deepseek-chat"
+  },
+  {
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "kind": "qwen",
+    "label": "通义千问（DashScope 兼容模式）",
+    "model": "qwen-plus"
+  },
+  {
+    "base_url": "",
+    "kind": "custom",
+    "label": "自定义 OpenAI 兼容服务",
+    "model": ""
+  }
+]

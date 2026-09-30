@@ -1,0 +1,93 @@
+{
+  "gold": 13,
+  "items": [
+    {
+      "affordable": false,
+      "description": "一大杯冒着泡沫的麦酒，带点蜂蜜味。",
+      "id": "demo:item/ale",
+      "name": "麦酒",
+      "price": 2,
+      "qty": 1,
+      "use": {
+        "action": "demo:action/use_item",
+        "item": "demo:item/ale",
+        "kind": "action",
+        "label": "喝下麦酒"
+      },
+      "use_label": "喝下"
+    },
+    {
+      "affordable": false,
+      "description": "刚出炉的黑面包，外皮硬，里面松软。",
+      "id": "demo:item/bread",
+      "name": "黑面包",
+      "price": 3,
+      "qty": 1,
+      "use": {
+        "action": "demo:action/use_item",
+        "item": "demo:item/bread",
+        "kind": "action",
+        "label": "吃掉黑面包"
+      },
+      "use_label": "吃掉"
+    }
+  ],
+  "shop": [
+    {
+      "affordable": true,
+      "buy": {
+        "action": "demo:action/order_drink",
+        "kind": "action",
+        "label": "点一杯麦酒"
+      },
+      "description": "一大杯冒着泡沫的麦酒，带点蜂蜜味。",
+      "id": "demo:item/ale",
+      "name": "麦酒",
+      "price": 2,
+      "qty": 0
+    },
+    {
+      "affordable": true,
+      "buy": {
+        "action": "demo:action/buy",
+        "item": "demo:item/bread",
+        "kind": "action",
+        "label": "购买黑面包"
+      },
+      "description": "刚出炉的黑面包，外皮硬，里面松软。",
+      "id": "demo:item/bread",
+      "name": "黑面包",
+      "price": 3,
+      "qty": 0
+    },
+    {
+      "affordable": true,
+      "buy": {
+        "action": "demo:action/buy",
+        "item": "demo:item/torch",
+        "kind": "action",
+        "label": "购买火把"
+      },
+      "description": "浸过松脂的火把，可以照亮黑暗的角落。",
+      "id": "demo:item/torch",
+      "name": "火把",
+      "price": 4,
+      "qty": 0
+    },
+    {
+      "affordable": true,
+      "buy": {
+        "action": "demo:action/buy",
+        "item": "demo:item/dried_fish",
+        "kind": "action",
+        "label": "购买小鱼干"
+      },
+      "description": "一小包咸鱼干，猫大概会喜欢。",
+      "id": "demo:item/dried_fish",
+      "name": "小鱼干",
+      "price": 1,
+      "qty": 0
+    }
+  ],
+  "shop_seller": "伯林"
+}

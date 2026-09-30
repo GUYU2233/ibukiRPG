@@ -1,0 +1,207 @@
+package com.guyu2233.ibukirpg.app.data
+
+import androidx.compose.runtime.Immutable
+import kotlinx.serialization.Serializable
+
+// 与 Go 端 internal/api/dto（V1）一一对应。JSON 使用 snake_case（见 Engine.json）。
+
+@Immutable @Serializable
+data class CheckV1(
+    val label: String = "",
+    val skillName: String = "",
+    val roll: Int = 0,
+    val modifier: Int = 0,
+    val dc: Int = 0,
+    val total: Int = 0,
+    val success: Boolean = false,
+    val critical: Boolean = false,
+    val fumble: Boolean = false,
+    val explanation: String = "",
+)
+
+@Immutable @Serializable
+data class QuickActionV1(
+    val kind: String = "",
+    val action: String? = null,
+    val target: String? = null,
+    val item: String? = null,
+    val destination: String? = null,
+    val text: String? = null,
+    val label: String? = null,
+)
+
+@Immutable @Serializable
+data class OptionV1(val label: String = "", val action: QuickActionV1 = QuickActionV1())
+
+@Immutable @Serializable
+data class EntryV1(
+    val id: Long = 0,
+    val commandId: String? = null,
+    val turn: Int = 0,
+    val kind: String = "",
+    val text: String = "",
+    val check: CheckV1? = null,
+    val chips: List<String> = emptyList(),
+    val options: List<OptionV1> = emptyList(),
+    val corrected: Boolean = false,
+    val source: String? = null,
+)
+
+@Immutable @Serializable
+data class SuggestionV1(
+    val label: String = "",
+    val icon: String = "",
+    val hint: String? = null,
+    val disabled: Boolean = false,
+    val action: QuickActionV1 = QuickActionV1(),
+)
+
+@Immutable @Serializable
+data class NPCBriefV1(val id: String = "", val name: String = "", val role: String = "", val attitude: String = "")
+
+@Immutable @Serializable
+data class ExitV1(val id: String = "", val label: String = "", val locked: Boolean = false)
+
+@Immutable @Serializable
+data class StoryBriefV1(val id: String = "", val title: String = "", val hints: List<String> = emptyList())
+
+@Immutable @Serializable
+data class SceneV1(
+    val slotId: String = "",
+    val saveName: String = "",
+    val locationId: String = "",
+    val locationName: String = "",
+    val description: String = "",
+    val timeText: String = "",
+    val clock: String = "",
+    val day: Int = 1,
+    val period: String = "",
+    val turn: Int = 0,
+    val gold: Int = 0,
+    val playerName: String = "",
+    val present: List<NPCBriefV1> = emptyList(),
+    val exits: List<ExitV1> = emptyList(),
+    val facts: List<String> = emptyList(),
+    val conditions: List<String> = emptyList(),
+    val story: StoryBriefV1? = null,
+)
+
+@Immutable @Serializable
+data class TurnV1(
+    val commandId: String = "",
+    val accepted: Boolean = false,
+    val duplicate: Boolean = false,
+    val entries: List<EntryV1> = emptyList(),
+    val scene: SceneV1 = SceneV1(),
+    val suggestions: List<SuggestionV1> = emptyList(),
+    val resolver: String? = null,
+)
+
+@Immutable @Serializable
+data class GameBundle(
+    val scene: SceneV1 = SceneV1(),
+    val transcript: List<EntryV1> = emptyList(),
+    val suggestions: List<SuggestionV1> = emptyList(),
+)
+
+@Immutable @Serializable
+data class StatV1(val id: String = "", val name: String = "", val value: Int = 0, val modifier: Int = 0, val note: String? = null)
+
+@Immutable @Serializable
+data class CharacterV1(
+    val name: String = "",
+    val role: String = "",
+    val gold: Int = 0,
+    val attributes: List<StatV1> = emptyList(),
+    val skills: List<StatV1> = emptyList(),
+    val conditions: List<StatV1> = emptyList(),
+)
+
+@Immutable @Serializable
+data class ItemV1(
+    val id: String = "",
+    val name: String = "",
+    val qty: Int = 0,
+    val price: Int = 0,
+    val description: String = "",
+    val affordable: Boolean = false,
+    val use: QuickActionV1? = null,
+    val useLabel: String? = null,
+    val buy: QuickActionV1? = null,
+)
+
+@Immutable @Serializable
+data class InventoryV1(
+    val gold: Int = 0,
+    val items: List<ItemV1> = emptyList(),
+    val shop: List<ItemV1> = emptyList(),
+    val shopSeller: String? = null,
+)
+
+@Immutable @Serializable
+data class BeliefV1(val text: String = "", val source: String = "", val `when`: String = "", val confidence: Int = 0)
+
+@Immutable @Serializable
+data class NPCActionV1(val label: String = "", val chance: Int = -1, val action: QuickActionV1 = QuickActionV1())
+
+@Immutable @Serializable
+data class NPCV1(
+    val id: String = "",
+    val name: String = "",
+    val role: String = "",
+    val description: String = "",
+    val locationName: String = "",
+    val present: Boolean = false,
+    val trust: Int = 0,
+    val fear: Int = 0,
+    val attitude: String = "",
+    val beliefs: List<BeliefV1> = emptyList(),
+    val actions: List<NPCActionV1> = emptyList(),
+)
+
+@Immutable @Serializable
+data class JournalEntryV1(val seq: Long = 0, val turn: Int = 0, val time: String = "", val kind: String = "", val text: String = "")
+
+@Immutable @Serializable
+data class SlotV1(
+    val id: String = "",
+    val name: String = "",
+    val playerName: String = "",
+    val location: String = "",
+    val time: String = "",
+    val turn: Int = 0,
+    val gold: Int = 0,
+    val story: String? = null,
+    val updatedAt: Long = 0,
+    val createdAt: Long = 0,
+    val current: Boolean = false,
+)
+
+@Immutable @Serializable
+data class AIStatusV1(
+    val kind: String = "offline",
+    val baseUrl: String = "",
+    val model: String = "",
+    val hasKey: Boolean = false,
+    val online: Boolean = false,
+    val lastError: String? = null,
+)
+
+@Immutable @Serializable
+data class PresetV1(val kind: String = "", val label: String = "", val baseUrl: String = "", val model: String = "")
+
+@Serializable
+data class AIConfig(val kind: String, val baseUrl: String = "", val model: String = "", val apiKey: String = "")
+
+@Serializable
+data class TestAIResult(val ok: Boolean = false, val reply: String = "", val latencyMs: Long = 0, val error: String? = null)
+
+@Serializable
+data class StreamEventV1(
+    val version: String = "",
+    val type: String = "",
+    val commandId: String = "",
+    val text: String? = null,
+    val corrected: Boolean = false,
+    val source: String? = null,
+)

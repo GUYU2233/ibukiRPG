@@ -1,0 +1,246 @@
+[
+  {
+    "actions": [
+      {
+        "action": {
+          "action": "demo:action/talk",
+          "kind": "action",
+          "label": "和伯林聊聊",
+          "target": "demo:character/borin"
+        },
+        "chance": -1,
+        "label": "交谈"
+      },
+      {
+        "action": {
+          "action": "demo:action/persuade",
+          "kind": "action",
+          "label": "说服伯林",
+          "target": "demo:character/borin"
+        },
+        "chance": 50,
+        "label": "说服"
+      },
+      {
+        "action": {
+          "action": "demo:action/intimidate",
+          "kind": "action",
+          "label": "威吓伯林",
+          "target": "demo:character/borin"
+        },
+        "chance": 30,
+        "label": "威吓"
+      },
+      {
+        "action": {
+          "action": "demo:action/deceive",
+          "kind": "action",
+          "label": "欺骗伯林",
+          "target": "demo:character/borin"
+        },
+        "chance": 40,
+        "label": "欺骗"
+      }
+    ],
+    "attitude": "亲近",
+    "beliefs": [
+      {
+        "confidence": 1000,
+        "source": "亲眼所见",
+        "text": "阿澈试图说服伯林（成功）",
+        "when": "第1天 19:12 · 夜晚"
+      }
+    ],
+    "description": "围着油腻围裙的壮实男人，胡子花白，擦杯子的动作又快又稳。",
+    "fear": 0,
+    "id": "demo:character/borin",
+    "location_name": "锈酒杯酒馆",
+    "name": "伯林",
+    "present": true,
+    "role": "锈酒杯酒馆老板",
+    "trust": 5
+  },
+  {
+    "actions": [
+      {
+        "action": {
+          "action": "demo:action/talk",
+          "kind": "action",
+          "label": "和莉娜聊聊",
+          "target": "demo:character/lena"
+        },
+        "chance": -1,
+        "label": "交谈"
+      },
+      {
+        "action": {
+          "action": "demo:action/persuade",
+          "kind": "action",
+          "label": "说服莉娜",
+          "target": "demo:character/lena"
+        },
+        "chance": 60,
+        "label": "说服"
+      },
+      {
+        "action": {
+          "action": "demo:action/intimidate",
+          "kind": "action",
+          "label": "威吓莉娜",
+          "target": "demo:character/lena"
+        },
+        "chance": 40,
+        "label": "威吓"
+      },
+      {
+        "action": {
+          "action": "demo:action/deceive",
+          "kind": "action",
+          "label": "欺骗莉娜",
+          "target": "demo:character/lena"
+        },
+        "chance": 50,
+        "label": "欺骗"
+      }
+    ],
+    "attitude": "中立",
+    "beliefs": [
+      {
+        "confidence": 900,
+        "source": "亲眼所见",
+        "text": "阿澈试图说服伯林（成功）",
+        "when": "第1天 19:12 · 夜晚"
+      }
+    ],
+    "description": "坐在壁炉边的短发女人，腰间挂着一柄旧铁剑，面前的酒杯几乎没动过。",
+    "fear": 0,
+    "id": "demo:character/lena",
+    "location_name": "锈酒杯酒馆",
+    "name": "莉娜",
+    "present": true,
+    "role": "退役佣兵，酒馆常客",
+    "trust": 0
+  },
+  {
+    "actions": [
+      {
+        "action": {
+          "action": "demo:action/talk",
+          "kind": "action",
+          "label": "和米拉聊聊",
+          "target": "demo:character/mira"
+        },
+        "chance": -1,
+        "label": "交谈"
+      },
+      {
+        "action": {
+          "action": "demo:action/persuade",
+          "kind": "action",
+          "label": "说服米拉",
+          "target": "demo:character/mira"
+        },
+        "chance": 70,
+        "label": "说服"
+      },
+      {
+        "action": {
+          "action": "demo:action/intimidate",
+          "kind": "action",
+          "label": "威吓米拉",
+          "target": "demo:character/mira"
+        },
+        "chance": 50,
+        "label": "威吓"
+      },
+      {
+        "action": {
+          "action": "demo:action/deceive",
+          "kind": "action",
+          "label": "欺骗米拉",
+          "target": "demo:character/mira"
+        },
+        "chance": 60,
+        "label": "欺骗"
+      }
+    ],
+    "attitude": "中立",
+    "beliefs": [
+      {
+        "confidence": 900,
+        "source": "亲眼所见",
+        "text": "阿澈试图说服伯林（成功）",
+        "when": "第1天 19:12 · 夜晚"
+      }
+    ],
+    "description": "抱着鲁特琴的年轻女孩，斗篷下摆还在滴水，眼睛亮晶晶的，总在打量周围的人。",
+    "fear": 0,
+    "id": "demo:character/mira",
+    "location_name": "锈酒杯酒馆",
+    "name": "米拉",
+    "present": true,
+    "role": "流浪吟游诗人",
+    "trust": 0
+  },
+  {
+    "actions": [
+      {
+        "action": {
+          "action": "demo:action/talk",
+          "kind": "action",
+          "label": "和奥托聊聊",
+          "target": "demo:character/otto"
+        },
+        "chance": -1,
+        "label": "交谈"
+      },
+      {
+        "action": {
+          "action": "demo:action/persuade",
+          "kind": "action",
+          "label": "说服奥托",
+          "target": "demo:character/otto"
+        },
+        "chance": 65,
+        "label": "说服"
+      },
+      {
+        "action": {
+          "action": "demo:action/intimidate",
+          "kind": "action",
+          "label": "威吓奥托",
+          "target": "demo:character/otto"
+        },
+        "chance": 45,
+        "label": "威吓"
+      },
+      {
+        "action": {
+          "action": "demo:action/deceive",
+          "kind": "action",
+          "label": "欺骗奥托",
+          "target": "demo:character/otto"
+        },
+        "chance": 55,
+        "label": "欺骗"
+      }
+    ],
+    "attitude": "中立",
+    "beliefs": [
+      {
+        "confidence": 900,
+        "source": "亲眼所见",
+        "text": "阿澈试图说服伯林（成功）",
+        "when": "第1天 19:12 · 夜晚"
+      }
+    ],
+    "description": "穿着体面的外乡商人，脸喝得通红，手指上戴着两枚铜戒指。",
+    "fear": 0,
+    "id": "demo:character/otto",
+    "location_name": "锈酒杯酒馆",
+    "name": "奥托",
+    "present": true,
+    "role": "路过的外乡商人",
+    "trust": 0
+  }
+]

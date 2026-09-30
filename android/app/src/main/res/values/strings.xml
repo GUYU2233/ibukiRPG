@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ibukiRPG</string>
+    <string name="app_subtitle">边境酒馆 · 文字冒险</string>
+    <string name="app_tagline">用你自己的话行动，骰子与规则决定结果。</string>
+
+    <!-- 首页 -->
+    <string name="home_continue">继续游戏</string>
+    <string name="home_new_game">新游戏</string>
+    <string name="home_saves">存档</string>
+    <string name="home_settings">设置</string>
+    <string name="home_no_save">还没有存档，开始一段新的旅程吧。</string>
+    <string name="home_last_played">上次进度</string>
+    <string name="home_mode_offline">离线模式</string>
+    <string name="home_mode_ai">AI 模式：%1$s</string>
+    <string name="home_version">版本 %1$s</string>
+    <string name="home_loading">正在准备引擎…</string>
+
+    <!-- 新游戏 -->
+    <string name="new_game_title">开始新的旅程</string>
+    <string name="new_game_name_label">你的名字</string>
+    <string name="new_game_name_default">旅人</string>
+    <string name="new_game_hint">故事发生在边境小镇的“锈酒杯”酒馆。存档会自动保存。</string>
+    <string name="new_game_start">出发</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">确定</string>
+    <string name="retry">重试</string>
+    <string name="back">返回</string>
+    <string name="close">关闭</string>
+
+    <!-- 存档 -->
+    <string name="saves_title">存档</string>
+    <string name="saves_empty">还没有存档</string>
+    <string name="saves_turn">第 %1$d 回合</string>
+    <string name="saves_current">当前</string>
+    <string name="saves_updated">保存于 %1$s</string>
+    <string name="saves_more">更多操作</string>
+    <string name="saves_copy">复制存档</string>
+    <string name="saves_rename">重命名</string>
+    <string name="saves_delete">删除</string>
+    <string name="saves_delete_title">删除存档？</string>
+    <string name="saves_delete_msg">“%1$s”将被永久删除，无法恢复。</string>
+    <string name="saves_rename_title">重命名存档</string>
+    <string name="saves_copied">已复制存档</string>
+    <string name="saves_deleted">已删除存档</string>
+
+    <!-- 游戏 -->
+    <string name="game_input_hint">你想做什么？</string>
+    <string name="game_send">发送</string>
+    <string name="game_panels">角色与背包</string>
+    <string name="game_thinking">正在理解你的行动…</string>
+    <string name="game_story">事件：%1$s</string>
+    <string name="game_gold">%1$d 铜币</string>
+    <string name="game_input_kept">行动没有完成，你的输入已保留，可以直接重试。</string>
+    <string name="game_check_success">成功</string>
+    <string name="game_check_failure">失败</string>
+    <string name="game_check_critical">大成功</string>
+    <string name="game_check_fumble">大失败</string>
+    <string name="game_corrected">叙事已按规则校正</string>
+    <string name="game_suggestions">快捷行动</string>
+    <string name="game_you">你</string>
+    <string name="game_present">在场：%1$s</string>
+    <string name="game_hints_title">可以试试</string>
+    <string name="game_scroll_bottom">回到最新</string>
+
+    <!-- 面板 -->
+    <string name="tab_character">角色</string>
+    <string name="tab_inventory">背包</string>
+    <string name="tab_people">人物</string>
+    <string name="tab_journal">日志</string>
+    <string name="panel_attributes">属性</string>
+    <string name="panel_skills">技能（d20 + 修正）</string>
+    <string name="panel_conditions">状态</string>
+    <string name="panel_no_conditions">状态良好</string>
+    <string name="panel_items">随身物品</string>
+    <string name="panel_no_items">背包空空如也</string>
+    <string name="panel_shop">%1$s 的货架</string>
+    <string name="panel_buy">买（%1$d 铜币）</string>
+    <string name="panel_trust">信任</string>
+    <string name="panel_fear">畏惧</string>
+    <string name="panel_beliefs">TA 知道的事</string>
+    <string name="panel_no_beliefs">还没对你留下什么印象</string>
+    <string name="panel_present">在场</string>
+    <string name="panel_chance">成功率约 %1$d%%</string>
+    <string name="panel_journal_empty">还没有记录</string>
+    <string name="panel_loading">加载中…</string>
+
+    <!-- 设置 -->
+    <string name="settings_title">设置</string>
+    <string name="settings_ai">AI 叙事</string>
+    <string name="settings_ai_desc">离线模式使用规则解析和模板叙事，完全不联网。填写 API Key 后可使用大模型理解更自由的输入、生成更生动的叙事；规则与骰子始终由本地引擎决定。</string>
+    <string name="settings_offline">离线模式（默认）</string>
+    <string name="settings_offline_desc">无需联网，所有功能可用</string>
+    <string name="settings_deepseek">DeepSeek</string>
+    <string name="settings_qwen">通义千问</string>
+    <string name="settings_custom">自定义 OpenAI 兼容服务</string>
+    <string name="settings_base_url">Base URL</string>
+    <string name="settings_model">模型</string>
+    <string name="settings_api_key">API Key</string>
+    <string name="settings_api_key_saved">已保存（加密存储），留空则保持不变</string>
+    <string name="settings_api_key_note">密钥使用 Android Keystore 加密后保存在本机，不会上传或写入存档。</string>
+    <string name="settings_show_key">显示密钥</string>
+    <string name="settings_hide_key">隐藏密钥</string>
+    <string name="settings_test">测试连接</string>
+    <string name="settings_testing">正在连接…</string>
+    <string name="settings_test_ok">连接成功（%1$d 毫秒）</string>
+    <string name="settings_test_fail">连接失败：%1$s</string>
+    <string name="settings_save">保存并应用</string>
+    <string name="settings_saved">设置已保存</string>
+    <string name="settings_clear_key">清除密钥</string>
+    <string name="settings_display">显示</string>
+    <string name="settings_text_size">文字大小</string>
+    <string name="settings_text_preview">伯林头也不抬：“雨天生意冷清，你坐吧。”</string>
+    <string name="settings_theme">主题</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
+    <string name="settings_dynamic">动态取色</string>
+    <string name="settings_dynamic_desc">使用壁纸颜色（Android 12 及以上）</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_about_text">ibukiRPG %1$s · 引擎 %2$s</string>
+    <string name="settings_need_key">请填写 API Key</string>
+</resources>

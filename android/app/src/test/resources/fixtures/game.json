@@ -1,0 +1,343 @@
+{
+  "scene": {
+    "clock": "19:12",
+    "conditions": [],
+    "day": 1,
+    "description": "壁炉噼啪作响，麦酒的香气混着松木烟味。",
+    "exits": [
+      {
+        "id": "demo:location/town_square",
+        "label": "小镇广场",
+        "locked": false
+      },
+      {
+        "id": "demo:location/back_room",
+        "label": "储藏室",
+        "locked": false
+      }
+    ],
+    "facts": [
+      "壁炉里的火正旺",
+      "角落的桌上有一道新的刀痕",
+      "柜台旁坐着一个衣着体面的外乡商人",
+      "你面前放着一大杯麦酒",
+      "奥托正大声指责米拉偷了他的钱袋"
+    ],
+    "gold": 13,
+    "location_id": "demo:location/rusty_tankard",
+    "location_name": "锈酒杯酒馆",
+    "period": "夜晚",
+    "player_name": "阿澈",
+    "present": [
+      {
+        "attitude": "亲近",
+        "id": "demo:character/borin",
+        "name": "伯林",
+        "role": "锈酒杯酒馆老板"
+      },
+      {
+        "attitude": "中立",
+        "id": "demo:character/lena",
+        "name": "莉娜",
+        "role": "退役佣兵，酒馆常客"
+      },
+      {
+        "attitude": "中立",
+        "id": "demo:character/mira",
+        "name": "米拉",
+        "role": "流浪吟游诗人"
+      },
+      {
+        "attitude": "中立",
+        "id": "demo:character/otto",
+        "name": "奥托",
+        "role": "路过的外乡商人"
+      }
+    ],
+    "save_name": "阿澈的旅程",
+    "slot_id": "slot-1790765250569-a5791fcb",
+    "story": {
+      "hints": [
+        "调查一下周围",
+        "劝奥托冷静",
+        "问问米拉"
+      ],
+      "id": "demo:story/lost_purse",
+      "title": "失窃的钱袋"
+    },
+    "time_text": "第1天 19:12 · 夜晚",
+    "turn": 5
+  },
+  "suggestions": [
+    {
+      "action": {
+        "kind": "text",
+        "label": "仔细调查一下奥托座位附近",
+        "text": "仔细调查一下奥托座位附近"
+      },
+      "icon": "auto_stories",
+      "label": "调查一下周围"
+    },
+    {
+      "action": {
+        "kind": "text",
+        "label": "劝说奥托冷静下来",
+        "text": "劝说奥托冷静下来"
+      },
+      "icon": "auto_stories",
+      "label": "劝奥托冷静"
+    },
+    {
+      "action": {
+        "kind": "text",
+        "label": "和米拉谈谈",
+        "text": "和米拉谈谈"
+      },
+      "icon": "auto_stories",
+      "label": "问问米拉"
+    },
+    {
+      "action": {
+        "action": "demo:action/look",
+        "kind": "action",
+        "label": "环顾四周"
+      },
+      "icon": "visibility",
+      "label": "环顾四周"
+    },
+    {
+      "action": {
+        "action": "demo:action/talk",
+        "kind": "action",
+        "label": "和伯林聊聊",
+        "target": "demo:character/borin"
+      },
+      "icon": "chat",
+      "label": "与伯林交谈"
+    },
+    {
+      "action": {
+        "action": "demo:action/talk",
+        "kind": "action",
+        "label": "和莉娜聊聊",
+        "target": "demo:character/lena"
+      },
+      "icon": "chat",
+      "label": "与莉娜交谈"
+    },
+    {
+      "action": {
+        "action": "demo:action/talk",
+        "kind": "action",
+        "label": "和米拉聊聊",
+        "target": "demo:character/mira"
+      },
+      "icon": "chat",
+      "label": "与米拉交谈"
+    },
+    {
+      "action": {
+        "action": "demo:action/use_item",
+        "item": "demo:item/ale",
+        "kind": "action",
+        "label": "喝下麦酒"
+      },
+      "icon": "backpack",
+      "label": "喝下麦酒"
+    },
+    {
+      "action": {
+        "destination": "demo:location/town_square",
+        "kind": "move",
+        "label": "前往小镇广场"
+      },
+      "icon": "directions_walk",
+      "label": "前往小镇广场"
+    },
+    {
+      "action": {
+        "destination": "demo:location/back_room",
+        "kind": "move",
+        "label": "前往储藏室"
+      },
+      "icon": "directions_walk",
+      "label": "前往储藏室"
+    },
+    {
+      "action": {
+        "action": "demo:action/rest",
+        "kind": "action",
+        "label": "找个地方歇一会儿"
+      },
+      "hint": "30 分钟",
+      "icon": "hourglass",
+      "label": "休息片刻"
+    }
+  ],
+  "transcript": [
+    {
+      "id": 1,
+      "kind": "intro",
+      "text": "秋夜，冷雨敲打着边境小镇的石板路。你推开“锈酒杯”酒馆厚重的木门，暖意和麦酒的香气一齐涌来。\n壁炉旁有人低声交谈，柜台后的老板抬头打量了你一眼。\n——你想做什么？可以直接输入想法，比如“环顾四周”“和老板打个招呼”，也可以点下方的快捷建议。",
+      "turn": 0
+    },
+    {
+      "command_id": "fixture-1",
+      "id": 2,
+      "kind": "player",
+      "text": "和老板打个招呼",
+      "turn": 1
+    },
+    {
+      "command_id": "fixture-1",
+      "id": 4,
+      "kind": "narration",
+      "source": "template",
+      "text": "伯林头也不抬：“雨天生意冷清，你坐吧。想吃想喝跟我说。”",
+      "turn": 1
+    },
+    {
+      "chips": [
+        "伯林 信任 +2"
+      ],
+      "command_id": "fixture-1",
+      "id": 3,
+      "kind": "system",
+      "text": "伯林 信任 +2",
+      "turn": 1
+    },
+    {
+      "command_id": "fixture-2",
+      "id": 5,
+      "kind": "player",
+      "text": "来一杯麦酒",
+      "turn": 2
+    },
+    {
+      "command_id": "fixture-2",
+      "id": 7,
+      "kind": "narration",
+      "source": "template",
+      "text": "你把两枚铜币拍在柜台上。伯林利落地打满一杯麦酒推到你面前，泡沫顺着杯沿淌下来。",
+      "turn": 2
+    },
+    {
+      "chips": [
+        "铜币 -2",
+        "获得 麦酒"
+      ],
+      "command_id": "fixture-2",
+      "id": 6,
+      "kind": "system",
+      "text": "铜币 -2 · 获得 麦酒",
+      "turn": 2
+    },
+    {
+      "command_id": "fixture-3",
+      "id": 8,
+      "kind": "player",
+      "text": "环顾四周",
+      "turn": 3
+    },
+    {
+      "command_id": "fixture-3",
+      "id": 9,
+      "kind": "narration",
+      "source": "template",
+      "text": "边境小镇上唯一的酒馆。低矮的木梁被烟熏得发黑，壁炉常年燃着，柜台后挂着一面褪色的佣兵团旗帜。你注意到：壁炉里的火正旺；角落的桌上有一道新的刀痕；柜台旁坐着一个衣着体面的外乡商人；你面前放着一大杯麦酒。这里有：伯林（锈酒杯酒馆老板）、莉娜（退役佣兵，酒馆常客）、米拉（流浪吟游诗人）、奥托（路过的外乡商人）。从这里可以去：小镇广场、储藏室。",
+      "turn": 3
+    },
+    {
+      "command_id": "fixture-4",
+      "id": 10,
+      "kind": "player",
+      "text": "仔细搜查奥托的座位附近",
+      "turn": 4
+    },
+    {
+      "check": {
+        "critical": false,
+        "dc": 12,
+        "explanation": "掷出 12，察觉修正 +4，合计 16 ≥ 难度 12 → 成功",
+        "fumble": false,
+        "label": "察觉",
+        "modifier": 4,
+        "roll": 12,
+        "skill_name": "察觉",
+        "success": true,
+        "total": 16
+      },
+      "command_id": "fixture-4",
+      "id": 11,
+      "kind": "check",
+      "text": "掷出 12，察觉修正 +4，合计 16 ≥ 难度 12 → 成功",
+      "turn": 4
+    },
+    {
+      "command_id": "fixture-4",
+      "id": 13,
+      "kind": "narration",
+      "source": "template",
+      "text": "你仔细检查了酒馆的各个角落：刀痕很新，像是有人不久前在这里拔过刀；长椅下积着厚厚的灰。\n\n“我的钱袋！”柜台边的外乡商人奥托猛地站起来，椅子哐当一声倒在地上。\n他满脸通红，手指直直地指向角落里抱着琴的米拉：“是你！刚才就你在我旁边转悠！”\n酒馆一下子安静了。米拉的脸刷地白了，伯林放下了手里的杯子。",
+      "turn": 4
+    },
+    {
+      "command_id": "fixture-4",
+      "id": 12,
+      "kind": "story",
+      "text": "事件开始：《失窃的钱袋》",
+      "turn": 4
+    },
+    {
+      "command_id": "fixture-5",
+      "id": 14,
+      "kind": "player",
+      "text": "说服伯林让我去储藏室看看",
+      "turn": 5
+    },
+    {
+      "check": {
+        "critical": false,
+        "dc": 15,
+        "explanation": "掷出 17，说服修正 +4，合计 21 ≥ 难度 15 → 成功",
+        "fumble": false,
+        "label": "说服 · 伯林",
+        "modifier": 4,
+        "roll": 17,
+        "skill_name": "说服",
+        "success": true,
+        "total": 21
+      },
+      "command_id": "fixture-5",
+      "id": 15,
+      "kind": "check",
+      "text": "掷出 17，说服修正 +4，合计 21 ≥ 难度 15 → 成功",
+      "turn": 5
+    },
+    {
+      "command_id": "fixture-5",
+      "id": 18,
+      "kind": "narration",
+      "source": "template",
+      "text": "你的话说到了点子上。伯林的神情明显松动了。\n\n伯林叹了口气，冲储藏室努了努嘴：“行吧，你去看看。别碰我的酒桶。”",
+      "turn": 5
+    },
+    {
+      "chips": [
+        "伯林 信任 +3"
+      ],
+      "command_id": "fixture-5",
+      "id": 16,
+      "kind": "system",
+      "text": "伯林 信任 +3",
+      "turn": 5
+    },
+    {
+      "command_id": "fixture-5",
+      "id": 17,
+      "kind": "story",
+      "text": "事件进展：伯林同意你去储藏室看看",
+      "turn": 5
+    }
+  ]
+}
