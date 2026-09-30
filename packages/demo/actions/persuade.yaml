@@ -1,0 +1,29 @@
+id: demo:action/persuade
+category: social
+name: 说服
+description: 以理服人或以情动人，让目标接受请求。
+
+requirements:
+  - actor.can_speak == true
+  - target.type == "character"
+
+checks:
+  - skill: persuasion
+    difficulty: target.resolve + 2
+
+cost:
+  time: 1m
+
+outcomes:
+  success:
+    - effect:
+        type: relationship_delta
+        target: target
+        values:
+          trust: 2
+  failure:
+    - effect:
+        type: relationship_delta
+        target: target
+        values:
+          patience: -2

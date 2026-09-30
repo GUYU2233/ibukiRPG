@@ -1,0 +1,28 @@
+# 构建产物
+/build/
+/bin/
+*.exe
+*.aar
+*.jar
+*.apk
+*.test
+*.out
+coverage.*
+
+# 本地数据 / 存档
+*.db
+*.db-wal
+*.db-shm
+/saves/
+
+# 环境变量（切勿提交真实密钥）
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

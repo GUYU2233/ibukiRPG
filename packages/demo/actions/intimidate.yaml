@@ -1,0 +1,29 @@
+id: demo:action/intimidate
+category: social
+name: 威吓
+description: 用言语或姿态迫使目标屈服。
+
+requirements:
+  - actor.can_speak == true
+  - target.type == "character"
+
+checks:
+  - skill: intimidation
+    difficulty: target.resolve
+
+cost:
+  time: 30s
+
+outcomes:
+  success:
+    - effect:
+        type: relationship_delta
+        target: target
+        values:
+          fear: 5
+  failure:
+    - effect:
+        type: relationship_delta
+        target: target
+        values:
+          trust: -3

@@ -1,0 +1,23 @@
+# Demo 世界包：Phase 0 Vertical Slice（1 个酒馆、3 个 NPC、少量 Action）
+id: demo
+namespace: demo
+name: "边境酒馆 Demo"
+version: 0.1.0
+type: world
+engine: ">=0.0.1"
+description: >
+  用于验证“输入 → Resolver → 判定 → Event → Narrator → Guard → 输出”闭环的最小世界包。
+authors:
+  - guyu2233
+dependencies: []
+content:
+  locations:
+    - world/locations/tavern.yaml
+  characters:
+    - characters/lena.yaml
+    - characters/borin.yaml
+    - characters/mira.yaml
+  actions:
+    - actions/intimidate.yaml
+    - actions/persuade.yaml
+    - actions/order_drink.yaml

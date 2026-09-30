@@ -1,0 +1,37 @@
+id: demo:character/borin
+
+identity:
+  name: Borin
+  age: 52
+  role: 锈酒杯酒馆老板
+
+attributes:
+  strength: 13
+  agility: 8
+  intelligence: 11
+  resolve: 14
+
+skills:
+  brawling: 9
+  insight: 12
+  bargaining: 11
+
+personality:
+  description: >
+    嗓门大、心肠软，对惹事的客人毫不客气。
+
+goals:
+  - keep_tavern_running
+
+traits:
+  - gruff
+  - protective
+
+relationships:
+  demo:character/lena:
+    trust: 20
+beliefs: {}
+memories: []
+secrets: []
+inventory: []
+tags: [npc, merchant]

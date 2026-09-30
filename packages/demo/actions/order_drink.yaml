@@ -1,0 +1,26 @@
+id: demo:action/order_drink
+category: trade
+name: 点酒
+description: 向酒馆老板买一杯麦酒。
+
+requirements:
+  - actor.gold >= 2
+  - scene.has_bartender == true
+
+checks: []
+
+cost:
+  time: 2m
+
+outcomes:
+  success:
+    - effect:
+        type: gold_delta
+        target: actor
+        values:
+          gold: -2
+    - effect:
+        type: scene_fact
+        target: scene
+        values:
+          fact: 玩家面前多了一杯麦酒

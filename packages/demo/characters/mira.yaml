@@ -1,0 +1,37 @@
+id: demo:character/mira
+
+identity:
+  name: Mira
+  age: 19
+  role: 流浪吟游诗人
+
+attributes:
+  strength: 6
+  agility: 13
+  intelligence: 12
+  resolve: 7
+
+skills:
+  performance: 13
+  deception: 9
+  persuasion: 8
+
+personality:
+  description: >
+    好奇、健谈，喜欢打听别人的故事，但对自己的来历讳莫如深。
+
+goals:
+  - find_missing_brother
+
+traits:
+  - curious
+  - evasive
+
+relationships: {}
+beliefs: {}
+memories: []
+secrets:
+  - id: demo:secret/mira_noble
+    text: 她是一个没落贵族家族的私生女。
+inventory: []
+tags: [npc]

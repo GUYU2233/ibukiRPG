@@ -1,0 +1,37 @@
+id: demo:character/lena
+
+identity:
+  name: Lena
+  age: 24
+  role: 退役佣兵，酒馆常客
+
+attributes:
+  strength: 7
+  agility: 12
+  intelligence: 14
+  resolve: 11
+
+skills:
+  sword: 8
+  persuasion: 10
+
+personality:
+  description: >
+    谨慎、现实，但重视承诺。
+
+goals:
+  - protect_family
+
+traits:
+  - cautious
+  - loyal
+
+relationships: {}
+beliefs: {}
+memories: []
+secrets:
+  - id: demo:secret/lena_debt
+    text: 她欠了北方商会一大笔钱。
+inventory:
+  - core:item/iron_sword
+tags: [npc]
