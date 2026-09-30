@@ -1,0 +1,24 @@
+# Eval 用例（第 39 节）：intent/persuade_for_backroom
+id: intent/persuade_for_backroom
+description: 同时提到“去储藏室”，但核心意图是说服伯林（不是移动）。
+input: 说服伯林让我去储藏室看看
+expected:
+  kind: action
+  action: persuade
+  target: borin
+llm_output:
+  intent: persuade
+  kind: action
+  matched_action: demo:action/persuade
+  targets:
+  - demo:character/borin
+  item: null
+  destination: null
+  reasonability: ALLOW_WITH_CHECK
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

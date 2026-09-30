@@ -1,0 +1,5 @@
+{
+  "status": 200,
+  "body": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"{\\\"confidence\\\":0.9,\\\"description\\\":\\\"帮米拉捡起散落的乐谱\\\",\\\"destination\\\":null,\\\"estimated_time\\\":2,\\\"intent\\\":\\\"help\\\",\\\"item\\\":null,\\\"kind\\\":\\\"freeform\\\",\\\"matched_action\\\":null,\\\"proposed_effects\\\":[{\\\"target\\\":\\\"demo:character/mira\\\",\\\"type\\\":\\\"relationship_nudge\\\",\\\"value\\\":1,\\\"when\\\":\\\"always\\\"}],\\\"reason\\\":\\\"\\\",\\\"reasonability\\\":\\\"ALLOW\\\",\\\"suggested_check\\\":null,\\\"tags\\\":[],\\\"targets\\\":[\\\"demo:character/mira\\\"]}\",\"role\":\"assistant\"}}],\"id\":\"synthetic-freeform_action/help_mira\",\"model\":\"deepseek-chat\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":0,\"prompt_tokens\":0}}",
+  "comment": "synthetic: freeform_action/help_mira"
+}

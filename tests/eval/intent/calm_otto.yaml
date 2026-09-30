@@ -1,0 +1,24 @@
+# Eval 用例（第 39 节）：intent/calm_otto
+id: intent/calm_otto
+description: “劝奥托冷静”在事件中应识别为说服奥托。
+input: 劝奥托先冷静一下，别冤枉好人
+expected:
+  kind: action
+  action: persuade
+  target: otto
+llm_output:
+  intent: persuade
+  kind: action
+  matched_action: demo:action/persuade
+  targets:
+  - demo:character/otto
+  item: null
+  destination: null
+  reasonability: ALLOW_WITH_CHECK
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

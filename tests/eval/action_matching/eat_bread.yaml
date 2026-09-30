@@ -1,0 +1,22 @@
+# Eval 用例（第 39 节）：action_matching/eat_bread
+id: action_matching/eat_bread
+input: 把黑面包吃了
+expected:
+  kind: action
+  action: use_item
+  item: bread
+llm_output:
+  intent: use_item
+  kind: action
+  matched_action: demo:action/use_item
+  targets: []
+  item: demo:item/bread
+  destination: null
+  reasonability: ALLOW
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

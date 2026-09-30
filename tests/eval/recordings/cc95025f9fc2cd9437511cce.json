@@ -1,0 +1,5 @@
+{
+  "status": 200,
+  "body": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"{\\\"confidence\\\":0.9,\\\"description\\\":\\\"\\\",\\\"destination\\\":null,\\\"estimated_time\\\":1,\\\"intent\\\":\\\"investigate\\\",\\\"item\\\":null,\\\"kind\\\":\\\"action\\\",\\\"matched_action\\\":\\\"demo:action/investigate\\\",\\\"proposed_effects\\\":[],\\\"reason\\\":\\\"\\\",\\\"reasonability\\\":\\\"ALLOW_WITH_CHECK\\\",\\\"suggested_check\\\":null,\\\"tags\\\":[],\\\"targets\\\":[]}\",\"role\":\"assistant\"}}],\"id\":\"synthetic-action_matching/investigate\",\"model\":\"deepseek-chat\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":0,\"prompt_tokens\":0}}",
+  "comment": "synthetic: action_matching/investigate"
+}

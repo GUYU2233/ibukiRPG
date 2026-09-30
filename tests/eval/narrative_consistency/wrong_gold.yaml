@@ -1,0 +1,14 @@
+# Eval 用例（第 39 节）：narrative_consistency/wrong_gold
+id: narrative_consistency/wrong_gold
+description: 叙事中的钱数与事实不符。
+guard:
+  text: 你付了十枚铜币，伯林给你满上一杯麦酒。
+  expect_ok: false
+  expect_rules:
+  - gold
+  facts:
+    player_location: 锈酒杯酒馆
+    outcome: none
+    gold_delta: -2
+    gold: 13
+  context: {}

@@ -1,0 +1,33 @@
+# Eval 用例（第 39 节）：freeform_action/sing_on_table
+id: freeform_action/sing_on_table
+description: 长尾行为：走 FreeformAction，并带有噪音效果。
+input: 我跳上桌子高声唱一首家乡的歌
+expected:
+  kind: freeform
+  freeform_tag: noise
+llm_output:
+  intent: perform
+  kind: freeform
+  matched_action: null
+  targets: []
+  item: null
+  destination: null
+  reasonability: ALLOW_WITH_CHECK
+  reason: ''
+  description: 跳上桌子高声唱家乡的歌
+  suggested_check:
+    skill: performance
+    difficulty: 12
+  estimated_time: 5
+  tags:
+  - noise
+  - performance
+  proposed_effects:
+  - type: noise
+    value: 2
+    when: always
+  - type: relationship_nudge
+    target: demo:character/mira
+    value: 1
+    when: success
+  confidence: 0.9

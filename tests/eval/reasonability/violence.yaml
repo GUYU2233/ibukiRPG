@@ -1,0 +1,21 @@
+# Eval 用例（第 39 节）：reasonability/violence
+id: reasonability/violence
+description: 试玩版不支持战斗：拒绝并给出替代（威吓 / 说服）。
+input: 我拔刀砍向奥托
+expected:
+  reject: true
+llm_output:
+  intent: attack
+  kind: reject
+  matched_action: null
+  targets: []
+  item: null
+  destination: null
+  reasonability: REJECT
+  reason: 试玩版还不支持战斗，也许可以试试威吓他。
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

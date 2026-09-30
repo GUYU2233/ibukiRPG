@@ -1,0 +1,15 @@
+# Eval 用例（第 39 节）：narrative_consistency/unauthorized_move
+id: narrative_consistency/unauthorized_move
+description: 叙事擅自把玩家带到别的地点。
+guard:
+  text: 说完，你推门走进储藏室。
+  expect_ok: false
+  expect_rules:
+  - location
+  facts:
+    player_location: 锈酒杯酒馆
+    outcome: none
+  context:
+    other_locations:
+    - 储藏室
+    - 小镇广场

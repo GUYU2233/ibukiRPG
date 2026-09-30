@@ -1,0 +1,22 @@
+# Eval 用例（第 39 节）：reasonability/fly
+id: reasonability/fly
+description: 飞行不存在于这个世界，应拒绝。
+input: 我飞到屋顶上去
+expected:
+  kind: reject
+  reject: true
+llm_output:
+  intent: fly
+  kind: reject
+  matched_action: null
+  targets: []
+  item: null
+  destination: null
+  reasonability: REJECT
+  reason: 你不会飞。
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

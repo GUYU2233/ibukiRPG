@@ -1,0 +1,21 @@
+# Eval 用例（第 39 节）：action_matching/move_square
+id: action_matching/move_square
+input: 去广场透透气
+expected:
+  kind: move
+  destination: town_square
+llm_output:
+  intent: move
+  kind: move
+  matched_action: null
+  targets: []
+  item: null
+  destination: demo:location/town_square
+  reasonability: ALLOW
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

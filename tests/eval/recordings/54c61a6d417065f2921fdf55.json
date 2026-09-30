@@ -1,0 +1,5 @@
+{
+  "status": 200,
+  "body": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"{\\\"confidence\\\":0.9,\\\"description\\\":\\\"\\\",\\\"destination\\\":null,\\\"estimated_time\\\":1,\\\"intent\\\":\\\"deceive\\\",\\\"item\\\":null,\\\"kind\\\":\\\"action\\\",\\\"matched_action\\\":\\\"demo:action/deceive\\\",\\\"proposed_effects\\\":[],\\\"reason\\\":\\\"\\\",\\\"reasonability\\\":\\\"ALLOW_WITH_CHECK\\\",\\\"suggested_check\\\":null,\\\"tags\\\":[],\\\"targets\\\":[\\\"demo:character/borin\\\"]}\",\"role\":\"assistant\"}}],\"id\":\"synthetic-intent/deceive_as_envoy\",\"model\":\"deepseek-chat\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":0,\"prompt_tokens\":0}}",
+  "comment": "synthetic: intent/deceive_as_envoy"
+}

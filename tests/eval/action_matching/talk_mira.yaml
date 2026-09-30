@@ -1,0 +1,23 @@
+# Eval 用例（第 39 节）：action_matching/talk_mira
+id: action_matching/talk_mira
+input: 和米拉聊聊
+expected:
+  kind: action
+  action: talk
+  target: mira
+llm_output:
+  intent: talk
+  kind: action
+  matched_action: demo:action/talk
+  targets:
+  - demo:character/mira
+  item: null
+  destination: null
+  reasonability: ALLOW
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

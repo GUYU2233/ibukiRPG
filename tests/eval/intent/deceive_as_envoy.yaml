@@ -1,0 +1,25 @@
+# Eval 用例（第 39 节）：intent/deceive_as_envoy
+id: intent/deceive_as_envoy
+description: 玩家冒充使者：是欺瞒尝试（需要检定），不是知识违规，不应拒绝。
+input: 我告诉伯林我是国王派来的使者
+expected:
+  kind: action
+  action: deceive
+  target: borin
+  reject: false
+llm_output:
+  intent: deceive
+  kind: action
+  matched_action: demo:action/deceive
+  targets:
+  - demo:character/borin
+  item: null
+  destination: null
+  reasonability: ALLOW_WITH_CHECK
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

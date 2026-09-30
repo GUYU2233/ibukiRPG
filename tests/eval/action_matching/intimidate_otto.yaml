@@ -1,0 +1,23 @@
+# Eval 用例（第 39 节）：action_matching/intimidate_otto
+id: action_matching/intimidate_otto
+input: 威胁奥托闭嘴
+expected:
+  kind: action
+  action: intimidate
+  target: otto
+llm_output:
+  intent: intimidate
+  kind: action
+  matched_action: demo:action/intimidate
+  targets:
+  - demo:character/otto
+  item: null
+  destination: null
+  reasonability: ALLOW_WITH_CHECK
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

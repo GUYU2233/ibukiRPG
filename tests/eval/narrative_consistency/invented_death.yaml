@@ -1,0 +1,14 @@
+# Eval 用例（第 39 节）：narrative_consistency/invented_death
+id: narrative_consistency/invented_death
+description: 凭空出现死亡。
+guard:
+  text: 奥托捂着胸口倒下，当场断气。
+  expect_ok: false
+  expect_rules:
+  - death
+  facts:
+    player_location: 锈酒杯酒馆
+    outcome: success
+  context:
+    allowed_names:
+    - 奥托

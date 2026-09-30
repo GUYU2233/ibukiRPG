@@ -1,0 +1,22 @@
+# Eval 用例（第 39 节）：action_matching/buy_torch
+id: action_matching/buy_torch
+input: 买一支火把
+expected:
+  kind: action
+  action: buy
+  item: torch
+llm_output:
+  intent: buy
+  kind: action
+  matched_action: demo:action/buy
+  targets: []
+  item: demo:item/torch
+  destination: null
+  reasonability: ALLOW
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

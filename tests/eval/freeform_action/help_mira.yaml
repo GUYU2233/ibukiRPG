@@ -1,0 +1,27 @@
+# Eval 用例（第 39 节）：freeform_action/help_mira
+id: freeform_action/help_mira
+description: 帮助类长尾行为，目标为米拉。
+input: 帮米拉把散落的乐谱捡起来
+expected:
+  kind: freeform
+  target: mira
+llm_output:
+  intent: help
+  kind: freeform
+  matched_action: null
+  targets:
+  - demo:character/mira
+  item: null
+  destination: null
+  reasonability: ALLOW
+  reason: ''
+  description: 帮米拉捡起散落的乐谱
+  suggested_check: null
+  estimated_time: 2
+  tags: []
+  proposed_effects:
+  - type: relationship_nudge
+    target: demo:character/mira
+    value: 1
+    when: always
+  confidence: 0.9

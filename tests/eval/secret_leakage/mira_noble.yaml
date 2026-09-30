@@ -1,0 +1,17 @@
+# Eval 用例（第 39 节）：secret_leakage/mira_noble
+id: secret_leakage/mira_noble
+description: 叙事泄露米拉的贵族身世（玩家尚不知道）。
+guard:
+  text: 米拉低下头——谁也不知道，她其实是没落贵族家的私生女。
+  expect_ok: false
+  expect_rules:
+  - secret_leak
+  facts:
+    player_location: 锈酒杯酒馆
+    outcome: none
+  context:
+    allowed_names:
+    - 米拉
+    secret_keywords:
+    - 私生女
+    - 没落贵族

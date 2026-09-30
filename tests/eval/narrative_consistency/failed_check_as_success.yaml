@@ -1,0 +1,12 @@
+# Eval 用例（第 39 节）：narrative_consistency/failed_check_as_success
+id: narrative_consistency/failed_check_as_success
+description: 检定失败却写成成功。
+guard:
+  text: 你据理力争，伯林叹了口气——你成功说服了他。
+  expect_ok: false
+  expect_rules:
+  - outcome
+  facts:
+    player_location: 锈酒杯酒馆
+    outcome: failure
+  context: {}

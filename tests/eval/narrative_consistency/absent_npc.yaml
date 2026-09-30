@@ -1,0 +1,14 @@
+# Eval 用例（第 39 节）：narrative_consistency/absent_npc
+id: narrative_consistency/absent_npc
+description: 不在场的人物出现在叙事中。
+guard:
+  text: 米拉在一旁偷偷看着你。
+  expect_ok: false
+  expect_rules:
+  - absent_npc
+  facts:
+    player_location: 小镇广场
+    outcome: none
+  context:
+    absent_names:
+    - 米拉

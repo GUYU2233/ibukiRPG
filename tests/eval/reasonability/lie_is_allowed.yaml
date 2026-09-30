@@ -1,0 +1,24 @@
+# Eval 用例（第 39 节）：reasonability/lie_is_allowed
+id: reasonability/lie_is_allowed
+description: 说谎是允许的尝试，结果由检定决定。
+input: 骗米拉说我认识她的家人
+expected:
+  reject: false
+  action: deceive
+  target: mira
+llm_output:
+  intent: deceive
+  kind: action
+  matched_action: demo:action/deceive
+  targets:
+  - demo:character/mira
+  item: null
+  destination: null
+  reasonability: ALLOW_WITH_CHECK
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

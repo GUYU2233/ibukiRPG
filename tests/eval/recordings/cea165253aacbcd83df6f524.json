@@ -1,0 +1,5 @@
+{
+  "status": 200,
+  "body": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"{\\\"confidence\\\":0.9,\\\"description\\\":\\\"\\\",\\\"destination\\\":null,\\\"estimated_time\\\":1,\\\"intent\\\":\\\"attack\\\",\\\"item\\\":null,\\\"kind\\\":\\\"reject\\\",\\\"matched_action\\\":null,\\\"proposed_effects\\\":[],\\\"reason\\\":\\\"试玩版还不支持战斗，也许可以试试威吓他。\\\",\\\"reasonability\\\":\\\"REJECT\\\",\\\"suggested_check\\\":null,\\\"tags\\\":[],\\\"targets\\\":[]}\",\"role\":\"assistant\"}}],\"id\":\"synthetic-reasonability/violence\",\"model\":\"deepseek-chat\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":0,\"prompt_tokens\":0}}",
+  "comment": "synthetic: reasonability/violence"
+}

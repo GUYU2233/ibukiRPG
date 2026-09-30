@@ -1,0 +1,21 @@
+# Eval 用例（第 39 节）：action_matching/investigate
+id: action_matching/investigate
+input: 仔细搜查一下桌子底下
+expected:
+  kind: action
+  action: investigate
+llm_output:
+  intent: investigate
+  kind: action
+  matched_action: demo:action/investigate
+  targets: []
+  item: null
+  destination: null
+  reasonability: ALLOW_WITH_CHECK
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

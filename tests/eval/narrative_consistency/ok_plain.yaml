@@ -1,0 +1,27 @@
+# Eval 用例（第 39 节）：narrative_consistency/ok_plain
+id: narrative_consistency/ok_plain
+description: 与事实一致的叙事应放行。
+guard:
+  text: 你把两枚铜币拍在柜台上，伯林给你满上了一杯麦酒。
+  expect_ok: true
+  facts:
+    player_location: 锈酒杯酒馆
+    outcome: none
+    gold_delta: -2
+    gold: 13
+    items_added:
+    - 麦酒
+    present_npcs:
+    - 伯林
+    - 莉娜
+  context:
+    allowed_names:
+    - 伯林
+    - 莉娜
+    absent_names:
+    - 奥托
+    other_locations:
+    - 小镇广场
+    - 储藏室
+    other_items:
+    - 火把

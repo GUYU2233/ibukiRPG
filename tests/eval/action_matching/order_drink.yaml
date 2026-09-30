@@ -1,0 +1,22 @@
+# Eval 用例（第 39 节）：action_matching/order_drink
+id: action_matching/order_drink
+input: 老板，来杯麦酒！
+expected:
+  kind: action
+  action: order_drink
+llm_output:
+  intent: order_drink
+  kind: action
+  matched_action: demo:action/order_drink
+  targets:
+  - demo:character/borin
+  item: null
+  destination: null
+  reasonability: ALLOW
+  reason: ''
+  description: ''
+  suggested_check: null
+  estimated_time: 1
+  tags: []
+  proposed_effects: []
+  confidence: 0.9

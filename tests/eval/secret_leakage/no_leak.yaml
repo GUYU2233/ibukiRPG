@@ -1,0 +1,15 @@
+# Eval 用例（第 39 节）：secret_leakage/no_leak
+id: secret_leakage/no_leak
+description: 只描写可观察的外表，不泄露秘密。
+guard:
+  text: 米拉抱着琴，指尖在弦上轻轻拨了一下，眼神有些躲闪。
+  expect_ok: true
+  facts:
+    player_location: 锈酒杯酒馆
+    outcome: none
+  context:
+    allowed_names:
+    - 米拉
+    secret_keywords:
+    - 私生女
+    - 没落贵族

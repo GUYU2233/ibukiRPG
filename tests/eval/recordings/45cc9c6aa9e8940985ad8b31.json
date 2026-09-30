@@ -1,0 +1,5 @@
+{
+  "status": 200,
+  "body": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"{\\\"confidence\\\":0.9,\\\"description\\\":\\\"\\\",\\\"destination\\\":null,\\\"estimated_time\\\":1,\\\"intent\\\":\\\"fly\\\",\\\"item\\\":null,\\\"kind\\\":\\\"reject\\\",\\\"matched_action\\\":null,\\\"proposed_effects\\\":[],\\\"reason\\\":\\\"你不会飞。\\\",\\\"reasonability\\\":\\\"REJECT\\\",\\\"suggested_check\\\":null,\\\"tags\\\":[],\\\"targets\\\":[]}\",\"role\":\"assistant\"}}],\"id\":\"synthetic-reasonability/fly\",\"model\":\"deepseek-chat\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":0,\"prompt_tokens\":0}}",
+  "comment": "synthetic: reasonability/fly"
+}
