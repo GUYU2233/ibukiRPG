@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/GUYU2233/ibukiRPG/internal/agent/tools"
+
 	"github.com/GUYU2233/ibukiRPG/internal/agent/orchestrator"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
 	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
@@ -158,6 +160,7 @@ func gameDispatch(ctx context.Context, req dto.RequestV1) (any, bool, error) {
 		"get_journal": true, "get_transcript": true, "get_bundle": true, "get_hud": true,
 		"list_packs": true, "import_pack": true, "delete_pack": true,
 		"get_codex": true, "get_card": true, "get_relations": true, "get_cards": true, "get_growth": true, "get_combat": true, "get_portrait": true, "get_mechs": true, "get_mech": true,
+		"list_tools": true, "call_tool": true,
 	}
 	if !handled[req.Type] {
 		return nil, false, nil
@@ -329,6 +332,42 @@ func gameRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV1
 		}
 		v, _, err := s.Portrait(ctx, p.ID)
 		return v, err
+	case "list_tools":
+		// 只读检索工具（与 MCP 适配器相同的工具集，第 48 节）；scope 缺省为 player。
+		p, err := decode[struct {
+			Scope string `json:"scope"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		sc, err := tools.ParseScope(p.Scope)
+		if err != nil {
+			return nil, err
+		}
+		return tools.Specs(sc), nil
+	case "call_tool":
+		p, err := decode[struct {
+			Scope     string          `json:"scope"`
+			Name      string          `json:"name"`
+			Arguments json.RawMessage `json:"arguments"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		sc, err := tools.ParseScope(p.Scope)
+		if err != nil {
+			return nil, err
+		}
+		env, err := s.ToolEnv(ctx)
+		if err != nil {
+			return nil, err
+		}
+		out, cerr := tools.Call(env, sc, p.Name, string(p.Arguments))
+		res := map[string]any{"result": json.RawMessage(out)}
+		if cerr != nil {
+			res["is_error"] = true
+		}
+		return res, nil
 	case "get_transcript":
 		p, err := decode[struct {
 			Limit    int   `json:"limit"`

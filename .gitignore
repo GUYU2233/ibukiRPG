@@ -33,3 +33,6 @@ packs-private/
 *tianzhichi*
 *天之炽*
 novel.txt
+/cli
+/eval
+/server

@@ -319,8 +319,10 @@ type Package struct {
 	// Variables 是故事变量及其初始值（manifest start.variables）。
 	Variables map[string]int
 	// ---- v0.1.1-rc2 ----
-	Combat    *combat.Content
-	Codex     []CodexEntry
+	Combat *combat.Content
+	Codex  []CodexEntry
+	// Prompts 是提示词段落补丁（manifest content.prompts）。
+	Prompts   []PromptPatch
 	Relations Relations
 	Mainline  Mainline
 }

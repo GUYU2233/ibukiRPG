@@ -13,10 +13,40 @@ import (
 	"time"
 )
 
-// Message 是一条对话消息。
+// Message 是一条对话消息。ToolCalls / ToolCallID 用于 OpenAI 兼容的函数调用（没有时不会序列化，
+// 因此不影响旧录音的请求哈希）。
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role       string     `json:"role"`
+	Content    string     `json:"content"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Name       string     `json:"name,omitempty"`
+}
+
+// ToolCall 是模型发起的一次函数调用。
+type ToolCall struct {
+	ID       string       `json:"id"`
+	Type     string       `json:"type"` // 固定为 function
+	Function FunctionCall `json:"function"`
+}
+
+// FunctionCall 是函数名与 JSON 参数。
+type FunctionCall struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
+}
+
+// ToolSpec 是提供给模型的函数声明（OpenAI tools 格式）。
+type ToolSpec struct {
+	Type     string       `json:"type"` // function
+	Function FunctionSpec `json:"function"`
+}
+
+// FunctionSpec 是函数名、说明与 JSON Schema 参数。
+type FunctionSpec struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Parameters  map[string]any `json:"parameters"`
 }
 
 // Request 是一次模型调用。
@@ -25,6 +55,8 @@ type Request struct {
 	Temperature float64
 	MaxTokens   int
 	JSON        bool // 要求 JSON 对象输出（response_format=json_object）
+	// Tools 非空时启用函数调用（只读检索工具）。
+	Tools []ToolSpec
 }
 
 // Response 是模型输出与统计。
@@ -35,7 +67,17 @@ type Response struct {
 	CompletionTokens int
 	Latency          time.Duration
 	FirstToken       time.Duration
+	// ToolCalls 是模型要求执行的函数调用（为空表示给出了最终回答）。
+	ToolCalls []ToolCall
 }
+
+// ToolCaller 由支持函数调用的 Provider 实现。本地小模型 / 离线模式不实现，调用方改用关键词预检索。
+type ToolCaller interface {
+	SupportsTools() bool
+}
+
+// ErrToolsUnsupported 表示服务端拒绝了 tools 参数（调用方应降级为预检索）。
+var ErrToolsUnsupported = errors.New("provider does not support tool calling")
 
 // Provider 是 AI Provider 接口（第 36 节）。实现必须可取消、可超时，失败不影响 Game State。
 type Provider interface {
@@ -50,6 +92,10 @@ const (
 	KindDeepSeek = "deepseek"
 	KindQwen     = "qwen"
 	KindCustom   = "custom"
+	// KindLocal 是设备本地模型（Android 端通过本地 HTTP 服务暴露），不支持函数调用。
+	KindLocal = "local"
+	// KindMediaPipe 是 Android 端 MediaPipe 本地模型（同样不支持函数调用）。
+	KindMediaPipe = "mediapipe"
 )
 
 // Preset 是内置的 OpenAI 兼容服务预设。
@@ -76,6 +122,8 @@ type Config struct {
 	BaseURL string `json:"base_url"`
 	Model   string `json:"model"`
 	APIKey  string `json:"api_key,omitempty"`
+	// NoTools 关闭函数调用（服务端不支持时由用户或自动探测设置）。
+	NoTools bool `json:"no_tools,omitempty"`
 }
 
 // Normalize 补全预设的默认 BaseURL / Model。
@@ -122,6 +170,12 @@ func NewOpenAICompatible(cfg Config, transport http.RoundTripper) *OpenAICompati
 // Name 返回 Provider 名。
 func (p *OpenAICompatible) Name() string { return p.cfg.Kind + ":" + p.cfg.Model }
 
+// SupportsTools 报告是否尝试函数调用。设备本地模型（kind=local）不支持；其它 OpenAI 兼容服务先尝试，
+// 被服务端拒绝时返回 ErrToolsUnsupported。
+func (p *OpenAICompatible) SupportsTools() bool {
+	return p.cfg.Kind != KindLocal && p.cfg.Kind != KindMediaPipe && !p.cfg.NoTools
+}
+
 type chatRequest struct {
 	Model          string            `json:"model"`
 	Messages       []Message         `json:"messages"`
@@ -129,13 +183,16 @@ type chatRequest struct {
 	MaxTokens      int               `json:"max_tokens,omitempty"`
 	Stream         bool              `json:"stream"`
 	ResponseFormat map[string]string `json:"response_format,omitempty"`
+	Tools          []ToolSpec        `json:"tools,omitempty"`
+	ToolChoice     string            `json:"tool_choice,omitempty"`
 }
 
 type chatResponse struct {
 	Model   string `json:"model"`
 	Choices []struct {
 		Message struct {
-			Content string `json:"content"`
+			Content   string     `json:"content"`
+			ToolCalls []ToolCall `json:"tool_calls"`
 		} `json:"message"`
 		Delta struct {
 			Content string `json:"content"`
@@ -176,6 +233,10 @@ func (p *OpenAICompatible) newRequest(ctx context.Context, req Request, stream b
 	if req.JSON {
 		body.ResponseFormat = map[string]string{"type": "json_object"}
 	}
+	if len(req.Tools) > 0 && !stream {
+		body.Tools, body.ToolChoice = req.Tools, "auto"
+		body.ResponseFormat = nil // 部分服务不允许 tools 与 json_object 同时出现
+	}
 	b, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -205,6 +266,19 @@ func readError(resp *http.Response) error {
 	return &HTTPError{Status: resp.StatusCode, Message: msg}
 }
 
+// toolsRejected 判断错误是否是服务端不支持 tools 参数（400 / 404 / 422 且提到 tool / function）。
+func toolsRejected(err error) bool {
+	var he *HTTPError
+	if !errors.As(err, &he) {
+		return false
+	}
+	if he.Status != http.StatusBadRequest && he.Status != http.StatusNotFound && he.Status != http.StatusUnprocessableEntity {
+		return false
+	}
+	m := strings.ToLower(he.Message)
+	return strings.Contains(m, "tool") || strings.Contains(m, "function")
+}
+
 // Generate 非流式调用。
 func (p *OpenAICompatible) Generate(ctx context.Context, req Request) (Response, error) {
 	start := time.Now()
@@ -218,7 +292,11 @@ func (p *OpenAICompatible) Generate(ctx context.Context, req Request) (Response,
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode/100 != 2 {
-		return Response{}, readError(resp)
+		err := readError(resp)
+		if len(req.Tools) > 0 && toolsRejected(err) {
+			return Response{}, fmt.Errorf("%w: %w", ErrToolsUnsupported, err)
+		}
+		return Response{}, err
 	}
 	var cr chatResponse
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&cr); err != nil {
@@ -227,7 +305,7 @@ func (p *OpenAICompatible) Generate(ctx context.Context, req Request) (Response,
 	if len(cr.Choices) == 0 {
 		return Response{}, errors.New("empty choices")
 	}
-	out := Response{Text: cr.Choices[0].Message.Content, Model: cr.Model, Latency: time.Since(start)}
+	out := Response{Text: cr.Choices[0].Message.Content, Model: cr.Model, Latency: time.Since(start), ToolCalls: cr.Choices[0].Message.ToolCalls}
 	out.FirstToken = out.Latency
 	if cr.Usage != nil {
 		out.PromptTokens, out.CompletionTokens = cr.Usage.PromptTokens, cr.Usage.CompletionTokens

@@ -1,0 +1,14 @@
+# Eval 用例（retrieval）：叙述者（PlayerScope）同样看不到玩家尚未发现的秘密
+id: retrieval/lena_debt_narrator_scope
+description: 叙述者检索莉娜，只能拿到玩家可观察的信息。
+lookup:
+  scope: player
+  question: 莉娜 欠债
+  calls:
+  - tool: pack.get_entity
+    args: {id: demo:character/lena}
+  - tool: pack.search
+    args: {query: 北方商会}
+  prefetch: true
+  expect_contains: [莉娜]
+  expect_absent: [欠了北方商会]

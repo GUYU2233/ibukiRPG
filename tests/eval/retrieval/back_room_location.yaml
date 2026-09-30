@@ -1,0 +1,12 @@
+# Eval 用例（retrieval）：玩家提到上下文里没有细节的地点，需查地点资料再描写
+id: retrieval/back_room_location
+description: 储藏室的样子不在默认上下文（只有 ID 与名字），必须用 world.get_location 查到再写。
+lookup:
+  scope: director
+  question: 储藏室里是什么样子？
+  calls:
+  - tool: world.get_location
+    args: {id: 储藏室}
+  prefetch: true
+  needs_lookup: true
+  expect_contains: [发酵的酸味]

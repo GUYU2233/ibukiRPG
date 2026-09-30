@@ -1,0 +1,11 @@
+# 提示词段落补丁（示例）：追加到引擎默认的 [TOOLS] / [RETRIEVAL_POLICY] 段落之后。
+# agent 留空表示所有 Agent；mode: append（默认）或 replace（整段替换默认文字）。
+sections:
+  - name: RETRIEVAL_POLICY
+    agent: narrator
+    text: |
+      - 锈钟镇的机械、甲胄与蒸汽压设定以故事包为准：写到“过热”“蒸汽压”或某台甲胄时，先用 mech_get_card / pack_search 核对。
+  - name: RETRIEVAL_POLICY
+    agent: director
+    text: |
+      - 自由推演节点优先复用竞技场、广场、下水道这些已有地点与欧琳、托克、铆钉等已有人物；安排战斗前先用 pack_list(type=enemy) 确认敌人 ID。

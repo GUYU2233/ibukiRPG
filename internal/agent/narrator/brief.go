@@ -1,10 +1,14 @@
 package narrator
 
 import (
+	"context"
+
 	"fmt"
 	"hash/fnv"
 	"slices"
 	"strings"
+
+	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
 
 	"github.com/GUYU2233/ibukiRPG/internal/core/command"
 	"github.com/GUYU2233/ibukiRPG/internal/core/engine"
@@ -39,7 +43,31 @@ type Brief struct {
 	Checks     []checks.Result `json:"-"`
 	// Memories 是本回合涉及的 NPC 的记忆（NPCScope：只含该 NPC 自己经历、听到、看到的事，不含秘密）。
 	Memories []NPCMemory `json:"npc_memory,omitempty"`
+
+	// StorySoFar 是记忆 Agent 生成的 [STORY_SO_FAR] 段（早期回合的摘要）；为空时不出现在提示词里。
+	StorySoFar string `json:"-"`
+	// Lookup 是需要先检索再叙述的原因（自由推演 / 未知名词 / 回忆被压缩的内容）；为空时不检索。
+	Lookup []string `json:"-"`
+	// Retrieval 是 [TOOLS] + [RETRIEVAL_POLICY] 段（故事包可修补）。
+	Retrieval string `json:"-"`
+	// Research 执行只读检索（PlayerScope，由编排器注入）：返回模型直接给出的回答，或带检索结果的新消息。
+	Research Research `json:"-"`
 }
+
+// Known 返回本回合上下文里已经出现的文字（用于判断玩家提到的名词是否“未知”）。
+func (b Brief) Known() []string {
+	out := []string{b.Location, b.Base, strings.Join(b.SceneFacts, "；"), b.StorySoFar}
+	for _, p := range b.Present {
+		out = append(out, p.Name+p.Role+p.Description)
+	}
+	for _, m := range b.Memories {
+		out = append(out, m.Name+strings.Join(m.Exchanges, "")+strings.Join(m.Episodes, ""))
+	}
+	return out
+}
+
+// Research 是检索回调：answer 非空表示模型检索后已直接写好叙事；否则用 msgs 再生成一次。
+type Research func(ctx context.Context, p provider.Provider, msgs []provider.Message, hint string) (answer string, out []provider.Message)
 
 // NPCMemory 是 AI 上下文中某个 NPC 的记忆摘要。
 type NPCMemory struct {

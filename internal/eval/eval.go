@@ -45,6 +45,28 @@ type Case struct {
 	Modes     []string       `yaml:"modes"`
 	LLMOutput map[string]any `yaml:"llm_output"`
 	Guard     *GuardCase     `yaml:"guard"`
+	Lookup    *LookupCase    `yaml:"lookup"`
+}
+
+// LookupCase 是检索用例（retrieval 套件）：正确答案不在默认上下文里，必须用只读工具查到；
+// 同时检查范围过滤（NPC / 叙述者不能查到秘密）。
+//   - tools 模式：脚本化的模型（进程内假 Provider，确定性）依次调用 calls 里的工具，检查工具结果；
+//   - prefetch 模式：模拟不支持函数调用的本地模型，用关键词预检索（[RETRIEVED] 段）。
+type LookupCase struct {
+	Scope    string       `yaml:"scope"`
+	Question string       `yaml:"question"`
+	Calls    []LookupCall `yaml:"calls"`
+	Prefetch bool         `yaml:"prefetch"`
+	// NeedsLookup 要求 expect_contains 不出现在默认上下文（导演提示词的公开资料）里。
+	NeedsLookup    bool     `yaml:"needs_lookup"`
+	ExpectContains []string `yaml:"expect_contains"`
+	ExpectAbsent   []string `yaml:"expect_absent"`
+}
+
+// LookupCall 是脚本化模型的一次工具调用。
+type LookupCall struct {
+	Tool string         `yaml:"tool"`
+	Args map[string]any `yaml:"args"`
 }
 
 // Setup 在初始状态上做最小修改。
@@ -172,6 +194,10 @@ func (r *Runner) Run(ctx context.Context, cases []Case) []Result {
 			out = append(out, r.runGuard(c))
 			continue
 		}
+		if c.Lookup != nil {
+			out = append(out, r.runLookup(ctx, c)...)
+			continue
+		}
 		in := resolver.Input{Text: c.Input, Pkg: r.Pkg, State: r.state(c)}
 		if c.wants("offline") {
 			res, err := resolver.Offline{}.Resolve(ctx, in)
@@ -274,7 +300,7 @@ func (r *Runner) runGuard(c Case) Result {
 func (r *Runner) Synthesize(ctx context.Context, cases []Case) (int, error) {
 	n := 0
 	for _, c := range cases {
-		if c.Guard != nil || c.LLMOutput == nil || !c.wants("llm") {
+		if c.Guard != nil || c.Lookup != nil || c.LLMOutput == nil || !c.wants("llm") {
 			continue
 		}
 		content, err := json.Marshal(c.LLMOutput)

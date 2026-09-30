@@ -1,0 +1,14 @@
+# Eval 用例（retrieval）：导演需要查阅人物秘密才能答对（默认上下文里没有）
+id: retrieval/lena_debt_director
+description: 自由推演时导演想用莉娜的背景安排节点——她欠了谁的钱？答案只在人物卡的秘密里，必须检索。
+lookup:
+  scope: director
+  question: 莉娜为什么总躲着北方来的人？
+  calls:
+  - tool: pack.search
+    args: {query: 莉娜}
+  - tool: pack.get_entity
+    args: {id: demo:character/lena}
+  prefetch: true
+  needs_lookup: true
+  expect_contains: [北方商会]

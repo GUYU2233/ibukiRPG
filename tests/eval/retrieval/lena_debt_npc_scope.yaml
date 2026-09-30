@@ -1,0 +1,16 @@
+# Eval 用例（retrieval）：NPC 范围查不到别人的秘密
+id: retrieval/lena_debt_npc_scope
+description: 米拉（NPC Agent）检索莉娜时只能看到公开资料，不能看到她的债务秘密。
+lookup:
+  scope: npc:demo:character/mira
+  question: 莉娜为什么总躲着北方来的人？
+  calls:
+  - tool: pack.search
+    args: {query: 莉娜 欠债 北方商会}
+  - tool: pack.get_entity
+    args: {id: demo:character/lena}
+  - tool: character.get_card
+    args: {id: 莉娜}
+  prefetch: true
+  expect_contains: [莉娜]
+  expect_absent: [欠了北方商会]

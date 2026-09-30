@@ -51,6 +51,10 @@ type Options struct {
 	// 超时（0 表示默认值）。
 	ResolverTimeout time.Duration
 	NarratorTimeout time.Duration
+	// MemorySync 让记忆 Agent 同步运行（测试用；默认在后台运行，不占关键路径）。
+	MemorySync bool
+	// MemoryLLM 让记忆 Agent 在联网时用大模型写摘要（失败回退离线摘要）。默认离线、确定性。
+	MemoryLLM bool
 }
 
 // Session 是一局游戏的编排器（Critical Path，第 38 节）：
@@ -69,6 +73,9 @@ type Session struct {
 	ai     provider.Config
 	aiErr  string
 	sink   func(dto.StreamEventV1)
+
+	memWG sync.WaitGroup // 后台记忆整理任务
+	memMu sync.Mutex
 }
 
 // Open 打开存档数据库并加载内容包。
@@ -121,7 +128,10 @@ func (s *Session) gameFor(id string) (*game, error) {
 func (s *Session) Registry() *registry.Registry { return s.reg }
 
 // Close 关闭数据库。
-func (s *Session) Close() error { return s.store.Close() }
+func (s *Session) Close() error {
+	s.memWait()
+	return s.store.Close()
+}
 
 // SetSink 设置流式事件接收者。
 func (s *Session) SetSink(f func(dto.StreamEventV1)) {

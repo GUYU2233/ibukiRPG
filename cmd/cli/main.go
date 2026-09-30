@@ -42,6 +42,13 @@ func defaultDataDir() string {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "mcp" {
+		if err := runMCP(os.Args[2:], os.Stdin, os.Stdout, os.Stderr); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	var o options
 	showVersion := flag.Bool("version", false, "打印版本并退出")
 	flag.StringVar(&o.dataDir, "data", defaultDataDir(), "存档目录")

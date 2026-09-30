@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
@@ -122,6 +123,12 @@ func (s *Store) migrate(ctx context.Context) error {
 			slot_id TEXT NOT NULL REFERENCES saves(slot_id) ON DELETE CASCADE,
 			command_id TEXT NOT NULL DEFAULT '', turn INTEGER NOT NULL, kind TEXT NOT NULL, text TEXT NOT NULL, meta TEXT)`,
 		`CREATE INDEX IF NOT EXISTS transcript_slot ON transcript(slot_id, id)`,
+		`CREATE TABLE IF NOT EXISTS memory (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			slot_id TEXT NOT NULL REFERENCES saves(slot_id) ON DELETE CASCADE,
+			kind TEXT NOT NULL, subject TEXT NOT NULL DEFAULT '', from_turn INTEGER NOT NULL, to_turn INTEGER NOT NULL,
+			text TEXT NOT NULL, compressed TEXT NOT NULL DEFAULT '')`,
+		`CREATE INDEX IF NOT EXISTS memory_slot ON memory(slot_id, kind, to_turn)`,
 		`INSERT INTO meta(key, value) VALUES ('schema_version', '1') ON CONFLICT(key) DO NOTHING`,
 	}
 	for _, q := range stmts {
@@ -240,6 +247,7 @@ func (s *Store) CopySlot(ctx context.Context, src, name string) (string, error) 
 			`INSERT INTO commands(slot_id,command_id,accepted,command,result,narration,created_at) SELECT ?,command_id,accepted,command,result,narration,created_at FROM commands WHERE slot_id=?`,
 			`INSERT INTO snapshots(slot_id,seq,state) SELECT ?,seq,state FROM snapshots WHERE slot_id=?`,
 			`INSERT INTO transcript(slot_id,command_id,turn,kind,text,meta) SELECT ?,command_id,turn,kind,text,meta FROM transcript WHERE slot_id=? ORDER BY id`,
+			`INSERT INTO memory(slot_id,kind,subject,from_turn,to_turn,text,compressed) SELECT ?,kind,subject,from_turn,to_turn,text,compressed FROM memory WHERE slot_id=? ORDER BY id`,
 		}
 		if _, err := tx.ExecContext(ctx, qs[0], dst, name, now, now, src); err != nil {
 			return err
@@ -576,4 +584,56 @@ func (s *Store) EntriesByCommand(ctx context.Context, slotID, cmdID string) ([]E
 		out = append(out, e)
 	}
 	return out, rows.Err()
+}
+
+// Memory 是记忆 Agent 写入的一条摘要（滚动对话摘要 / 长期记忆 / NPC 记忆摘要）。
+// 摘要不是游戏事实：它只帮助 AI 在上下文被压缩后回忆早期内容，删除它不影响重放。
+type Memory struct {
+	ID         int64    `json:"id"`
+	Kind       string   `json:"kind"` // rolling / longterm / npc
+	Subject    string   `json:"subject,omitempty"`
+	FromTurn   int      `json:"from_turn"`
+	ToTurn     int      `json:"to_turn"`
+	Text       string   `json:"text"`
+	Compressed []string `json:"compressed,omitempty"`
+}
+
+// Memories 按写入顺序返回存档的全部摘要。
+func (s *Store) Memories(ctx context.Context, slotID string) ([]Memory, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT id, kind, subject, from_turn, to_turn, text, compressed FROM memory WHERE slot_id=? ORDER BY id`, slotID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var out []Memory
+	for rows.Next() {
+		var m Memory
+		var comp string
+		if err := rows.Scan(&m.ID, &m.Kind, &m.Subject, &m.FromTurn, &m.ToTurn, &m.Text, &comp); err != nil {
+			return nil, err
+		}
+		if comp != "" {
+			m.Compressed = strings.Split(comp, "\x1f")
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+// ReplaceMemories 在一个事务里删除 ids 指定的摘要并写入 add（长期压缩：旧的滚动摘要合并为一条）。
+func (s *Store) ReplaceMemories(ctx context.Context, slotID string, remove []int64, add []Memory) error {
+	return sqlite.WithTx(ctx, s.db, func(tx *sql.Tx) error {
+		for _, id := range remove {
+			if _, err := tx.ExecContext(ctx, `DELETE FROM memory WHERE slot_id=? AND id=?`, slotID, id); err != nil {
+				return err
+			}
+		}
+		for _, m := range add {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO memory(slot_id,kind,subject,from_turn,to_turn,text,compressed) VALUES (?,?,?,?,?,?,?)`,
+				slotID, m.Kind, m.Subject, m.FromTurn, m.ToTurn, m.Text, strings.Join(m.Compressed, "\x1f")); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }

@@ -78,9 +78,14 @@ func BuildMessages(b Brief) []provider.Message {
 	for _, p := range b.Present {
 		present = append(present, fmt.Sprintf("%s（%s，对你%s）：%s", p.Name, p.Role, p.Attitude, p.Description))
 	}
-	user := fmt.Sprintf("[SCENE]\n地点：%s；时间：%s\n场景事实：%s\n[PRESENT]\n%s\n%s[IMMUTABLE_FACTS]\n%s\n[RESOLVED_EVENTS]（事实稿，请据此改写）\n%s\n[PLAYER_INPUT]\n%s",
-		b.Location, b.Time, strings.Join(b.SceneFacts, "；"), strings.Join(present, "\n"), MemorySection(b.Memories), facts, b.Base, b.Input)
-	return []provider.Message{{Role: "system", Content: narratorSystem}, {Role: "user", Content: user}}
+	user := fmt.Sprintf("%s[SCENE]\n地点：%s；时间：%s\n场景事实：%s\n[PRESENT]\n%s\n%s[IMMUTABLE_FACTS]\n%s\n[RESOLVED_EVENTS]（事实稿，请据此改写）\n%s\n[PLAYER_INPUT]\n%s",
+		b.StorySoFar, b.Location, b.Time, strings.Join(b.SceneFacts, "；"), strings.Join(present, "\n"), MemorySection(b.Memories), facts, b.Base, b.Input)
+	sys := narratorSystem
+	if len(b.Lookup) > 0 && b.Retrieval != "" {
+		sys += "\n" + strings.TrimRight(b.Retrieval, "\n")
+		user += "\n[LOOKUP]\n需要先查证：" + strings.Join(b.Lookup, "；") + "。查不到的内容不要写。"
+	}
+	return []provider.Message{{Role: "system", Content: sys}, {Role: "user", Content: user}}
 }
 
 // MemorySection 渲染 [NPC_MEMORY] 段落（没有记忆时为空串）。
@@ -121,12 +126,32 @@ func MemorySection(ms []NPCMemory) string {
 }
 
 // Narrate 实现 Narrator。
+//
+// 当 Brief.Lookup 非空（信息不足）时先跑只读检索循环（PlayerScope）：支持函数调用的模型自己调用工具，
+// 不支持的改为关键词预检索；检索后的最终叙事同样经过 Guard。
 func (l *LLM) Narrate(ctx context.Context, b Brief, onDelta func(string)) Output {
-	resp, err := l.Provider.Stream(ctx, provider.Request{Messages: BuildMessages(b), Temperature: 0.8, MaxTokens: 600}, onDelta)
+	msgs := BuildMessages(b)
+	if len(b.Lookup) > 0 && b.Research != nil {
+		answer, out := b.Research(ctx, l.Provider, msgs, b.Input+" "+strings.Join(b.Lookup, " "))
+		if strings.TrimSpace(answer) != "" {
+			if onDelta != nil {
+				for _, c := range chunks(answer, 12) {
+					onDelta(c)
+				}
+			}
+			return l.finish(b, answer)
+		}
+		msgs = out
+	}
+	resp, err := l.Provider.Stream(ctx, provider.Request{Messages: msgs, Temperature: 0.8, MaxTokens: 600}, onDelta)
 	if err != nil {
 		return Output{Text: b.Base, Source: "template(fallback)", Corrected: true, Err: err.Error(), Guard: guard.Check(b.Base, b.Facts, b.Guard)}
 	}
-	text := strings.TrimSpace(resp.Text)
+	return l.finish(b, resp.Text)
+}
+
+func (l *LLM) finish(b Brief, text string) Output {
+	text = strings.TrimSpace(text)
 	rep := guard.Check(text, b.Facts, b.Guard)
 	if !rep.OK {
 		// Template Fallback：宁可朴素，也不能篡改结果

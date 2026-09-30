@@ -56,3 +56,5 @@ content:
     - story/mainline.yaml
   hud:
     - rules/hud.yaml
+  prompts:
+    - prompts/retrieval.yaml

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/GUYU2233/ibukiRPG/internal/agent/tools"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
 	"github.com/GUYU2233/ibukiRPG/internal/core/command"
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
@@ -123,11 +124,36 @@ func Parse(text string) (*command.NodeProposal, error) {
 // Proposer 调用 Provider 生成提案。
 type Proposer struct {
 	Provider provider.Provider
+	// Env 非 nil 时先做只读检索（DirectorScope）：自由推演总是信息不足的场景，导演先查设定再提案。
+	Env *tools.Env
+	// Retrieval 是 [TOOLS] + [RETRIEVAL_POLICY] 段（故事包可修补）。
+	Retrieval string
+	Budget    tools.Budget
+	// Steps 记录最近一次提案的检索步骤（调试 / 测试）。
+	Steps []tools.Step
+	Mode  string
 }
 
 // Propose 请求一个新节点提案。
 func (x *Proposer) Propose(ctx context.Context, p *loader.Package, s *state.State, recent []string) (*command.NodeProposal, error) {
-	resp, err := x.Provider.Generate(ctx, provider.Request{Messages: BuildMessages(p, s, recent), Temperature: 0.7, MaxTokens: 600, JSON: true})
+	msgs := BuildMessages(p, s, recent)
+	x.Steps, x.Mode = nil, "none"
+	if x.Env != nil {
+		if x.Retrieval != "" {
+			msgs[0].Content += "\n" + strings.TrimRight(x.Retrieval, "\n")
+		}
+		msgs[1].Content += "\n[LOOKUP]\n玩家已进入自由推演：先检索与当前地点、在场人物、最近事件相关的设定，再提出节点。"
+		loop := &tools.Loop{Provider: x.Provider, Env: x.Env, Scope: tools.Director(), Budget: x.Budget, Temperature: 0.7, JSON: true}
+		o := loop.Run(ctx, msgs, p.Locations[s.Player.Location].Name+" "+strings.Join(recent, " "))
+		x.Steps, x.Mode = o.Steps, o.Mode
+		if o.Answer != nil {
+			if pr, err := Parse(o.Answer.Text); err == nil {
+				return pr, nil
+			}
+		}
+		msgs = tools.Flatten(msgs, o)
+	}
+	resp, err := x.Provider.Generate(ctx, provider.Request{Messages: msgs, Temperature: 0.7, MaxTokens: 600, JSON: true})
 	if err != nil {
 		return nil, err
 	}

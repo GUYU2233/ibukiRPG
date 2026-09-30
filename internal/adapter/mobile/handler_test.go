@@ -3,6 +3,7 @@ package mobile
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -93,5 +94,19 @@ func TestGameAPI(t *testing.T) {
 	r = call(t, `{"version":"v1","type":"test_ai","payload":{"kind":"deepseek"}}`)
 	if r["data"].(map[string]any)["ok"] != false {
 		t.Fatalf("test_ai without key should fail gracefully: %v", r)
+	}
+	// 只读检索工具（移动端走进程内工具网关）
+	if r := call(t, `{"version":"v1","type":"list_tools","payload":{"scope":"npc:demo:character/lena"}}`); r["ok"] != true || len(r["data"].([]any)) == 0 {
+		t.Fatalf("list_tools: %v", r)
+	}
+	r = call(t, `{"version":"v1","type":"call_tool","payload":{"scope":"npc:demo:character/lena","name":"pack.get_entity","arguments":{"id":"demo:character/mira"}}}`)
+	if r["ok"] != true {
+		t.Fatalf("call_tool: %v", r)
+	}
+	if b, _ := json.Marshal(r["data"]); strings.Contains(string(b), "家族的私生女") || !strings.Contains(string(b), "米拉") {
+		t.Fatalf("call_tool scope leak or missing: %s", b)
+	}
+	if r := call(t, `{"version":"v1","type":"call_tool","payload":{"scope":"god","name":"pack.search"}}`); r["ok"] != false {
+		t.Fatalf("bad scope should fail: %v", r)
 	}
 }

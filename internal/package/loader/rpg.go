@@ -231,6 +231,27 @@ func (p *Package) loadRPG(fsys fs.FS, m *manifest.Manifest) error {
 			p.Codex = append(p.Codex, e)
 		}
 	}
+	for _, f := range m.Content["prompts"] {
+		var raw struct {
+			Sections []PromptPatch `yaml:"sections"`
+		}
+		if err := readYAML(fsys, f, &raw); err != nil {
+			return err
+		}
+		for _, x := range raw.Sections {
+			if x.Name == "" || strings.TrimSpace(x.Text) == "" {
+				return fmt.Errorf("%s: prompt section needs name and text", f)
+			}
+			if x.Mode == "" {
+				x.Mode = "append"
+			}
+			if x.Mode != "append" && x.Mode != "replace" {
+				return fmt.Errorf("%s: prompt section %s: mode must be append or replace", f, x.Name)
+			}
+			x.Text = strings.TrimSpace(x.Text)
+			p.Prompts = append(p.Prompts, x)
+		}
+	}
 	for _, f := range m.Content["relations"] {
 		var raw Relations
 		if err := readYAML(fsys, f, &raw); err != nil {
@@ -577,6 +598,15 @@ func (p *Package) EnemyStats(e *combat.EnemyDef) combat.Stats {
 		st[k] = v
 	}
 	return st
+}
+
+// PromptPatch 是故事包对 AI 提示词段落的补丁（例如 [TOOLS] / [RETRIEVAL_POLICY] / [STYLE]）。
+// Agent 为空表示对所有 Agent 生效；mode=append 追加在默认文字之后，replace 整段替换。
+type PromptPatch struct {
+	Name  string `yaml:"name"`
+	Agent string `yaml:"agent"` // narrator / director / npc / 空
+	Mode  string `yaml:"mode"`
+	Text  string `yaml:"text"`
 }
 
 // CodexName 返回图鉴条目 / 实体的显示名。

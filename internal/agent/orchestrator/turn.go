@@ -160,6 +160,9 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		nar = narrator.Template{}
 	}
 	brief := narrator.Build(g.pkg, st, after, cmd, result)
+	if _, ai := nar.(*narrator.LLM); ai {
+		s.prepareBrief(ctx, slot, g, after, &brief)
+	}
 	nctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.opts.NarratorTimeout)
 	out := nar.Narrate(nctx, brief, func(d string) {
 		s.emit(dto.StreamEventV1{Type: "narration_delta", CommandID: cmdID, Text: d})
@@ -182,6 +185,7 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		return dto.TurnV1{}, derr
 	}
 	notices = append(notices, dnotices...)
+	s.scheduleMemory(slot, g, s.stateOr(after))
 	v, err := s.view(ctx, slot, cmdID, true)
 	v.Entries = append(v.Entries, extra...)
 	v.Notices = notices
@@ -214,7 +218,7 @@ func (s *Session) directorTurn(ctx context.Context, slot, cmdID string, g *game,
 	if s.online() {
 		cfg := func() provider.Config { s.mu.RLock(); defer s.mu.RUnlock(); return s.ai }()
 		pctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.opts.NarratorTimeout)
-		pr, err := (&canon.Proposer{Provider: provider.NewOpenAICompatible(cfg, s.opts.Transport)}).Propose(pctx, g.pkg, st, recentFacts(g, st))
+		pr, err := (&canon.Proposer{Provider: provider.NewOpenAICompatible(cfg, s.opts.Transport), Env: s.toolEnv(pctx, slot, g, st), Retrieval: directorRetrieval(g)}).Propose(pctx, g.pkg, st, recentFacts(g, st))
 		cancel()
 		if err == nil {
 			if _, verr := engine.ValidateProposal(g.pkg, st, pr); verr == nil {
@@ -326,4 +330,14 @@ func (s *Session) view(ctx context.Context, slot, cmdID string, accepted bool) (
 	}
 	v.Suggestions, err = s.Suggestions()
 	return v, err
+}
+
+// stateOr 返回当前存档的最新状态（导演回合可能又推进了一步），没有时返回 fallback。
+func (s *Session) stateOr(fallback *state.State) *state.State {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.st != nil {
+		return s.st
+	}
+	return fallback
 }
