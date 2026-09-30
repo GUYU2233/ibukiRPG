@@ -2,7 +2,14 @@ package com.guyu2233.ibukirpg.app.ui.game
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guyu2233.ibukirpg.app.data.CardV1
+import com.guyu2233.ibukirpg.app.data.CardsV1
 import com.guyu2233.ibukirpg.app.data.CharacterV1
+import com.guyu2233.ibukirpg.app.data.CodexV1
+import com.guyu2233.ibukirpg.app.data.MechCardV1
+import com.guyu2233.ibukirpg.app.data.MechsV1
+import com.guyu2233.ibukirpg.app.data.NoticeV1
+import com.guyu2233.ibukirpg.app.data.RelationsV1
 import com.guyu2233.ibukirpg.app.data.Engine
 import com.guyu2233.ibukirpg.app.data.EntryV1
 import com.guyu2233.ibukirpg.app.data.GameBundle
@@ -34,6 +41,10 @@ data class GameState(
     val error: String? = null,
     /** 本次会话中新到达的叙事（用于逐字显示动画）。 */
     val freshIds: Set<Long> = emptySet(),
+    /** 待显示的提示（升级、获得卡片、机甲状态变化…），显示后清空。 */
+    val notices: List<NoticeV1> = emptyList(),
+    /** 每次回合提交后递增，用来刷新已打开的机甲卡。 */
+    val version: Int = 0,
 )
 
 data class PanelsState(
@@ -42,6 +53,10 @@ data class PanelsState(
     val inventory: InventoryV1? = null,
     val npcs: List<NPCV1> = emptyList(),
     val journal: List<JournalEntryV1> = emptyList(),
+    val codex: CodexV1? = null,
+    val relations: RelationsV1? = null,
+    val cards: CardsV1? = null,
+    val mechs: MechsV1? = null,
 )
 
 class GameViewModel(private val engine: Engine) : ViewModel() {
@@ -142,12 +157,32 @@ class GameViewModel(private val engine: Engine) : ViewModel() {
                 pending = null,
                 streaming = "",
                 freshIds = s.freshIds + fresh.filter { it.kind == "narration" }.map { it.id },
+                notices = s.notices + t.notices,
+                version = s.version + 1,
             )
         }
         if (_panels.value.character != null) refreshPanels()
     }
 
     fun consumeError() = _state.update { it.copy(error = null) }
+
+    fun consumeNotices() = _state.update { it.copy(notices = emptyList()) }
+
+    private val portraitCache = HashMap<String, ByteArray?>()
+
+    /** 立绘（带内存缓存）。没有图片时返回 null，界面显示占位头像。 */
+    suspend fun portrait(id: String): ByteArray? {
+        if (portraitCache.containsKey(id)) return portraitCache[id]
+        val bytes = runCatching { engine.portrait(id) }.getOrNull()
+            ?.takeIf { it.base64.isNotBlank() }
+            ?.let { android.util.Base64.decode(it.base64, android.util.Base64.DEFAULT) }
+        portraitCache[id] = bytes
+        return bytes
+    }
+
+    suspend fun card(id: String): CardV1? = runCatching { engine.card(id) }.getOrNull()
+
+    suspend fun mech(id: String): MechCardV1? = runCatching { engine.mech(id) }.getOrNull()
 
     fun refreshPanels() {
         _panels.update { it.copy(loading = true) }
@@ -159,7 +194,14 @@ class GameViewModel(private val engine: Engine) : ViewModel() {
                     inventory = engine.inventory(),
                     npcs = engine.npcs(),
                     journal = engine.journal(),
-                )
+                ).let { base ->
+                    if (!_state.value.scene.hasRpg) base else base.copy(
+                        codex = runCatching { engine.codex() }.getOrNull(),
+                        relations = runCatching { engine.relations() }.getOrNull(),
+                        cards = runCatching { engine.cards() }.getOrNull(),
+                        mechs = runCatching { engine.mechs() }.getOrNull(),
+                    )
+                }
             }.onSuccess { p -> _panels.value = p }
                 .onFailure { e -> _panels.update { it.copy(loading = false) }; _state.update { it.copy(error = e.message) } }
         }

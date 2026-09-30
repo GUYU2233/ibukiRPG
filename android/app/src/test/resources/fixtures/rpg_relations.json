@@ -1,0 +1,204 @@
+{
+  "dimensions": [
+    {
+      "id": "trust",
+      "name": "信任",
+      "value": 0
+    },
+    {
+      "id": "affection",
+      "name": "好感",
+      "value": 0
+    },
+    {
+      "id": "awe",
+      "name": "敬畏",
+      "value": 0
+    },
+    {
+      "id": "debt",
+      "name": "恩情",
+      "value": 0
+    },
+    {
+      "id": "hostility",
+      "name": "敌意",
+      "negative": true,
+      "value": 0
+    },
+    {
+      "id": "fear",
+      "name": "畏惧",
+      "negative": true,
+      "value": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": "brass:character/orin",
+      "from_name": "欧琳",
+      "label": "友好",
+      "source": "self",
+      "to": "player",
+      "to_name": "你",
+      "tone": "positive",
+      "values": [
+        {
+          "id": "trust",
+          "name": "信任",
+          "value": 10
+        },
+        {
+          "id": "awe",
+          "name": "敬畏",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "from": "brass:character/rivet",
+      "from_name": "小铆钉",
+      "label": "友好",
+      "source": "self",
+      "to": "player",
+      "to_name": "你",
+      "tone": "positive",
+      "values": [
+        {
+          "id": "trust",
+          "name": "信任",
+          "value": 5
+        },
+        {
+          "id": "affection",
+          "name": "好感",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "from": "brass:character/orin",
+      "from_name": "欧琳",
+      "label": "戒备",
+      "note": "师徒，但托克顶撞过她",
+      "source": "public",
+      "to": "brass:character/tock",
+      "to_name": "托克",
+      "tone": "negative",
+      "values": [
+        {
+          "id": "trust",
+          "name": "信任",
+          "value": 10
+        },
+        {
+          "id": "hostility",
+          "name": "敌意",
+          "negative": true,
+          "value": 15
+        }
+      ]
+    },
+    {
+      "from": "brass:character/rivet",
+      "from_name": "小铆钉",
+      "label": "亲密",
+      "source": "public",
+      "to": "brass:character/orin",
+      "to_name": "欧琳",
+      "tone": "positive",
+      "values": [
+        {
+          "id": "affection",
+          "name": "好感",
+          "value": 25
+        },
+        {
+          "id": "awe",
+          "name": "敬畏",
+          "value": 30
+        }
+      ]
+    },
+    {
+      "from": "brass:character/tock",
+      "from_name": "托克",
+      "label": "亲密",
+      "source": "public",
+      "to": "brass:character/orin",
+      "to_name": "欧琳",
+      "tone": "positive",
+      "values": [
+        {
+          "id": "awe",
+          "name": "敬畏",
+          "value": 40
+        },
+        {
+          "id": "hostility",
+          "name": "敌意",
+          "negative": true,
+          "value": 10
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "from": "brass:character/rivet",
+      "text": "小铆钉 → 你：信任 +2",
+      "time": "第1天 08:21 · 上午",
+      "to": "player",
+      "turn": 13
+    },
+    {
+      "from": "brass:character/rivet",
+      "text": "小铆钉 → 你：好感 +3（交谈：押了你赢试炼）",
+      "time": "第1天 08:21 · 上午",
+      "to": "player",
+      "turn": 13
+    },
+    {
+      "from": "brass:character/orin",
+      "text": "欧琳 → 你：信任 +3（听说你赢了第一场）",
+      "time": "第1天 08:13 · 上午",
+      "to": "player",
+      "turn": 11
+    },
+    {
+      "from": "brass:character/orin",
+      "text": "欧琳 → 你：信任 +2",
+      "time": "第1天 08:03 · 上午",
+      "to": "player",
+      "turn": 1
+    }
+  ],
+  "people": [
+    {
+      "icon": "person",
+      "id": "player",
+      "name": "阿砾",
+      "player": true
+    },
+    {
+      "card": "active",
+      "icon": "engineering",
+      "id": "brass:character/orin",
+      "name": "欧琳",
+      "role": "工匠行会长"
+    },
+    {
+      "card": "active",
+      "icon": "child_care",
+      "id": "brass:character/rivet",
+      "name": "小铆钉",
+      "role": "工坊跑腿的孩子"
+    },
+    {
+      "icon": "sports_mma",
+      "id": "brass:character/tock",
+      "name": "托克",
+      "role": "去年的试炼第一名"
+    }
+  ]
+}

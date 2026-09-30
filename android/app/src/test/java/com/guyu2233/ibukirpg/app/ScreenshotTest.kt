@@ -34,6 +34,18 @@ import com.guyu2233.ibukirpg.app.ui.settings.SettingsActions
 import com.guyu2233.ibukirpg.app.ui.settings.SettingsContent
 import com.guyu2233.ibukirpg.app.ui.settings.TestState
 import com.guyu2233.ibukirpg.app.ui.theme.IbukiTheme
+import com.guyu2233.ibukirpg.app.data.CardsV1
+import com.guyu2233.ibukirpg.app.data.CodexV1
+import com.guyu2233.ibukirpg.app.data.MainlineV1
+import com.guyu2233.ibukirpg.app.data.MechCardV1
+import com.guyu2233.ibukirpg.app.data.MechsV1
+import com.guyu2233.ibukirpg.app.data.PortraitV1
+import com.guyu2233.ibukirpg.app.data.RelationsV1
+import com.guyu2233.ibukirpg.app.ui.rpg.CardDialog
+import com.guyu2233.ibukirpg.app.ui.rpg.LocalRpgData
+import com.guyu2233.ibukirpg.app.ui.rpg.MechCardScreen
+import com.guyu2233.ibukirpg.app.ui.rpg.RpgData
+import androidx.compose.runtime.CompositionLocalProvider
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNamingStrategy
@@ -64,8 +76,10 @@ class ScreenshotTest {
         namingStrategy = JsonNamingStrategy.SnakeCase
     }
 
+    /** 夹具：优先读 -Pibuki.fixtures.dir 指定的目录（本地私有包截图），否则读测试资源。 */
     private inline fun <reified T> fixture(name: String): T {
-        val text = javaClass.classLoader!!.getResource("fixtures/$name")!!.readText()
+        val local = System.getProperty("ibuki.fixtures.dir")?.let { File(it, name) }?.takeIf { it.exists() }
+        val text = local?.readText() ?: javaClass.classLoader!!.getResource("fixtures/$name")!!.readText()
         return json.decodeFromString(text)
     }
 
@@ -75,9 +89,12 @@ class ScreenshotTest {
     }
 
     private fun shoot(name: String, dark: Boolean = false, content: @Composable () -> Unit) {
+        val data = rpgData
         compose.setContent {
             IbukiTheme(theme = if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = false) {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() }
+                CompositionLocalProvider(LocalRpgData provides data) {
+                    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() }
+                }
             }
         }
         compose.waitForIdle()
@@ -98,6 +115,92 @@ class ScreenshotTest {
         journal = fixture<List<JournalEntryV1>>("journal.json"),
     )
 
+    // ---------- 数值 RPG（内置示例包“锈钟镇·黄铜试炼”真实试玩导出） ----------
+
+    private val rpgMechs: MechsV1 get() = fixture("rpg_mechs.json")
+    private val rpgCodex: CodexV1 get() = fixture("rpg_codex.json")
+
+    private val rpgData: RpgData by lazy {
+        val portraits: Map<String, PortraitV1> = runCatching { fixture<Map<String, PortraitV1>>("rpg_portraits.json") }.getOrDefault(emptyMap())
+        val mechs = runCatching { rpgMechs.mechs }.getOrDefault(emptyList())
+        val cards = runCatching { rpgCodex.categories.flatMap { it.entries } }.getOrDefault(emptyList())
+        RpgData(
+            portrait = { id -> portraits[id]?.let { java.util.Base64.getMimeDecoder().decode(it.base64) } },
+            card = { id -> cards.firstOrNull { it.id == id } },
+            mech = { id -> mechs.firstOrNull { it.id == id } },
+        )
+    }
+
+    private fun rpgGame(name: String): GameState {
+        val b: GameBundle = fixture(name)
+        return GameState(loading = false, scene = b.scene, entries = b.transcript, suggestions = b.suggestions)
+    }
+
+    private val rpgPanels: PanelsState get() = PanelsState(
+        character = fixture<CharacterV1>("rpg_character.json"),
+        inventory = fixture<InventoryV1>("rpg_inventory.json"),
+        npcs = fixture<List<NPCV1>>("rpg_npcs.json"),
+        journal = fixture<List<JournalEntryV1>>("rpg_journal.json"),
+        codex = rpgCodex,
+        relations = fixture<RelationsV1>("rpg_relations.json"),
+        cards = fixture<CardsV1>("rpg_cards.json"),
+        mechs = rpgMechs,
+    )
+
+    /** 截图用的机甲：优先选己方且信息最全的。 */
+    private val showcaseMech: MechCardV1 get() = rpgMechs.mechs.sortedWith(compareByDescending<MechCardV1> { it.known }.thenByDescending { it.owned }.thenBy { it.unknown }).first()
+
+    @Test fun rpgCombat() = shoot("15-rpg-combat.png") {
+        GameContent(rpgGame("rpg_combat.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {})
+    }
+
+    @Test fun rpgCombatDark() = shoot("16-rpg-combat-dark.png", dark = true) {
+        GameContent(rpgGame("rpg_combat.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {})
+    }
+
+    @Test fun rpgAfterBattle() = shoot("17-rpg-game.png") {
+        GameContent(rpgGame("rpg_game.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, initialHudExpanded = true)
+    }
+
+    @Test fun rpgGrowth() = shoot("18-rpg-character.png") {
+        PanelsContent(rpgPanels, busy = false, onAction = { _, _ -> }, initialTab = 0, mainline = rpgGame("rpg_game.json").scene.mainline)
+    }
+
+    @Test fun rpgInventory() = shoot("19-rpg-inventory.png") {
+        PanelsContent(rpgPanels, busy = false, onAction = { _, _ -> }, initialTab = 1)
+    }
+
+    @Test fun rpgPeople() = shoot("20-rpg-people.png") {
+        PanelsContent(rpgPanels, busy = false, onAction = { _, _ -> }, initialTab = 2)
+    }
+
+    @Test fun rpgRelations() = shoot("21-rpg-relations.png") {
+        PanelsContent(rpgPanels, busy = false, onAction = { _, _ -> }, initialTab = 3)
+    }
+
+    @Test fun rpgCodex() = shoot("22-rpg-codex.png") {
+        PanelsContent(rpgPanels, busy = false, onAction = { _, _ -> }, initialTab = 4)
+    }
+
+    @Test fun rpgMechCard() = shoot("23-rpg-mech.png") {
+        MechCardScreen(showcaseMech, onBack = {}, onAction = {})
+    }
+
+    @Test fun rpgMechCardDark() = shoot("24-rpg-mech-dark.png", dark = true) {
+        MechCardScreen(rpgMechs.mechs.maxBy { it.unknown }, onBack = {}, onAction = {})
+    }
+
+    @Test fun rpgCardDialog() = shoot("25-rpg-card.png") {
+        val c = rpgCodex.categories.flatMap { it.entries }.filter { it.known }.maxBy { it.stats.size + (it.lore?.length ?: 0) / 20 }
+        CardDialog(c, onDismiss = {})
+    }
+
+    @Test fun rpgDeviation() = shoot("26-rpg-deviation.png") {
+        val g = rpgGame("rpg_game.json")
+        val ml = (g.scene.mainline ?: MainlineV1()).copy(pending = true, deviation = 74, level = 2, freeOnline = false)
+        GameContent(g.copy(scene = g.scene.copy(mainline = ml)), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {})
+    }
+
     /** 内置故事包 + 一个模拟的“已导入”故事包 + 一个不兼容的导入包（展示错误状态）。 */
     private val packs: PacksState get() {
         val builtin: List<PackV1> = fixture("packs.json")
@@ -109,14 +212,14 @@ class ScreenshotTest {
         val broken = PackV1(
             id = "future_pack", name = "星海远航", version = "2.0.0", type = "story", author = "某作者",
             tagline = "需要更新的引擎版本。", builtin = false, playable = false,
-            error = "需要引擎版本 >=0.3.0，当前是 0.1.2rc1。请先更新 App。", accent = "#37474F",
+            error = "需要引擎版本 >=0.3.0，当前是 0.1.2-rc2。请先更新 App。", accent = "#37474F",
         )
         return PacksState(loading = false, packs = builtin + imported + broken)
     }
 
     private val home: HomeState get() {
         val s = slots
-        return HomeState(loading = false, latest = s.firstOrNull(), saveCount = s.size, ai = AIStatusV1(kind = "offline"), version = "0.1.2rc1")
+        return HomeState(loading = false, latest = s.firstOrNull(), saveCount = s.size, ai = AIStatusV1(kind = "offline"), version = "0.1.2-rc2")
     }
 
     @Test fun home() = shoot("01-home.png") {
@@ -176,7 +279,7 @@ class ScreenshotTest {
             settings = AppSettings(aiKind = "deepseek"),
             form = AIForm(kind = "deepseek", baseUrl = "https://api.deepseek.com", model = "deepseek-chat", hasSavedKey = true, test = TestState.Idle),
             saved = false,
-            engineVersion = "0.1.2rc1",
+            engineVersion = "0.1.2-rc2",
             actions = SettingsActions(),
         )
     }
@@ -186,7 +289,7 @@ class ScreenshotTest {
             settings = AppSettings(),
             form = AIForm(kind = "offline"),
             saved = false,
-            engineVersion = "0.1.2rc1",
+            engineVersion = "0.1.2-rc2",
             actions = SettingsActions(),
         )
     }

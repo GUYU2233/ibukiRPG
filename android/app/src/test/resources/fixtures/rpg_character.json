@@ -1,0 +1,419 @@
+{
+  "attributes": [
+    {
+      "id": "strength",
+      "modifier": 0,
+      "name": "力量",
+      "value": 11
+    },
+    {
+      "id": "agility",
+      "modifier": 0,
+      "name": "敏捷",
+      "value": 11
+    },
+    {
+      "id": "intelligence",
+      "modifier": 1,
+      "name": "智力",
+      "value": 12
+    },
+    {
+      "id": "charisma",
+      "modifier": 0,
+      "name": "魅力",
+      "value": 10
+    },
+    {
+      "id": "resolve",
+      "modifier": 0,
+      "name": "意志",
+      "value": 10
+    }
+  ],
+  "conditions": [],
+  "gold": 16,
+  "growth": {
+    "attr_points": 0,
+    "attributes": [
+      {
+        "effect": "每点：速度 +1，闪避 +1",
+        "id": "agility",
+        "name": "敏捷",
+        "value": 11
+      },
+      {
+        "id": "charisma",
+        "name": "魅力",
+        "value": 10
+      },
+      {
+        "effect": "每点：命中 +1，暴击 +1",
+        "id": "intelligence",
+        "name": "智力",
+        "value": 12
+      },
+      {
+        "effect": "每点：生命 +4，体力 +2",
+        "id": "resolve",
+        "name": "意志",
+        "value": 10
+      },
+      {
+        "effect": "每点：生命 +2，攻击 +1",
+        "id": "strength",
+        "name": "力量",
+        "value": 11
+      }
+    ],
+    "equipment": [
+      {
+        "item": {
+          "description": "沉甸甸的铸铁扳手，既能拧螺栓，也能敲脑袋。",
+          "icon": "build",
+          "id": "brass:item/wrench",
+          "kind": "item",
+          "kind_name": "武器",
+          "known": true,
+          "lore": "每个学徒入门时都会领到一把，手柄上刻着前任主人的名字缩写。",
+          "name": "学徒扳手",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "槽位",
+              "value": "武器"
+            },
+            {
+              "label": "加成",
+              "value": "攻击 +4"
+            },
+            {
+              "label": "价格",
+              "value": "5"
+            }
+          ]
+        },
+        "name": "武器",
+        "slot": "weapon",
+        "unequip": {
+          "action": "unequip",
+          "kind": "manage",
+          "label": "卸下学徒扳手",
+          "target": "weapon"
+        }
+      },
+      {
+        "item": {
+          "description": "厚皮围裙，挡得住火星，挡不太住拳头。",
+          "icon": "checkroom",
+          "id": "brass:item/work_apron",
+          "kind": "item",
+          "kind_name": "护甲",
+          "known": true,
+          "name": "皮革工装",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "槽位",
+              "value": "护甲"
+            },
+            {
+              "label": "加成",
+              "value": "防御 +2"
+            },
+            {
+              "label": "价格",
+              "value": "5"
+            }
+          ]
+        },
+        "name": "护甲",
+        "slot": "armor",
+        "unequip": {
+          "action": "unequip",
+          "kind": "manage",
+          "label": "卸下皮革工装",
+          "target": "armor"
+        }
+      },
+      {
+        "name": "饰品",
+        "slot": "accessory"
+      }
+    ],
+    "has_mech": true,
+    "hp": 36,
+    "level": 1,
+    "max_hp": 62,
+    "mech_name": "黄铜守卫",
+    "mercury": 60,
+    "mercury_max": 100,
+    "resource_name": "蒸汽压",
+    "skill_points": 0,
+    "skills": [
+      {
+        "card": {
+          "description": "150% 攻击力的重击，25% 几率使目标踉跄。消耗 8 体力。",
+          "icon": "build",
+          "id": "brass:skill/wrench_smash",
+          "kind": "skill",
+          "kind_name": "技能",
+          "known": true,
+          "lore": "学徒的第一课：拧不开的螺栓，就砸开它。",
+          "name": "扳手重击",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "威力",
+              "value": "150%"
+            },
+            {
+              "label": "目标",
+              "value": "单个敌人"
+            },
+            {
+              "label": "消耗",
+              "value": "8 体力"
+            }
+          ]
+        },
+        "learned": true
+      },
+      {
+        "card": {
+          "description": "为自己或同伴恢复 18 点生命并清除负面状态。消耗 8 体力。",
+          "icon": "healing",
+          "id": "brass:skill/patch_up",
+          "kind": "skill",
+          "kind_name": "技能",
+          "known": true,
+          "name": "紧急包扎",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "目标",
+              "value": "单个友方"
+            },
+            {
+              "label": "消耗",
+              "value": "8 体力"
+            }
+          ]
+        },
+        "learned": true
+      },
+      {
+        "blocked": "需要等级 2",
+        "card": {
+          "description": "连续三次 60% 攻击力的快拳，每一拳独立判定命中。消耗 12 体力。",
+          "icon": "sports_mma",
+          "id": "brass:skill/flurry",
+          "kind": "skill",
+          "kind_name": "技能",
+          "known": true,
+          "lore": "托克的招牌。第一拳是试探，第二拳是诱饵，第三拳才是真的。",
+          "name": "快速连打",
+          "rarity": "uncommon",
+          "rarity_color": "#3B8B4F",
+          "rarity_name": "精良",
+          "stats": [
+            {
+              "label": "威力",
+              "value": "60% ×3"
+            },
+            {
+              "label": "目标",
+              "value": "单个敌人"
+            },
+            {
+              "label": "消耗",
+              "value": "12 体力"
+            },
+            {
+              "label": "修习",
+              "value": "等级 2 · 1 技能点"
+            }
+          ]
+        },
+        "cost": 1,
+        "learned": false
+      },
+      {
+        "blocked": "需要等级 2",
+        "card": {
+          "description": "摆出架势，两回合内防御 +6，并恢复 6 点体力。",
+          "icon": "shield",
+          "id": "brass:skill/guard_stance",
+          "kind": "skill",
+          "kind_name": "技能",
+          "known": true,
+          "name": "铁砧架势",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "目标",
+              "value": "自身"
+            },
+            {
+              "label": "修习",
+              "value": "等级 2 · 1 技能点"
+            }
+          ]
+        },
+        "cost": 1,
+        "learned": false
+      },
+      {
+        "blocked": "需要等级 3",
+        "card": {
+          "description": "精准的一发，命中 +15，无视目标 30% 防御。消耗 6 体力。",
+          "icon": "hardware",
+          "id": "brass:skill/rivet_shot",
+          "kind": "skill",
+          "kind_name": "技能",
+          "known": true,
+          "name": "铆钉射击",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "威力",
+              "value": "90%"
+            },
+            {
+              "label": "目标",
+              "value": "单个敌人"
+            },
+            {
+              "label": "消耗",
+              "value": "6 体力"
+            },
+            {
+              "label": "修习",
+              "value": "等级 3 · 1 技能点"
+            }
+          ]
+        },
+        "cost": 1,
+        "learned": false
+      }
+    ],
+    "stats": [
+      {
+        "id": "hp",
+        "modifier": 0,
+        "name": "生命",
+        "value": 62
+      },
+      {
+        "id": "sp",
+        "modifier": 0,
+        "name": "体力",
+        "value": 30
+      },
+      {
+        "id": "atk",
+        "modifier": 4,
+        "name": "攻击",
+        "note": "装备 +4",
+        "value": 16
+      },
+      {
+        "id": "def",
+        "modifier": 2,
+        "name": "防御",
+        "note": "装备 +2",
+        "value": 7
+      },
+      {
+        "id": "spd",
+        "modifier": 0,
+        "name": "速度",
+        "value": 10
+      },
+      {
+        "id": "acc",
+        "modifier": 0,
+        "name": "命中",
+        "value": 87
+      },
+      {
+        "id": "eva",
+        "modifier": 0,
+        "name": "闪避",
+        "value": 9
+      },
+      {
+        "id": "crit",
+        "modifier": 0,
+        "name": "暴击",
+        "value": 10
+      }
+    ],
+    "xp": 50,
+    "xp_next": 100
+  },
+  "name": "阿砾",
+  "role": "行会学徒候选人",
+  "skills": [
+    {
+      "id": "persuasion",
+      "modifier": 2,
+      "name": "说服",
+      "value": 2
+    },
+    {
+      "id": "intimidation",
+      "modifier": 0,
+      "name": "威吓",
+      "value": 0
+    },
+    {
+      "id": "deception",
+      "modifier": 0,
+      "name": "欺瞒",
+      "value": 0
+    },
+    {
+      "id": "perception",
+      "modifier": 4,
+      "name": "察觉",
+      "value": 3
+    },
+    {
+      "id": "insight",
+      "modifier": 3,
+      "name": "洞悉",
+      "value": 2
+    },
+    {
+      "id": "performance",
+      "modifier": 0,
+      "name": "表演",
+      "value": 0
+    },
+    {
+      "id": "stealth",
+      "modifier": 2,
+      "name": "潜行",
+      "value": 2
+    },
+    {
+      "id": "athletics",
+      "modifier": 3,
+      "name": "运动",
+      "value": 3
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+[
+  {
+    "actions": [],
+    "attitude": "亲近",
+    "beliefs": [],
+    "description": "短发、护目镜推在额头上的女人，左手是一只黄铜义肢，说话像拧螺丝一样干脆。",
+    "fear": 0,
+    "id": "brass:character/orin",
+    "location_name": "行会工坊",
+    "memories": [
+      "08:03 交谈：交代了两场竞技场试炼",
+      "向阿砾交代了试炼规矩"
+    ],
+    "name": "欧琳",
+    "present": false,
+    "role": "工匠行会长",
+    "talks": 1,
+    "trust": 10
+  },
+  {
+    "actions": [],
+    "attitude": "中立",
+    "beliefs": [],
+    "description": "肩膀宽阔的年轻人，拳套上缠着铜丝，笑起来露出一颗缺了角的门牙。",
+    "fear": 0,
+    "id": "brass:character/tock",
+    "location_name": "铁环竞技场",
+    "memories": [],
+    "name": "托克",
+    "present": false,
+    "role": "去年的试炼第一名",
+    "talks": 0,
+    "trust": 0
+  },
+  {
+    "actions": [
+      {
+        "action": {
+          "action": "brass:action/talk",
+          "kind": "action",
+          "label": "和小铆钉聊聊",
+          "target": "brass:character/rivet"
+        },
+        "chance": -1,
+        "label": "交谈"
+      }
+    ],
+    "attitude": "亲近",
+    "beliefs": [],
+    "description": "脸上总沾着机油的小姑娘，口袋里塞满了捡来的螺丝，耳朵后面夹着一支铅笔。",
+    "fear": 0,
+    "id": "brass:character/rivet",
+    "location_name": "钟楼广场",
+    "memories": [
+      "08:21 交谈：押了你赢试炼"
+    ],
+    "name": "小铆钉",
+    "present": true,
+    "role": "工坊跑腿的孩子",
+    "talks": 1,
+    "trust": 5
+  }
+]

@@ -32,7 +32,10 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material.icons.outlined.AltRoute
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -74,7 +78,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.guyu2233.ibukirpg.app.R
+import com.guyu2233.ibukirpg.app.data.MainlineV1
+import com.guyu2233.ibukirpg.app.data.QuickActionV1
 import com.guyu2233.ibukirpg.app.data.SceneV1
+import com.guyu2233.ibukirpg.app.ui.rpg.CombatPanel
+import com.guyu2233.ibukirpg.app.ui.rpg.LocalRpgData
+import com.guyu2233.ibukirpg.app.ui.rpg.RpgData
+import com.guyu2233.ibukirpg.app.ui.rpg.RpgDialogHost
+import com.guyu2233.ibukirpg.app.ui.rpg.RpgDialogState
+import com.guyu2233.ibukirpg.app.ui.rpg.rememberRpgDialogState
 import com.guyu2233.ibukirpg.app.data.SuggestionV1
 import com.guyu2233.ibukirpg.app.ui.common.iconFor
 import kotlinx.coroutines.launch
@@ -85,7 +97,8 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
     val s by vm.state.collectAsStateWithLifecycle()
     val input by vm.input.collectAsStateWithLifecycle()
     val panels by vm.panels.collectAsStateWithLifecycle()
-    GameContent(
+    val rpgData = remember(vm) { RpgData(portrait = vm::portrait, card = vm::card, mech = vm::mech) }
+    CompositionLocalProvider(LocalRpgData provides rpgData) { GameContent(
         s = s,
         input = input,
         panels = panels,
@@ -96,7 +109,8 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
         onOpenPanels = vm::refreshPanels,
         onRetry = vm::load,
         onErrorShown = vm::consumeError,
-    )
+        onNoticesShown = vm::consumeNotices,
+    ) }
 }
 
 /** 无状态的游戏界面（便于截图测试与预览）。 */
@@ -115,8 +129,20 @@ fun GameContent(
     onErrorShown: () -> Unit,
     initialPanels: Boolean = false,
     initialHudExpanded: Boolean = false,
+    onNoticesShown: () -> Unit = {},
+    dialogs: RpgDialogState = rememberRpgDialogState(),
 ) {
     val snackbar = remember { SnackbarHostState() }
+    val combat = s.scene.combat
+    val mainline = s.scene.mainline
+    var deviationDismissedAt by rememberSaveable { mutableIntStateOf(-1) }
+
+    LaunchedEffect(s.notices) {
+        if (s.notices.isEmpty()) return@LaunchedEffect
+        val text = s.notices.joinToString("\n") { it.text }
+        onNoticesShown()
+        snackbar.showSnackbar(text)
+    }
     var showPanels by rememberSaveable { mutableStateOf(initialPanels) }
     val keptMsg = stringResource(R.string.game_input_kept)
     val list = rememberLazyListState()
@@ -170,6 +196,12 @@ fun GameContent(
         },
         bottomBar = {
             InputArea(
+                combat = {
+                    if (combat != null) {
+                        CombatPanel(combat, busy = s.pending != null || s.loading, onAction = onQuick)
+                        HorizontalDivider()
+                    }
+                },
                 input = input,
                 onInput = onInput,
                 onSend = onSend,
@@ -208,6 +240,7 @@ fun GameContent(
                             onAnimated = { animated = animated + it },
                             onOption = { onQuick(it.action, it.label) },
                             enabled = s.pending == null,
+                            onCard = { dialogs.cardId = it },
                         )
                     }
                     s.pending?.let { p ->
@@ -242,9 +275,48 @@ fun GameContent(
             panels = panels,
             busy = s.pending != null,
             onDismiss = { showPanels = false },
-            onAction = { qa, label -> showPanels = false; onQuick(qa, label) },
+            onAction = { qa, label ->
+                // 管理类操作（加点 / 装备 / 改装）留在面板里，其它行动关闭面板回到叙事。
+                if (qa.kind != "manage") showPanels = false
+                onQuick(qa, label)
+            },
+            mainline = mainline,
+            refreshKey = s.version,
         )
     }
+
+    RpgDialogHost(dialogs, onQuick, refreshKey = s.version)
+
+    if (mainline != null && mainline.pending && s.pending == null && combat == null && deviationDismissedAt != s.scene.turn) {
+        DeviationDialog(
+            mainline = mainline,
+            onReturn = { onQuick(QuickActionV1(kind = "mainline", action = "return", label = "回到主线"), "回到主线") },
+            onFree = { onQuick(QuickActionV1(kind = "mainline", action = "free", label = "进入自由推演"), if (mainline.freeOnline) "进入自由推演" else "进入沙盒模式") },
+            onLater = { deviationDismissedAt = s.scene.turn },
+        )
+    }
+}
+
+@Composable
+private fun DeviationDialog(mainline: MainlineV1, onReturn: () -> Unit, onFree: () -> Unit, onLater: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onLater,
+        icon = { Icon(Icons.Outlined.AltRoute, contentDescription = null) },
+        title = { Text(stringResource(R.string.mainline_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.mainline_body, mainline.deviation))
+                mainline.anchor?.let { Text("当前锚点：$it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                if (!mainline.freeOnline) Text(stringResource(R.string.mainline_offline_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+            }
+        },
+        confirmButton = { Button(onClick = onReturn) { Text(stringResource(R.string.mainline_return)) } },
+        dismissButton = {
+            OutlinedButton(onClick = onFree) {
+                Text(stringResource(if (mainline.freeOnline) R.string.mainline_free else R.string.mainline_sandbox))
+            }
+        },
+    )
 }
 
 @Composable
@@ -267,6 +339,7 @@ private fun SceneTitle(scene: SceneV1) {
 
 @Composable
 private fun InputArea(
+    combat: @Composable () -> Unit,
     input: String,
     onInput: (String) -> Unit,
     onSend: () -> Unit,
@@ -276,6 +349,7 @@ private fun InputArea(
 ) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 0.dp) {
         Column(Modifier.windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))) {
+            combat()
             if (suggestions.isNotEmpty()) {
                 val label = stringResource(R.string.game_suggestions)
                 LazyRow(

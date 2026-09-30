@@ -1,0 +1,390 @@
+{
+  "mechs": [
+    {
+      "description": "行会的第二台蒸汽甲胄，胸口的压力表就是它的心跳。启动消耗 15 蒸汽压，每回合 6。",
+      "energy": [
+        {
+          "id": "engage",
+          "known": true,
+          "label": "启动消耗",
+          "value": "15 蒸汽压"
+        },
+        {
+          "id": "per_turn",
+          "known": true,
+          "label": "每回合消耗",
+          "value": "6 蒸汽压"
+        },
+        {
+          "id": "heat",
+          "known": true,
+          "label": "过热上限",
+          "value": "100"
+        }
+      ],
+      "fields": [
+        {
+          "id": "model",
+          "known": true,
+          "label": "型号",
+          "value": "行会二号蒸汽甲胄"
+        },
+        {
+          "id": "maker",
+          "known": true,
+          "label": "制造方",
+          "value": "锈钟镇工匠行会"
+        },
+        {
+          "id": "class",
+          "known": true,
+          "label": "分类",
+          "value": "蒸汽甲胄"
+        },
+        {
+          "id": "pilot",
+          "known": true,
+          "label": "驾驶者",
+          "value": "你"
+        }
+      ],
+      "hardpoints": [
+        {
+          "hardpoint": true,
+          "id": "hp:arm",
+          "kind": "arm",
+          "known": true,
+          "name": "右臂挂点",
+          "part": {
+            "description": "右臂挂点的重型拳套，提供「蒸汽重拳」。攻击 +2。",
+            "icon": "sports_mma",
+            "id": "brass:item/steam_fist",
+            "kind": "item",
+            "kind_name": "",
+            "known": true,
+            "lore": "拳套里藏着一根活塞，打出去的时候会“嗤”地喷出一团白雾。",
+            "name": "蒸汽拳套",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有",
+            "stats": [
+              {
+                "label": "安装位置",
+                "value": "武器挂点（arm）"
+              },
+              {
+                "label": "机体攻击",
+                "value": "+2"
+              },
+              {
+                "label": "出力",
+                "value": "+4"
+              },
+              {
+                "label": "提供技能",
+                "value": "brass:skill/steam_punch"
+              }
+            ]
+          },
+          "remove": {
+            "action": "mech_remove",
+            "kind": "manage",
+            "label": "卸下蒸汽拳套",
+            "skill": "brass:mech/warden",
+            "target": "hp:arm"
+          }
+        },
+        {
+          "hardpoint": true,
+          "id": "hp:shoulder",
+          "kind": "shoulder",
+          "known": true,
+          "name": "肩部挂点"
+        }
+      ],
+      "history": [],
+      "icon": "precision_manufacturing",
+      "id": "brass:mech/warden",
+      "known": true,
+      "lore_known": false,
+      "name": "黄铜守卫",
+      "owned": true,
+      "pilot_id": "player",
+      "rarity": "epic",
+      "rarity_color": "#8446B0",
+      "rarity_name": "史诗",
+      "skills": [
+        {
+          "description": "机甲专用。对所有敌人造成 80% 攻击力的伤害。产生 25 热量。",
+          "icon": "waves",
+          "id": "brass:skill/sweep",
+          "kind": "skill",
+          "kind_name": "技能",
+          "known": true,
+          "name": "横扫",
+          "rarity": "uncommon",
+          "rarity_color": "#3B8B4F",
+          "rarity_name": "精良",
+          "stats": [
+            {
+              "label": "威力",
+              "value": "80%"
+            },
+            {
+              "label": "目标",
+              "value": "全体敌人"
+            },
+            {
+              "label": "消耗",
+              "value": "25 热量"
+            }
+          ],
+          "tags": [
+            "机甲专用"
+          ]
+        },
+        {
+          "description": "机甲专用。打开三重泄压阀，降温 45 并修复 10 点机体。",
+          "icon": "air",
+          "id": "brass:skill/vent_cycle",
+          "kind": "skill",
+          "kind_name": "技能",
+          "known": true,
+          "name": "泄压循环",
+          "rarity": "uncommon",
+          "rarity_color": "#3B8B4F",
+          "rarity_name": "精良",
+          "stats": [
+            {
+              "label": "目标",
+              "value": "自身"
+            }
+          ],
+          "tags": [
+            "机甲专用"
+          ]
+        },
+        {
+          "description": "机甲专用。170% 攻击力的重拳，35% 几率使目标踉跄。产生 35 热量。",
+          "icon": "local_fire_department",
+          "id": "brass:skill/steam_punch",
+          "kind": "skill",
+          "kind_name": "技能",
+          "known": true,
+          "name": "蒸汽重拳",
+          "rarity": "rare",
+          "rarity_color": "#2F6DB5",
+          "rarity_name": "稀有",
+          "stats": [
+            {
+              "label": "威力",
+              "value": "170%"
+            },
+            {
+              "label": "目标",
+              "value": "单个敌人"
+            },
+            {
+              "label": "消耗",
+              "value": "35 热量"
+            }
+          ],
+          "tags": [
+            "机甲专用"
+          ]
+        }
+      ],
+      "slots": [
+        {
+          "id": "core",
+          "kind": "core",
+          "known": true,
+          "name": "锅炉",
+          "part": {
+            "description": "行会制式锅炉，结实耐用。机体生命 +10。",
+            "icon": "heat_pump",
+            "id": "brass:item/boiler_core",
+            "kind": "item",
+            "kind_name": "机甲部件",
+            "known": true,
+            "lore": "锅炉壁上刻着七个学徒的名字——每一任驾驶者都在上面留过手印。",
+            "name": "行会标准锅炉",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良",
+            "stats": [
+              {
+                "label": "安装位置",
+                "value": "改装槽（core）"
+              },
+              {
+                "label": "机体生命",
+                "value": "+10"
+              },
+              {
+                "label": "出力",
+                "value": "+8"
+              },
+              {
+                "label": "能源容量",
+                "value": "+20"
+              }
+            ]
+          },
+          "remove": {
+            "action": "mech_remove",
+            "kind": "manage",
+            "label": "卸下行会标准锅炉",
+            "skill": "brass:mech/warden",
+            "target": "core"
+          }
+        },
+        {
+          "id": "valve",
+          "kind": "valve",
+          "known": true,
+          "name": "阀门槽"
+        }
+      ],
+      "specs": [
+        {
+          "id": "armor",
+          "known": true,
+          "max": 100,
+          "name": "装甲",
+          "value": 55
+        },
+        {
+          "bonus": 12,
+          "id": "output",
+          "known": true,
+          "max": 100,
+          "name": "出力",
+          "value": 60
+        },
+        {
+          "id": "mobility",
+          "known": true,
+          "max": 100,
+          "name": "机动",
+          "value": 30
+        },
+        {
+          "bonus": 20,
+          "id": "capacity",
+          "known": true,
+          "max": 200,
+          "name": "能源容量",
+          "value": 120
+        },
+        {
+          "id": "heat_threshold",
+          "known": true,
+          "max": 200,
+          "name": "过热阈值",
+          "value": 100
+        },
+        {
+          "id": "sync",
+          "known": false,
+          "max": 100,
+          "name": "同步率",
+          "unit": "%",
+          "value": 0
+        }
+      ],
+      "stats": [
+        {
+          "bonus": 10,
+          "id": "hp",
+          "known": true,
+          "max": 400,
+          "name": "生命",
+          "value": 150
+        },
+        {
+          "bonus": 2,
+          "id": "atk",
+          "known": true,
+          "max": 60,
+          "name": "攻击",
+          "value": 28
+        },
+        {
+          "id": "def",
+          "known": true,
+          "max": 60,
+          "name": "防御",
+          "value": 20
+        },
+        {
+          "id": "spd",
+          "known": true,
+          "max": 20,
+          "name": "速度",
+          "value": 8
+        },
+        {
+          "id": "acc",
+          "known": true,
+          "max": 120,
+          "name": "命中",
+          "value": 85
+        },
+        {
+          "id": "eva",
+          "known": true,
+          "max": 40,
+          "name": "闪避",
+          "value": 3
+        },
+        {
+          "id": "crit",
+          "known": true,
+          "max": 50,
+          "name": "暴击",
+          "value": 8
+        }
+      ],
+      "stats_known": true,
+      "status": {
+        "engage": false,
+        "id": "inactive",
+        "known": true,
+        "name": "未激活",
+        "tone": "neutral"
+      },
+      "unknown": 2
+    },
+    {
+      "description": "尚未解锁。",
+      "enemy": true,
+      "energy": [],
+      "fields": [],
+      "hardpoints": [],
+      "history": [],
+      "icon": "smart_toy",
+      "id": "brass:mech/golem",
+      "known": false,
+      "lore_known": false,
+      "name": "？？？",
+      "rarity": "rare",
+      "rarity_color": "#2F6DB5",
+      "rarity_name": "稀有",
+      "skills": [],
+      "slots": [],
+      "specs": [],
+      "stats": [],
+      "stats_known": false,
+      "status": {
+        "engage": false,
+        "id": "",
+        "known": false,
+        "name": "未知",
+        "tone": "neutral"
+      },
+      "unknown": 0
+    }
+  ],
+  "resource_name": "蒸汽压"
+}

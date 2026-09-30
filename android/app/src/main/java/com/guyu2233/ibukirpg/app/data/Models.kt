@@ -28,6 +28,7 @@ data class QuickActionV1(
     val destination: String? = null,
     val text: String? = null,
     val label: String? = null,
+    val skill: String? = null,
 )
 
 @Immutable @Serializable
@@ -45,6 +46,8 @@ data class EntryV1(
     val options: List<OptionV1> = emptyList(),
     val corrected: Boolean = false,
     val source: String? = null,
+    /** 战斗记录（kind=combat）：掷骰与伤害分解。 */
+    val combat: CombatLogV1? = null,
 )
 
 @Immutable @Serializable
@@ -57,7 +60,7 @@ data class SuggestionV1(
 )
 
 @Immutable @Serializable
-data class NPCBriefV1(val id: String = "", val name: String = "", val role: String = "", val attitude: String = "")
+data class NPCBriefV1(val id: String = "", val name: String = "", val role: String = "", val attitude: String = "", val portrait: Boolean = false)
 
 @Immutable @Serializable
 data class ExitV1(val id: String = "", val label: String = "", val locked: Boolean = false)
@@ -88,6 +91,10 @@ data class SceneV1(
     val hud: List<HudFieldV1> = emptyList(),
     val packId: String = "",
     val packName: String = "",
+    /** 数值 RPG：当前战斗（null 表示不在战斗中）、主线状态、是否带数值系统。 */
+    val combat: CombatV1? = null,
+    val mainline: MainlineV1? = null,
+    val hasRpg: Boolean = false,
 )
 
 /** HUD 字段。progress 为 0-1000 的千分比，-1 表示不是进度条；tone：normal / success / warning / danger。 */
@@ -137,6 +144,7 @@ data class TurnV1(
     val scene: SceneV1 = SceneV1(),
     val suggestions: List<SuggestionV1> = emptyList(),
     val resolver: String? = null,
+    val notices: List<NoticeV1> = emptyList(),
 )
 
 @Immutable @Serializable
@@ -157,6 +165,8 @@ data class CharacterV1(
     val attributes: List<StatV1> = emptyList(),
     val skills: List<StatV1> = emptyList(),
     val conditions: List<StatV1> = emptyList(),
+    val growth: GrowthV1? = null,
+    val portrait: Boolean = false,
 )
 
 @Immutable @Serializable
@@ -170,6 +180,11 @@ data class ItemV1(
     val use: QuickActionV1? = null,
     val useLabel: String? = null,
     val buy: QuickActionV1? = null,
+    val card: CardV1? = null,
+    val equipped: Boolean = false,
+    val equip: QuickActionV1? = null,
+    /** 非空表示机甲改装件 / 挂载武器：点开跳到该机甲卡安装。 */
+    val mech: String? = null,
 )
 
 @Immutable @Serializable
@@ -202,6 +217,7 @@ data class NPCV1(
     /** 和玩家交谈过的次数与 NPC 对玩家的记忆（新的在前）。 */
     val talks: Int = 0,
     val memories: List<String> = emptyList(),
+    val portrait: Boolean = false,
 )
 
 @Immutable @Serializable

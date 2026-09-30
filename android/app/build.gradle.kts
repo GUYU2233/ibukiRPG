@@ -71,7 +71,15 @@ android {
             isIncludeAndroidResources = true
             all {
                 it.systemProperty("roborazzi.test.record", "true")
-                it.systemProperty("ibuki.shots.dir", rootProject.file("../build/screenshots").absolutePath)
+                // 可用 -Pibuki.shots.dir=… / -Pibuki.fixtures.dir=… 把截图渲染到别处、改用本地夹具（私有故事包截图）
+                it.systemProperty(
+                    "ibuki.shots.dir",
+                    (project.findProperty("ibuki.shots.dir") as String?) ?: rootProject.file("../build/screenshots").absolutePath,
+                )
+                (project.findProperty("ibuki.fixtures.dir") as String?)?.let { d -> it.systemProperty("ibuki.fixtures.dir", d) }
+                // 夹具目录变化时强制重跑
+                it.inputs.property("ibukiFixturesDir", (project.findProperty("ibuki.fixtures.dir") as String?) ?: "")
+                it.inputs.property("ibukiShotsDir", (project.findProperty("ibuki.shots.dir") as String?) ?: "")
                 it.maxHeapSize = "2g"
             }
         }

@@ -1,6 +1,7 @@
 package com.guyu2233.ibukirpg.app.ui.game
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,8 +57,10 @@ fun EntryItem(
     onAnimated: (Long) -> Unit,
     onOption: (OptionV1) -> Unit,
     enabled: Boolean,
+    onCard: (String) -> Unit = {},
 ) {
     when (entry.kind) {
+        "combat" -> CombatEntry(entry, onCard)
         "player" -> PlayerBubble(entry.text)
         "narration", "intro" -> Narration(entry, animate, onAnimated)
         "check" -> entry.check?.let { CheckCard(it) }
@@ -246,6 +249,48 @@ private fun ResultChip(text: String) {
     ) {
         CompositionLocalProvider(LocalContentColor provides color) {
             Text(text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+        }
+    }
+}
+
+/** 战斗记录：行动者 → 目标、命中掷骰、伤害与分解标签；点按打开技能 / 道具卡。 */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun CombatEntry(entry: EntryV1, onCard: (String) -> Unit) {
+    val log = entry.combat
+    val enemy = log?.side == "enemy"
+    val accent = if (enemy) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    val ref = log?.skillId ?: log?.itemId
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = androidx.compose.foundation.BorderStroke(1.dp, accent.copy(alpha = 0.35f)),
+        modifier = Modifier.fillMaxWidth().then(
+            if (ref != null) Modifier.clickable { onCard(ref) } else Modifier,
+        ),
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(8.dp).background(accent, RoundedCornerShape(4.dp)))
+                Spacer(Modifier.size(8.dp))
+                Text(entry.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                if (log != null && log.damage > 0) {
+                    Text(
+                        (if (log.critical) "暴击 " else "") + "-${log.damage}",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (log.critical) MaterialTheme.colorScheme.tertiary else accent,
+                    )
+                }
+            }
+            if (log != null && (log.chips.isNotEmpty() || log.chance > 0)) {
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    if (log.chance > 0) ResultChip("掷 ${log.roll} / ${log.chance}")
+                    log.chips.forEach { ResultChip(it) }
+                }
+            }
         }
     }
 }

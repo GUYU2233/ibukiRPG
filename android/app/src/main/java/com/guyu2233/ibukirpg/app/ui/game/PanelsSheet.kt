@@ -1,5 +1,6 @@
 package com.guyu2233.ibukirpg.app.ui.game
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backpack
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.Card
@@ -35,6 +38,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -43,6 +47,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,7 +63,19 @@ import com.guyu2233.ibukirpg.app.data.InventoryV1
 import com.guyu2233.ibukirpg.app.data.JournalEntryV1
 import com.guyu2233.ibukirpg.app.data.NPCV1
 import com.guyu2233.ibukirpg.app.data.QuickActionV1
+import com.guyu2233.ibukirpg.app.data.MainlineV1
 import com.guyu2233.ibukirpg.app.data.StatV1
+import com.guyu2233.ibukirpg.app.ui.rpg.MechLinkButton
+import com.guyu2233.ibukirpg.app.ui.rpg.Portrait
+import com.guyu2233.ibukirpg.app.ui.rpg.RpgDialogHost
+import com.guyu2233.ibukirpg.app.ui.rpg.RpgDialogState
+import com.guyu2233.ibukirpg.app.ui.rpg.cardsTab
+import com.guyu2233.ibukirpg.app.ui.rpg.codexTab
+import com.guyu2233.ibukirpg.app.ui.rpg.growthSection
+import com.guyu2233.ibukirpg.app.ui.rpg.rarityColor
+import com.guyu2233.ibukirpg.app.ui.rpg.relationsTab
+import com.guyu2233.ibukirpg.app.ui.rpg.rememberRpgDialogState
+import com.guyu2233.ibukirpg.app.ui.rpg.rpgIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,14 +84,25 @@ fun PanelsSheet(
     busy: Boolean,
     onDismiss: () -> Unit,
     onAction: (QuickActionV1, String) -> Unit,
+    mainline: MainlineV1? = null,
+    refreshKey: Any? = null,
 ) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
-        PanelsContent(panels, busy, onAction, Modifier.fillMaxHeight(0.88f))
+        PanelsContent(panels, busy, onAction, Modifier.fillMaxHeight(0.88f), mainline = mainline, refreshKey = refreshKey)
     }
 }
 
-/** 角色 / 背包 / 人物 / 日志 四个标签页的内容。 */
+private enum class PanelTab(val label: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Character(R.string.tab_character, Icons.Outlined.Person),
+    Inventory(R.string.tab_inventory, Icons.Outlined.Backpack),
+    People(R.string.tab_people, Icons.Outlined.Groups),
+    Relations(R.string.tab_relations, Icons.Outlined.Hub),
+    Codex(R.string.tab_codex, Icons.Outlined.MenuBook),
+    Journal(R.string.tab_journal, Icons.Outlined.History),
+}
+
+/** 角色 / 背包 / 人物 /（关系网 / 图鉴）/ 日志 标签页。带数值系统的故事包才显示关系网与图鉴。 */
 @Composable
 fun PanelsContent(
     panels: PanelsState,
@@ -82,23 +110,32 @@ fun PanelsContent(
     onAction: (QuickActionV1, String) -> Unit,
     modifier: Modifier = Modifier,
     initialTab: Int = 0,
+    mainline: MainlineV1? = null,
+    dialogs: RpgDialogState = rememberRpgDialogState(),
+    refreshKey: Any? = null,
+    initialFocus: String? = null,
+    initialCategory: String? = null,
 ) {
     var tab by rememberSaveable { mutableIntStateOf(initialTab) }
-    val tabs = listOf(
-        Triple(R.string.tab_character, Icons.Outlined.Person, 0),
-        Triple(R.string.tab_inventory, Icons.Outlined.Backpack, 1),
-        Triple(R.string.tab_people, Icons.Outlined.Groups, 2),
-        Triple(R.string.tab_journal, Icons.Outlined.History, 3),
-    )
+    var focus by rememberSaveable { mutableStateOf(initialFocus) }
+    var category by rememberSaveable { mutableStateOf(initialCategory) }
+    val rpg = panels.codex != null || panels.relations != null || panels.cards != null
+    val tabs = if (rpg) PanelTab.entries.toList() else listOf(PanelTab.Character, PanelTab.Inventory, PanelTab.People, PanelTab.Journal)
+    val current = tabs.getOrElse(tab) { tabs.first() }
     Column(modifier) {
-        PrimaryTabRow(selectedTabIndex = tab) {
-            tabs.forEach { (label, icon, i) ->
+        val tabContent: @Composable () -> Unit = {
+            tabs.forEachIndexed { i, t ->
                 Tab(
                     selected = tab == i, onClick = { tab = i },
-                    text = { Text(stringResource(label)) },
-                    icon = { Icon(icon, contentDescription = null) },
+                    text = { Text(stringResource(t.label)) },
+                    icon = { Icon(t.icon, contentDescription = null) },
                 )
             }
+        }
+        if (rpg) {
+            PrimaryScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp) { tabContent() }
+        } else {
+            PrimaryTabRow(selectedTabIndex = tab) { tabContent() }
         }
         if (panels.loading && panels.character == null) {
             Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -109,27 +146,43 @@ fun PanelsContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            when (tab) {
-                0 -> panels.character?.let { characterTab(it) }
-                1 -> panels.inventory?.let { inventoryTab(it, busy, onAction) }
-                2 -> peopleTab(panels.npcs, busy, onAction)
-                else -> journalTab(panels.journal)
+            when (current) {
+                PanelTab.Character -> panels.character?.let { characterTab(it, mainline, busy, onAction, dialogs) }
+                PanelTab.Inventory -> panels.inventory?.let { inventoryTab(it, busy, onAction, dialogs) }
+                PanelTab.People -> {
+                    panels.cards?.let { c -> cardsTab(c, dialogs) { p -> focus = p.id; tab = tabs.indexOf(PanelTab.Relations) } }
+                    if (panels.cards != null && panels.npcs.isNotEmpty()) {
+                        item { Text(stringResource(R.string.panel_npc_details), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary) }
+                    }
+                    peopleTab(panels.npcs, busy, onAction)
+                }
+                PanelTab.Relations -> panels.relations?.let { relationsTab(it, focus) { f -> focus = f } }
+                PanelTab.Codex -> panels.codex?.let { codexTab(it, panels.mechs, category, { c -> category = c }, dialogs) }
+                PanelTab.Journal -> journalTab(panels.journal)
             }
         }
     }
+    RpgDialogHost(dialogs, onAction, refreshKey)
 }
 
 private fun LazyListScope.sectionTitle(text: @Composable () -> String) {
     item { Text(text(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 4.dp)) }
 }
 
-private fun LazyListScope.characterTab(c: CharacterV1) {
+private fun LazyListScope.characterTab(c: CharacterV1, mainline: MainlineV1?, busy: Boolean, onAction: (QuickActionV1, String) -> Unit, dialogs: RpgDialogState) {
     item {
-        Column {
-            Text(c.name, style = MaterialTheme.typography.headlineSmall)
-            Text("${c.role} · ${stringResource(R.string.game_gold, c.gold)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (c.growth != null) {
+                Portrait("player", c.name, c.portrait, size = 64.dp)
+                Spacer(Modifier.width(12.dp))
+            }
+            Column {
+                Text(c.name, style = MaterialTheme.typography.headlineSmall)
+                Text("${c.role} · ${stringResource(R.string.game_gold, c.gold)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
+    c.growth?.let { g -> growthSection(g, mainline, busy, onAction, dialogs) }
     sectionTitle { stringResource(R.string.panel_attributes) }
     item { StatGrid(c.attributes, showValue = true) }
     sectionTitle { stringResource(R.string.panel_skills) }
@@ -170,19 +223,34 @@ private fun StatGrid(stats: List<StatV1>, showValue: Boolean) {
     }
 }
 
-private fun LazyListScope.inventoryTab(inv: InventoryV1, busy: Boolean, onAction: (QuickActionV1, String) -> Unit) {
+private fun LazyListScope.inventoryTab(inv: InventoryV1, busy: Boolean, onAction: (QuickActionV1, String) -> Unit, dialogs: RpgDialogState) {
     sectionTitle { stringResource(R.string.panel_items) }
     if (inv.items.isEmpty()) {
         item { Text(stringResource(R.string.panel_no_items), color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
     items(inv.items, key = { "i" + it.id }) { it2 ->
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            modifier = Modifier.clickable(enabled = it2.card != null) { it2.card?.let(dialogs::openCard) },
+        ) {
             ListItem(
-                headlineContent = { Text(if (it2.qty > 1) "${it2.name} ×${it2.qty}" else it2.name) },
-                supportingContent = { Text(it2.description) },
+                leadingContent = it2.card?.let { c -> { Icon(rpgIcon(c.icon, c.kind), contentDescription = null, tint = rarityColor(c.rarityColor)) } },
+                headlineContent = {
+                    Text(
+                        (if (it2.qty > 1) "${it2.name} ×${it2.qty}" else it2.name) + if (it2.equipped) " · 已装备" else "",
+                        color = it2.card?.let { c -> rarityColor(c.rarityColor) } ?: androidx.compose.ui.graphics.Color.Unspecified,
+                    )
+                },
+                supportingContent = { Text(it2.description, maxLines = 2) },
                 trailingContent = {
-                    it2.use?.let { qa ->
-                        FilledTonalButton(onClick = { onAction(qa, it2.useLabel ?: it2.name) }, enabled = !busy) { Text(it2.useLabel ?: "使用") }
+                    Column(horizontalAlignment = Alignment.End) {
+                        it2.use?.let { qa ->
+                            FilledTonalButton(onClick = { onAction(qa, it2.useLabel ?: it2.name) }, enabled = !busy) { Text(it2.useLabel ?: "使用") }
+                        }
+                        it2.equip?.let { qa ->
+                            OutlinedButton(onClick = { onAction(qa, qa.label ?: it2.name) }, enabled = !busy) { Text(if (it2.equipped) "卸下" else "装备") }
+                        }
+                        it2.mech?.takeIf { it.isNotBlank() }?.let { m -> MechLinkButton(m) { dialogs.mech = it } }
                     }
                 },
                 colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
@@ -214,6 +282,8 @@ private fun LazyListScope.peopleTab(npcs: List<NPCV1>, busy: Boolean, onAction: 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Portrait(n.id, n.name, n.portrait, size = 44.dp)
+                    Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(n.name, style = MaterialTheme.typography.titleMedium)
                         Text(n.role, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -1,0 +1,850 @@
+{
+  "scene": {
+    "clock": "08:21",
+    "conditions": [],
+    "day": 1,
+    "description": "钟楼的指针停在七点零三分，广场上人来人往。",
+    "exits": [
+      {
+        "id": "brass:location/workshop",
+        "label": "行会工坊",
+        "locked": false
+      },
+      {
+        "id": "brass:location/arena",
+        "label": "竞技场",
+        "locked": false
+      },
+      {
+        "id": "brass:location/sewer",
+        "label": "下水道入口",
+        "locked": true
+      }
+    ],
+    "facts": [
+      "钟楼的表盘停在七点零三分"
+    ],
+    "gold": 16,
+    "has_rpg": true,
+    "hud": [
+      {
+        "compact": true,
+        "icon": "flag",
+        "id": "objective",
+        "label": "目标",
+        "progress": -1,
+        "value": "在竞技场挑战托克，赢下第二场试炼。",
+        "wide": true
+      },
+      {
+        "compact": true,
+        "icon": "route",
+        "id": "mode",
+        "label": "进程",
+        "progress": -1,
+        "value": "主线 · 第一章 · 黄铜试炼"
+      },
+      {
+        "compact": true,
+        "icon": "place",
+        "id": "location",
+        "label": "位置",
+        "progress": -1,
+        "value": "钟楼广场"
+      },
+      {
+        "compact": true,
+        "icon": "military_tech",
+        "id": "level",
+        "label": "等级",
+        "progress": -1,
+        "value": "Lv.1"
+      },
+      {
+        "compact": true,
+        "icon": "favorite",
+        "id": "hp",
+        "label": "生命",
+        "progress": -1,
+        "value": "36/62"
+      },
+      {
+        "compact": true,
+        "icon": "propane_tank",
+        "id": "steam",
+        "label": "蒸汽压",
+        "progress": 600,
+        "value": "60"
+      },
+      {
+        "compact": false,
+        "icon": "trending_up",
+        "id": "xp",
+        "label": "经验",
+        "progress": -1,
+        "value": "50/100"
+      },
+      {
+        "compact": false,
+        "icon": "explore",
+        "id": "adherence",
+        "label": "贴合度",
+        "progress": 1000,
+        "value": "100%"
+      },
+      {
+        "compact": false,
+        "icon": "payments",
+        "id": "gold",
+        "label": "铜币",
+        "progress": -1,
+        "value": "16"
+      }
+    ],
+    "location_id": "brass:location/plaza",
+    "location_name": "钟楼广场",
+    "mainline": {
+      "adherence": 100,
+      "anchor": "第一章 · 黄铜试炼",
+      "anchor_idx": 0,
+      "anchors": 2,
+      "deviation": 0,
+      "heavy": 70,
+      "level": 0,
+      "mild": 35,
+      "mode": "main",
+      "mode_label": "主线",
+      "objective": "在铁环竞技场赢下两场试炼。"
+    },
+    "pack_id": "brass_trial",
+    "pack_name": "锈钟镇·黄铜试炼",
+    "period": "上午",
+    "player_name": "阿砾",
+    "present": [
+      {
+        "attitude": "亲近",
+        "id": "brass:character/rivet",
+        "name": "小铆钉",
+        "role": "工坊跑腿的孩子"
+      }
+    ],
+    "save_name": "阿砾的旅程",
+    "slot_id": "slot-1790801300358-f147a77b",
+    "story": {
+      "hints": [
+        "去竞技场"
+      ],
+      "id": "brass:story/trial",
+      "title": "黄铜试炼"
+    },
+    "time_text": "第1天 08:21 · 上午",
+    "turn": 13
+  },
+  "suggestions": [
+    {
+      "action": {
+        "action": "brass:action/look",
+        "kind": "action",
+        "label": "环顾四周"
+      },
+      "icon": "visibility",
+      "label": "环顾四周"
+    },
+    {
+      "action": {
+        "action": "brass:action/talk",
+        "kind": "action",
+        "label": "和小铆钉聊聊",
+        "target": "brass:character/rivet"
+      },
+      "icon": "chat",
+      "label": "与小铆钉交谈"
+    },
+    {
+      "action": {
+        "action": "brass:action/investigate",
+        "kind": "action",
+        "label": "仔细调查周围"
+      },
+      "hint": "成功率 65%",
+      "icon": "search",
+      "label": "调查"
+    },
+    {
+      "action": {
+        "destination": "brass:location/workshop",
+        "kind": "move",
+        "label": "前往行会工坊"
+      },
+      "icon": "directions_walk",
+      "label": "前往行会工坊"
+    },
+    {
+      "action": {
+        "destination": "brass:location/arena",
+        "kind": "move",
+        "label": "前往竞技场"
+      },
+      "icon": "directions_walk",
+      "label": "前往竞技场"
+    },
+    {
+      "action": {
+        "destination": "brass:location/sewer",
+        "kind": "move",
+        "label": "前往下水道入口"
+      },
+      "hint": "未获允许",
+      "icon": "lock",
+      "label": "前往下水道入口"
+    },
+    {
+      "action": {
+        "action": "brass:action/rest",
+        "kind": "action",
+        "label": "找个地方歇一会儿"
+      },
+      "hint": "30 分钟",
+      "icon": "hourglass",
+      "label": "休息片刻"
+    }
+  ],
+  "transcript": [
+    {
+      "id": 24,
+      "kind": "intro",
+      "text": "锈钟镇的钟楼已经三天没有敲响了。\n你背着一只旧工具箱走进行会工坊，炉火把墙上的齿轮映得通红。行会长欧琳从一台拆开的甲胄后面探出头来：“学徒试炼今天开始。先去竞技场，赢了再说话。”\n——试试“和欧琳聊聊”“去竞技场”，或者点开角色面板看看你的数值与装备。",
+      "turn": 0
+    },
+    {
+      "command_id": "rpg-1",
+      "id": 25,
+      "kind": "player",
+      "text": "和欧琳聊聊",
+      "turn": 1
+    },
+    {
+      "command_id": "rpg-1",
+      "id": 28,
+      "kind": "narration",
+      "source": "template",
+      "text": "欧琳头也不抬：“行会一年只收一个学徒。竞技场有两场试炼——先是发条鼠，再是托克。输了也不丢人，爬起来再打。”\n\n竞技场的告示牌上贴出了今天的名单：学徒候选人——你。两场试炼，赢了才能进行会。",
+      "turn": 1
+    },
+    {
+      "chips": [
+        "欧琳 信任 +2"
+      ],
+      "command_id": "rpg-1",
+      "id": 26,
+      "kind": "system",
+      "text": "欧琳 信任 +2",
+      "turn": 1
+    },
+    {
+      "command_id": "rpg-1",
+      "id": 27,
+      "kind": "story",
+      "text": "事件开始：《黄铜试炼》",
+      "turn": 1
+    },
+    {
+      "command_id": "rpg-2",
+      "id": 29,
+      "kind": "player",
+      "text": "去钟楼广场",
+      "turn": 2
+    },
+    {
+      "command_id": "rpg-2",
+      "id": 30,
+      "kind": "narration",
+      "source": "template",
+      "text": "你来到钟楼广场。钟楼的指针停在七点零三分，广场上人来人往。这里有：小铆钉（工坊跑腿的孩子）。",
+      "turn": 2
+    },
+    {
+      "command_id": "rpg-3",
+      "id": 31,
+      "kind": "player",
+      "text": "去竞技场",
+      "turn": 3
+    },
+    {
+      "command_id": "rpg-3",
+      "id": 32,
+      "kind": "narration",
+      "source": "template",
+      "text": "你来到铁环竞技场。沙地擂台被铸铁看台围着，观众在押注。这里有：托克（去年的试炼第一名）。",
+      "turn": 3
+    },
+    {
+      "command_id": "rpg-4",
+      "id": 33,
+      "kind": "player",
+      "text": "迎战",
+      "turn": 4
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠乙",
+        "chance": 71,
+        "chips": [
+          "命中 59/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 101%",
+          "= 4 伤害"
+        ],
+        "damage": 4,
+        "hit": true,
+        "roll": 59,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-4",
+      "id": 34,
+      "kind": "combat",
+      "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
+      "turn": 4
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠甲",
+        "chance": 71,
+        "chips": [
+          "命中 16/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 91%",
+          "= 3 伤害"
+        ],
+        "damage": 3,
+        "hit": true,
+        "roll": 16,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-4",
+      "id": 35,
+      "kind": "combat",
+      "text": "发条鼠甲发动了攻击，击中了阿砾。 −3",
+      "turn": 4
+    },
+    {
+      "command_id": "rpg-4",
+      "id": 37,
+      "kind": "narration",
+      "source": "template",
+      "text": "铁闸拉起，两只发条鼠“咔哒咔哒”地冲了出来。\n\n发条鼠乙发动了攻击，击中了你。发条鼠甲发动了攻击，击中了你。",
+      "turn": 4
+    },
+    {
+      "command_id": "rpg-4",
+      "id": 36,
+      "kind": "story",
+      "text": "战斗开始：试炼第一场：发条鼠",
+      "turn": 4
+    },
+    {
+      "command_id": "rpg-5",
+      "id": 38,
+      "kind": "player",
+      "text": "攻击",
+      "turn": 5
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "阿砾",
+        "chance": 75,
+        "chips": [
+          "命中 80/75% ✗"
+        ],
+        "hit": false,
+        "roll": 80,
+        "side": "party",
+        "target": "发条鼠甲"
+      },
+      "command_id": "rpg-5",
+      "id": 39,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，被发条鼠甲躲开了。",
+      "turn": 5
+    },
+    {
+      "command_id": "rpg-5",
+      "id": 40,
+      "kind": "narration",
+      "source": "template",
+      "text": "你发动了攻击，被发条鼠甲躲开了。",
+      "turn": 5
+    },
+    {
+      "command_id": "rpg-6",
+      "id": 41,
+      "kind": "player",
+      "text": "攻击",
+      "turn": 6
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "阿砾",
+        "chance": 75,
+        "chips": [
+          "命中 56/75% ✓",
+          "攻 16×100%",
+          "防 2",
+          "浮动 102%",
+          "= 14 伤害"
+        ],
+        "damage": 14,
+        "hit": true,
+        "roll": 56,
+        "side": "party",
+        "target": "发条鼠甲"
+      },
+      "command_id": "rpg-6",
+      "id": 42,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，击中了发条鼠甲。 −14",
+      "turn": 6
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠乙",
+        "chance": 71,
+        "chips": [
+          "命中 90/71% ✗"
+        ],
+        "hit": false,
+        "roll": 90,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-6",
+      "id": 43,
+      "kind": "combat",
+      "text": "发条鼠乙发动了攻击，被阿砾躲开了。",
+      "turn": 6
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠甲",
+        "chance": 71,
+        "chips": [
+          "命中 34/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 101%",
+          "= 4 伤害"
+        ],
+        "damage": 4,
+        "hit": true,
+        "roll": 34,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-6",
+      "id": 44,
+      "kind": "combat",
+      "text": "发条鼠甲发动了攻击，击中了阿砾。 −4",
+      "turn": 6
+    },
+    {
+      "command_id": "rpg-6",
+      "id": 45,
+      "kind": "narration",
+      "source": "template",
+      "text": "你发动了攻击，击中了发条鼠甲。发条鼠乙发动了攻击，被你躲开了。发条鼠甲发动了攻击，击中了你。",
+      "turn": 6
+    },
+    {
+      "command_id": "rpg-7",
+      "id": 46,
+      "kind": "player",
+      "text": "攻击",
+      "turn": 7
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "阿砾",
+        "chance": 75,
+        "chips": [
+          "命中 33/75% ✓",
+          "攻 16×100%",
+          "防 2",
+          "浮动 108%",
+          "= 15 伤害"
+        ],
+        "damage": 15,
+        "hit": true,
+        "roll": 33,
+        "side": "party",
+        "target": "发条鼠甲"
+      },
+      "command_id": "rpg-7",
+      "id": 47,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，击中了发条鼠甲。 −15",
+      "turn": 7
+    },
+    {
+      "combat": {
+        "action": "down",
+        "actor": "发条鼠甲",
+        "hit": false,
+        "side": "enemy"
+      },
+      "command_id": "rpg-7",
+      "id": 48,
+      "kind": "combat",
+      "text": "发条鼠甲倒下了",
+      "turn": 7
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠乙",
+        "chance": 71,
+        "chips": [
+          "命中 13/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 94%",
+          "= 3 伤害"
+        ],
+        "damage": 3,
+        "hit": true,
+        "roll": 13,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-7",
+      "id": 49,
+      "kind": "combat",
+      "text": "发条鼠乙发动了攻击，击中了阿砾。 −3",
+      "turn": 7
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠乙",
+        "chance": 71,
+        "chips": [
+          "命中 32/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 102%",
+          "= 4 伤害"
+        ],
+        "damage": 4,
+        "hit": true,
+        "roll": 32,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-7",
+      "id": 50,
+      "kind": "combat",
+      "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
+      "turn": 7
+    },
+    {
+      "command_id": "rpg-7",
+      "id": 51,
+      "kind": "narration",
+      "source": "template",
+      "text": "你发动了攻击，击中了发条鼠甲。发条鼠甲倒下了。发条鼠乙发动了攻击，击中了你。",
+      "turn": 7
+    },
+    {
+      "command_id": "rpg-8",
+      "id": 52,
+      "kind": "player",
+      "text": "攻击",
+      "turn": 8
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "阿砾",
+        "chance": 75,
+        "chips": [
+          "命中 99/75% ✗"
+        ],
+        "hit": false,
+        "roll": 99,
+        "side": "party",
+        "target": "发条鼠乙"
+      },
+      "command_id": "rpg-8",
+      "id": 53,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，被发条鼠乙躲开了。",
+      "turn": 8
+    },
+    {
+      "command_id": "rpg-8",
+      "id": 54,
+      "kind": "narration",
+      "source": "template",
+      "text": "你发动了攻击，被发条鼠乙躲开了。",
+      "turn": 8
+    },
+    {
+      "command_id": "rpg-9",
+      "id": 55,
+      "kind": "player",
+      "text": "攻击",
+      "turn": 9
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "阿砾",
+        "chance": 75,
+        "chips": [
+          "命中 98/75% ✗"
+        ],
+        "hit": false,
+        "roll": 98,
+        "side": "party",
+        "target": "发条鼠乙"
+      },
+      "command_id": "rpg-9",
+      "id": 56,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，被发条鼠乙躲开了。",
+      "turn": 9
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠乙",
+        "chance": 71,
+        "chips": [
+          "命中 19/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 109%",
+          "= 4 伤害"
+        ],
+        "damage": 4,
+        "hit": true,
+        "roll": 19,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-9",
+      "id": 57,
+      "kind": "combat",
+      "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
+      "turn": 9
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠乙",
+        "chance": 71,
+        "chips": [
+          "命中 13/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 108%",
+          "= 4 伤害"
+        ],
+        "damage": 4,
+        "hit": true,
+        "roll": 13,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-9",
+      "id": 58,
+      "kind": "combat",
+      "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
+      "turn": 9
+    },
+    {
+      "command_id": "rpg-9",
+      "id": 59,
+      "kind": "narration",
+      "source": "template",
+      "text": "你发动了攻击，被发条鼠乙躲开了。发条鼠乙发动了攻击，击中了你。发条鼠乙发动了攻击，击中了你。",
+      "turn": 9
+    },
+    {
+      "command_id": "rpg-10",
+      "id": 60,
+      "kind": "player",
+      "text": "攻击",
+      "turn": 10
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "阿砾",
+        "chance": 75,
+        "chips": [
+          "命中 39/75% ✓",
+          "攻 16×100%",
+          "防 2",
+          "浮动 91%",
+          "= 12 伤害"
+        ],
+        "damage": 12,
+        "hit": true,
+        "roll": 39,
+        "side": "party",
+        "target": "发条鼠乙"
+      },
+      "command_id": "rpg-10",
+      "id": 61,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，击中了发条鼠乙。 −12",
+      "turn": 10
+    },
+    {
+      "command_id": "rpg-10",
+      "id": 62,
+      "kind": "narration",
+      "source": "template",
+      "text": "你发动了攻击，击中了发条鼠乙。",
+      "turn": 10
+    },
+    {
+      "command_id": "rpg-11",
+      "id": 63,
+      "kind": "player",
+      "text": "攻击",
+      "turn": 11
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "阿砾",
+        "chance": 75,
+        "chips": [
+          "命中 42/75% ✓",
+          "攻 16×100%",
+          "防 2",
+          "浮动 105%",
+          "= 14 伤害"
+        ],
+        "damage": 14,
+        "hit": true,
+        "roll": 42,
+        "side": "party",
+        "target": "发条鼠乙"
+      },
+      "command_id": "rpg-11",
+      "id": 64,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，击中了发条鼠乙。 −14",
+      "turn": 11
+    },
+    {
+      "combat": {
+        "action": "down",
+        "actor": "发条鼠乙",
+        "hit": false,
+        "side": "enemy"
+      },
+      "command_id": "rpg-11",
+      "id": 65,
+      "kind": "combat",
+      "text": "发条鼠乙倒下了",
+      "turn": 11
+    },
+    {
+      "command_id": "rpg-11",
+      "id": 69,
+      "kind": "narration",
+      "source": "template",
+      "text": "看台上响起稀稀拉拉的掌声。托克在擂台另一头抱着胳膊，冲你扬了扬下巴。\n\n你发动了攻击，击中了发条鼠乙。发条鼠乙倒下了。\n\n最后一个对手倒下了。你喘着粗气，握紧了手里的武器——这一战，你赢了。",
+      "turn": 11
+    },
+    {
+      "chips": [
+        "生命 -26",
+        "铜币 +6",
+        "经验 +50",
+        "欧琳→你 信任 +3"
+      ],
+      "command_id": "rpg-11",
+      "id": 66,
+      "kind": "system",
+      "text": "生命 -26 · 铜币 +6 · 经验 +50 · 欧琳→你 信任 +3",
+      "turn": 11
+    },
+    {
+      "command_id": "rpg-11",
+      "id": 67,
+      "kind": "story",
+      "text": "战斗胜利：试炼第一场：发条鼠",
+      "turn": 11
+    },
+    {
+      "command_id": "rpg-11",
+      "id": 68,
+      "kind": "story",
+      "text": "事件进展：赢下了第一场试炼",
+      "turn": 11
+    },
+    {
+      "command_id": "rpg-12",
+      "id": 70,
+      "kind": "player",
+      "text": "去钟楼广场",
+      "turn": 12
+    },
+    {
+      "command_id": "rpg-12",
+      "id": 71,
+      "kind": "narration",
+      "source": "template",
+      "text": "你来到钟楼广场。钟楼的指针停在七点零三分，广场上人来人往。这里有：小铆钉（工坊跑腿的孩子）。",
+      "turn": 12
+    },
+    {
+      "command_id": "rpg-13",
+      "id": 72,
+      "kind": "player",
+      "text": "和小铆钉聊聊",
+      "turn": 13
+    },
+    {
+      "command_id": "rpg-13",
+      "id": 75,
+      "kind": "narration",
+      "source": "template",
+      "text": "小铆钉从喷泉边跳下来：“你就是今年的候选人？我押了你赢！别让我的三个铜板打水漂啊。”",
+      "turn": 13
+    },
+    {
+      "chips": [
+        "小铆钉→你 好感 +3",
+        "小铆钉 信任 +2"
+      ],
+      "command_id": "rpg-13",
+      "id": 73,
+      "kind": "system",
+      "text": "小铆钉→你 好感 +3 · 小铆钉 信任 +2",
+      "turn": 13
+    },
+    {
+      "command_id": "rpg-13",
+      "id": 74,
+      "kind": "story",
+      "text": "新角色卡：小铆钉（常常围着你打转）",
+      "turn": 13
+    }
+  ]
+}

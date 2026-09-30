@@ -40,5 +40,25 @@
     ],
     "type": "story",
     "version": "0.1.0"
+  },
+  {
+    "accent": "#9A6B2F",
+    "author": "guyu2233",
+    "builtin": true,
+    "description": "锈钟镇的工匠行会每年只收一名学徒。你要在竞技场赢下两场试炼，再下到镇子底下，找出让钟楼停摆的怪物。一个约 20 分钟的战斗小故事，也是战斗 / 成长 / 图鉴 / 关系网格式的示例。",
+    "engine": "\u003e=0.1.1",
+    "icon": "precision_manufacturing",
+    "id": "brass_trial",
+    "name": "锈钟镇·黄铜试炼",
+    "playable": true,
+    "save_count": 0,
+    "tagline": "学徒机械师的第一场试炼——扳手、齿轮，和一台会呼吸的黄铜甲胄。",
+    "tags": [
+      "战斗",
+      "蒸汽朋克",
+      "示例"
+    ],
+    "type": "story",
+    "version": "0.1.0"
   }
 ]

@@ -399,6 +399,25 @@ func (p *Package) EntityName(id string) string {
 	if it, ok := p.Items[id]; ok {
 		return it.Name
 	}
+	if p.Combat != nil {
+		if e, ok := p.Combat.Enemies[id]; ok {
+			return e.Name
+		}
+		if s, ok := p.Combat.Skills[id]; ok {
+			return s.Name
+		}
+		if m, ok := p.Combat.Mechs[id]; ok {
+			return m.Name
+		}
+		if e, ok := p.Combat.Encounters[id]; ok {
+			return e.Title
+		}
+	}
+	for _, e := range p.Codex {
+		if e.ID == id {
+			return e.Name
+		}
+	}
 	return id
 }
 

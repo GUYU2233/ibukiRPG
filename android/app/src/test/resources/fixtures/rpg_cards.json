@@ -1,0 +1,88 @@
+{
+  "active": [
+    {
+      "description": "短发、护目镜推在额头上的女人，左手是一只黄铜义肢，说话像拧螺丝一样干脆。",
+      "faction": "brass:codex/guild",
+      "icon": "engineering",
+      "id": "brass:character/orin",
+      "location": "行会工坊",
+      "lore": "年轻时驾驶过行会的第一台蒸汽甲胄，在一次锅炉爆炸里失去了左手。从那以后，她给每台甲胄都装上了三道泄压阀。",
+      "memories": [
+        "08:03 交谈：交代了两场竞技场试炼",
+        "向阿砾交代了试炼规矩"
+      ],
+      "name": "欧琳",
+      "reason": "主要角色",
+      "relation": [
+        {
+          "id": "trust",
+          "name": "信任",
+          "value": 10
+        },
+        {
+          "id": "awe",
+          "name": "敬畏",
+          "value": 10
+        }
+      ],
+      "role": "工匠行会长",
+      "status": "active",
+      "turn": 0
+    },
+    {
+      "description": "脸上总沾着机油的小姑娘，口袋里塞满了捡来的螺丝，耳朵后面夹着一支铅笔。",
+      "icon": "child_care",
+      "id": "brass:character/rivet",
+      "level": 2,
+      "location": "钟楼广场",
+      "memories": [
+        "08:21 交谈：押了你赢试炼"
+      ],
+      "name": "小铆钉",
+      "reason": "常常围着你打转",
+      "relation": [
+        {
+          "id": "trust",
+          "name": "信任",
+          "value": 5
+        },
+        {
+          "id": "affection",
+          "name": "好感",
+          "value": 8
+        }
+      ],
+      "role": "工坊跑腿的孩子",
+      "stats": [
+        {
+          "id": "hp",
+          "modifier": 0,
+          "name": "生命",
+          "value": 26
+        },
+        {
+          "id": "atk",
+          "modifier": 0,
+          "name": "攻击",
+          "value": 4
+        },
+        {
+          "id": "def",
+          "modifier": 0,
+          "name": "防御",
+          "value": 3
+        },
+        {
+          "id": "spd",
+          "modifier": 0,
+          "name": "速度",
+          "value": 17
+        }
+      ],
+      "status": "active",
+      "turn": 13
+    }
+  ],
+  "archived": [],
+  "dead": []
+}

@@ -1,0 +1,437 @@
+{
+  "scene": {
+    "clock": "08:13",
+    "combat": {
+      "actions": [
+        {
+          "icon": "swords",
+          "kind": "attack",
+          "label": "攻击",
+          "target": "enemy"
+        },
+        {
+          "hint": "减伤 50%",
+          "icon": "shield",
+          "kind": "defend",
+          "label": "防御",
+          "target": "none"
+        },
+        {
+          "disabled": true,
+          "hint": "15 蒸汽压",
+          "icon": "precision_manufacturing",
+          "id": "brass:mech/warden",
+          "kind": "mech",
+          "label": "启动黄铜守卫",
+          "reason": "这场战斗无法启动",
+          "target": "none"
+        },
+        {
+          "icon": "directions_run",
+          "kind": "flee",
+          "label": "逃跑",
+          "target": "none"
+        }
+      ],
+      "encounter": "brass:encounter/trial_bout1",
+      "enemies": [
+        {
+          "hp": 24,
+          "icon": "pest_control_rodent",
+          "id": "e1",
+          "level": 1,
+          "max_hp": 24,
+          "max_sp": 10,
+          "name": "发条鼠甲",
+          "ref": "brass:enemy/clock_rat",
+          "side": "enemy",
+          "sp": 10,
+          "statuses": [],
+          "tier": "minion"
+        },
+        {
+          "hp": 24,
+          "icon": "pest_control_rodent",
+          "id": "e2",
+          "level": 1,
+          "max_hp": 24,
+          "max_sp": 10,
+          "name": "发条鼠乙",
+          "ref": "brass:enemy/clock_rat",
+          "side": "enemy",
+          "sp": 10,
+          "statuses": [],
+          "tier": "minion"
+        }
+      ],
+      "items": [
+        {
+          "hint": "×2",
+          "icon": "healing",
+          "id": "brass:item/bandage",
+          "kind": "item",
+          "label": "干净绷带",
+          "qty": 2,
+          "target": "self"
+        },
+        {
+          "hint": "×1",
+          "icon": "propane_tank",
+          "id": "brass:item/fuel_can",
+          "kind": "item",
+          "label": "高压燃料罐",
+          "qty": 1,
+          "target": "self"
+        }
+      ],
+      "mercury": 60,
+      "mercury_max": 100,
+      "order": [
+        "你",
+        "发条鼠乙",
+        "发条鼠甲"
+      ],
+      "party": [
+        {
+          "current": true,
+          "hp": 55,
+          "icon": "person",
+          "id": "player",
+          "level": 1,
+          "max_hp": 62,
+          "max_sp": 30,
+          "name": "阿砾",
+          "ref": "player",
+          "side": "party",
+          "sp": 30,
+          "statuses": []
+        }
+      ],
+      "resource_name": "蒸汽压",
+      "round": 2,
+      "skills": [
+        {
+          "hint": "8 体力",
+          "icon": "build",
+          "id": "brass:skill/wrench_smash",
+          "kind": "skill",
+          "label": "扳手重击",
+          "target": "enemy"
+        },
+        {
+          "hint": "8 体力",
+          "icon": "healing",
+          "id": "brass:skill/patch_up",
+          "kind": "skill",
+          "label": "紧急包扎",
+          "target": "ally"
+        }
+      ],
+      "title": "试炼第一场：发条鼠",
+      "your_turn": true
+    },
+    "conditions": [],
+    "day": 1,
+    "description": "沙地擂台被铸铁看台围着，观众在押注。",
+    "exits": [
+      {
+        "id": "brass:location/plaza",
+        "label": "钟楼广场",
+        "locked": false
+      }
+    ],
+    "facts": [
+      "看台上坐满了押注的观众"
+    ],
+    "gold": 10,
+    "has_rpg": true,
+    "hud": [
+      {
+        "compact": true,
+        "icon": "flag",
+        "id": "objective",
+        "label": "目标",
+        "progress": -1,
+        "value": "去铁环竞技场，赢下第一场试炼。",
+        "wide": true
+      },
+      {
+        "compact": true,
+        "icon": "route",
+        "id": "mode",
+        "label": "进程",
+        "progress": -1,
+        "value": "主线 · 第一章 · 黄铜试炼"
+      },
+      {
+        "compact": true,
+        "icon": "place",
+        "id": "location",
+        "label": "位置",
+        "progress": -1,
+        "value": "铁环竞技场"
+      },
+      {
+        "compact": true,
+        "icon": "military_tech",
+        "id": "level",
+        "label": "等级",
+        "progress": -1,
+        "value": "Lv.1"
+      },
+      {
+        "compact": true,
+        "icon": "favorite",
+        "id": "hp",
+        "label": "生命",
+        "progress": -1,
+        "value": "55/62"
+      },
+      {
+        "compact": true,
+        "icon": "propane_tank",
+        "id": "steam",
+        "label": "蒸汽压",
+        "progress": 600,
+        "value": "60"
+      },
+      {
+        "compact": false,
+        "icon": "trending_up",
+        "id": "xp",
+        "label": "经验",
+        "progress": -1,
+        "value": "0/100"
+      },
+      {
+        "compact": false,
+        "icon": "explore",
+        "id": "adherence",
+        "label": "贴合度",
+        "progress": 1000,
+        "value": "100%"
+      },
+      {
+        "compact": false,
+        "icon": "payments",
+        "id": "gold",
+        "label": "铜币",
+        "progress": -1,
+        "value": "10"
+      }
+    ],
+    "location_id": "brass:location/arena",
+    "location_name": "铁环竞技场",
+    "mainline": {
+      "adherence": 100,
+      "anchor": "第一章 · 黄铜试炼",
+      "anchor_idx": 0,
+      "anchors": 2,
+      "deviation": 0,
+      "heavy": 70,
+      "level": 0,
+      "mild": 35,
+      "mode": "main",
+      "mode_label": "主线",
+      "objective": "在铁环竞技场赢下两场试炼。"
+    },
+    "pack_id": "brass_trial",
+    "pack_name": "锈钟镇·黄铜试炼",
+    "period": "上午",
+    "player_name": "阿砾",
+    "present": [
+      {
+        "attitude": "中立",
+        "id": "brass:character/tock",
+        "name": "托克",
+        "role": "去年的试炼第一名"
+      }
+    ],
+    "save_name": "阿砾的旅程",
+    "slot_id": "slot-1790801300358-f147a77b",
+    "story": {
+      "hints": [
+        "去竞技场"
+      ],
+      "id": "brass:story/trial",
+      "title": "黄铜试炼"
+    },
+    "time_text": "第1天 08:13 · 上午",
+    "turn": 5
+  },
+  "suggestions": [],
+  "transcript": [
+    {
+      "id": 24,
+      "kind": "intro",
+      "text": "锈钟镇的钟楼已经三天没有敲响了。\n你背着一只旧工具箱走进行会工坊，炉火把墙上的齿轮映得通红。行会长欧琳从一台拆开的甲胄后面探出头来：“学徒试炼今天开始。先去竞技场，赢了再说话。”\n——试试“和欧琳聊聊”“去竞技场”，或者点开角色面板看看你的数值与装备。",
+      "turn": 0
+    },
+    {
+      "command_id": "rpg-1",
+      "id": 25,
+      "kind": "player",
+      "text": "和欧琳聊聊",
+      "turn": 1
+    },
+    {
+      "command_id": "rpg-1",
+      "id": 28,
+      "kind": "narration",
+      "source": "template",
+      "text": "欧琳头也不抬：“行会一年只收一个学徒。竞技场有两场试炼——先是发条鼠，再是托克。输了也不丢人，爬起来再打。”\n\n竞技场的告示牌上贴出了今天的名单：学徒候选人——你。两场试炼，赢了才能进行会。",
+      "turn": 1
+    },
+    {
+      "chips": [
+        "欧琳 信任 +2"
+      ],
+      "command_id": "rpg-1",
+      "id": 26,
+      "kind": "system",
+      "text": "欧琳 信任 +2",
+      "turn": 1
+    },
+    {
+      "command_id": "rpg-1",
+      "id": 27,
+      "kind": "story",
+      "text": "事件开始：《黄铜试炼》",
+      "turn": 1
+    },
+    {
+      "command_id": "rpg-2",
+      "id": 29,
+      "kind": "player",
+      "text": "去钟楼广场",
+      "turn": 2
+    },
+    {
+      "command_id": "rpg-2",
+      "id": 30,
+      "kind": "narration",
+      "source": "template",
+      "text": "你来到钟楼广场。钟楼的指针停在七点零三分，广场上人来人往。这里有：小铆钉（工坊跑腿的孩子）。",
+      "turn": 2
+    },
+    {
+      "command_id": "rpg-3",
+      "id": 31,
+      "kind": "player",
+      "text": "去竞技场",
+      "turn": 3
+    },
+    {
+      "command_id": "rpg-3",
+      "id": 32,
+      "kind": "narration",
+      "source": "template",
+      "text": "你来到铁环竞技场。沙地擂台被铸铁看台围着，观众在押注。这里有：托克（去年的试炼第一名）。",
+      "turn": 3
+    },
+    {
+      "command_id": "rpg-4",
+      "id": 33,
+      "kind": "player",
+      "text": "迎战",
+      "turn": 4
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠乙",
+        "chance": 71,
+        "chips": [
+          "命中 59/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 101%",
+          "= 4 伤害"
+        ],
+        "damage": 4,
+        "hit": true,
+        "roll": 59,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-4",
+      "id": 34,
+      "kind": "combat",
+      "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
+      "turn": 4
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠甲",
+        "chance": 71,
+        "chips": [
+          "命中 16/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 91%",
+          "= 3 伤害"
+        ],
+        "damage": 3,
+        "hit": true,
+        "roll": 16,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "rpg-4",
+      "id": 35,
+      "kind": "combat",
+      "text": "发条鼠甲发动了攻击，击中了阿砾。 −3",
+      "turn": 4
+    },
+    {
+      "command_id": "rpg-4",
+      "id": 37,
+      "kind": "narration",
+      "source": "template",
+      "text": "铁闸拉起，两只发条鼠“咔哒咔哒”地冲了出来。\n\n发条鼠乙发动了攻击，击中了你。发条鼠甲发动了攻击，击中了你。",
+      "turn": 4
+    },
+    {
+      "command_id": "rpg-4",
+      "id": 36,
+      "kind": "story",
+      "text": "战斗开始：试炼第一场：发条鼠",
+      "turn": 4
+    },
+    {
+      "command_id": "rpg-5",
+      "id": 38,
+      "kind": "player",
+      "text": "攻击",
+      "turn": 5
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "阿砾",
+        "chance": 75,
+        "chips": [
+          "命中 80/75% ✗"
+        ],
+        "hit": false,
+        "roll": 80,
+        "side": "party",
+        "target": "发条鼠甲"
+      },
+      "command_id": "rpg-5",
+      "id": 39,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，被发条鼠甲躲开了。",
+      "turn": 5
+    },
+    {
+      "command_id": "rpg-5",
+      "id": 40,
+      "kind": "narration",
+      "source": "template",
+      "text": "你发动了攻击，被发条鼠甲躲开了。",
+      "turn": 5
+    }
+  ]
+}
