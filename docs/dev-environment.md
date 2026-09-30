@@ -85,3 +85,10 @@ make mobile-smoke
 - **race 检测**需要 CGO 与 C 编译器；默认 `make test` 不开启。
 - 真机 / 模拟器运行测试尚未进行（本机无模拟器），当前仅验证 AAR 可成功生成。
 - 架构文档中的 `world/time` 模块在代码中命名为 `internal/world/worldtime`，避免与标准库 `time` 同名。
+
+## Android App（v0.1.0-rc1 补充）
+
+- Gradle 通过 wrapper 自动下载（8.14.3）；AGP 8.13.2、Kotlin 2.3.21，需要 platform 36 + build-tools 36.1.0（已安装）。
+- 构建与签名见 [android.md](android.md)。发布签名密钥库位于 `~/.ibukirpg/keystore`（不在仓库内）。
+- 模拟器：本机 `/dev/kvm` 存在，但宿主内核的嵌套 KVM 不可用（emulator 37.1 启动后 vCPU 不运行，dmesg 中出现 `kvm_spurious_fault`），
+  因此截图改用 Robolectric + Roborazzi 的 JVM 截图测试（`./gradlew testDebugUnitTest`）。

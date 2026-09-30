@@ -4,6 +4,7 @@
 *.exe
 *.aar
 *.jar
+!android/gradle/wrapper/gradle-wrapper.jar
 *.apk
 *.test
 *.out
