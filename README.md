@@ -2,7 +2,13 @@
 
 > AI 驱动、事件化、可扩展的中文文字冒险 RPG。**用你自己的话行动，骰子与规则决定结果。**
 
-当前版本：**v0.1.2rc1（试玩版）** —— 两个内置故事包：《边境酒馆 · 失窃的钱袋》（4 位 NPC、3 个地点）与小短篇《雾港灯塔 · 守灯人的信》；支持导入第三方故事包（.zip，格式见 [docs/story-pack-format.md](docs/story-pack-format.md)）。
+当前版本：**v0.1.2-rc2（试玩版，预发布）** —— 三个内置故事包：《边境酒馆 · 失窃的钱袋》、小短篇《雾港灯塔 · 守灯人的信》，以及数值 RPG 示例《锈钟镇 · 黄铜试炼》；支持导入第三方故事包（.zip，格式见 [docs/story-pack-format.md](docs/story-pack-format.md)）。
+
+v0.1.2-rc2 新增：
+- **数值 RPG**：回合制战斗（技能、状态、敌人 AI、同伴、掉落）、**机甲形态**（能源 / 过热、改装槽与武器挂点、机甲卡与情报揭示）、成长与装备、**图鉴**、**关系网**（多维关系与变化原因）、**角色卡**（主要 / 次要角色升格、归档）、**立绘**（故事包内图片）。
+- **主线贴合度**：自由行动会累计偏离度，严重偏离时可以回到主线或进入**沙盒 / 自由推演**（AI 基于故事包已有内容生成新委托，离线模式用模板）。
+- **AI 记忆与检索**：滚动摘要 + 长期记忆压缩（后台运行，不阻塞回合）；信息不足时 AI 会通过**只读检索工具**查阅故事包与存档（按可见范围过滤，NPC 查不到秘密），不支持工具调用的模型改为关键词预取。
+- **MCP 服务**：`ibukirpg mcp --save <存档>` 以 stdio 方式把同一套只读工具提供给 Claude Desktop / Cursor / VS Code 等 MCP 客户端，配置方法见 [docs/mcp.md](docs/mcp.md)。
 
 v0.1.2 新增：NPC **对话记忆**（记得聊过什么、看到你做了什么，不再复读，存档后依然记得）、**故事包选择 / 导入**、聊天界面顶部的**实时状态栏**（位置、时间、铜币、当前目标、故事变量，由故事包定义）。
 
@@ -57,6 +63,10 @@ IBUKI_AI_KEY=sk-... ./build/bin/ibukirpg -ai custom -base-url https://example.co
 
 输入数字执行对应的快捷建议；常用命令：`/s` 场景、`/me` 角色、`/inv` 背包、`/npc` 人物、`/log` 日志、`/saves` 存档、`/load N`、`/new`、`/ai` AI 状态、`/help`、`/quit`。存档默认位于用户配置目录（`-data` 可指定）。
 
+数值 RPG 命令：`/fight` 可发起的战斗、`/attack` `/skill 技能 目标` `/item 道具` `/defend` `/flee` `/mech` `/eject`、`/grow` 成长、`/mechs` `/mechcard` 机甲卡、`/codex` 图鉴、`/rel` 关系网、`/cards` 角色卡、`/main` 主线、`/mode return|free`。
+
+MCP 服务（只读）：`./build/bin/ibukirpg mcp --save <存档目录或 .db>`，详见 [docs/mcp.md](docs/mcp.md)。
+
 ## 构建
 
 环境：Go 1.27.1+、golangci-lint v2；Android 需要 JDK 17、Android SDK（platform 36、build-tools 36.1.0）、NDK r27、gomobile。详见 [docs/dev-environment.md](docs/dev-environment.md) 和 [docs/android.md](docs/android.md)。
@@ -70,7 +80,7 @@ IBUKI_AI_KEY=sk-... ./build/bin/ibukirpg -ai custom -base-url https://example.co
 | `make mobile-smoke` | gomobile 生成 `build/android/ibukirpg.aar`（冒烟） |
 | `make android-aar` | 为 App 生成 `android/app/libs/ibukirpg.aar`（arm / arm64 / x86_64） |
 | `make apk-debug` | 调试版 APK |
-| `make apk VERSION=0.1.2rc1` | 发布版 `build/release/ibukiRPG-v0.1.2rc1.apk`（签名配置见 docs/android.md） |
+| `make apk VERSION=0.1.2-rc2` | 发布版 `build/release/ibukiRPG-v0.1.2-rc2.apk`（签名配置见 docs/android.md） |
 | `make pack-zip PACK=lighthouse` | 校验并把 `packages/<PACK>` 打包成可导入的 `build/packs/<id>-<version>.zip` |
 
 ## 目录结构
@@ -80,7 +90,9 @@ cmd/cli            命令行客户端        cmd/eval        Eval Runner        
 mobile/            gomobile 导出包（Handle(json) / SetEventSink）
 internal/core      engine / command / event / state（事件溯源核心）
 internal/action    definition / resolver（离线 + LLM）/ freeform
-internal/agent     orchestrator（回合编排）/ narrator（模板 + LLM + Guard）
+internal/agent     orchestrator（回合编排）/ narrator（模板 + LLM + Guard）/ tools（只读检索工具 + 工具调用循环）/ memory（记忆压缩）
+internal/adapter   mobile（gomobile JSON API）/ mcp（MCP stdio 服务）
+internal/combat    战斗规则、机甲、数值模拟器（sim）
 internal/ai        provider（OpenAI 兼容）/ transport（录音回放）
 internal/narrative guard（不可变事实校验）
 internal/storage   sqlite / eventstore（事件、快照、命令幂等、存档槽）
@@ -88,15 +100,17 @@ internal/api       dto（V1 视图）/ query（场景、建议、面板）
 internal/eval      Eval Runner
 packages/demo      内置故事包《边境酒馆》（YAML：地点、人物、台词池、物品、动作、事件、HUD）
 packages/lighthouse 内置示例故事包《雾港灯塔》（最小结构示例）
+packages/brass     内置数值 RPG 示例《锈钟镇 · 黄铜试炼》
 internal/package   manifest / loader / registry（故事包发现、导入校验、删除）
 tests/eval         Eval 用例与录音
 android/           Android App（Kotlin + Compose + Material 3）
 docs/              架构文档（architecture-v0.2.md）与开发文档
 ```
 
-## 已知限制（v0.1.2rc1）
+## 已知限制（v0.1.2-rc2）
 
-- 内容规模很小：两个短故事；没有战斗系统（暴力行为会被拒绝并给出替代方案）。
+- 内容规模很小：三个短故事。没有 `combat` 的故事包里暴力行为仍会被拒绝；有战斗的故事包里，场景中动粗是有后果的自由行动并计入主线偏离。
+- 战斗中的自然语言输入由规则解析器识别；AI 自由推演临时生成的角色只有角色卡（没有立绘与台词池）；图鉴条目除人物 / 机甲立绘外暂不支持配图。
 - 离线模式的台词来自故事包的台词池：说完所有台词后 NPC 会提起“说过了”，而不会编出新内容；想要更自由的对话请开启 AI 模式。
 - 故事包依赖（dependencies）只检查是否已安装及版本，暂不合并内容。
 - NPC 只知道自己亲眼看到的事（Witness → Belief），暂不传播流言。

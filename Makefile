@@ -1,7 +1,7 @@
 # ibukiRPG — 开发命令
 GO        ?= go
 PKG       := github.com/GUYU2233/ibukiRPG
-VERSION   ?= 0.1.2rc1
+VERSION   ?= 0.1.2-rc2
 COMMIT    ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 LDFLAGS   := -s -w -X $(PKG)/internal/buildinfo.Version=$(VERSION) -X $(PKG)/internal/buildinfo.Commit=$(COMMIT)
 BIN       := build/bin

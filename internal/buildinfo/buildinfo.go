@@ -7,7 +7,7 @@ const Name = "ibukiRPG"
 // 以下变量可在构建时通过 -ldflags "-X" 覆盖。
 var (
 	// Version 引擎版本号。
-	Version = "0.1.2rc1"
+	Version = "0.1.2-rc2"
 	// Commit 构建所用 git 提交。
 	Commit = "unknown"
 )

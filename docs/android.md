@@ -7,7 +7,7 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 | 项目 | 值 |
 |---|---|
 | applicationId | `com.guyu2233.ibukirpg`（debug 版为 `.debug` 后缀，可与正式版共存） |
-| versionName / versionCode | `0.1.2rc1` / `3` |
+| versionName / versionCode | `0.1.2-rc2` / `4` |
 | minSdk / targetSdk / compileSdk | 24 / 36 / 36 |
 | 工具链 | Gradle 8.14.3（wrapper）、AGP 8.13.2、Kotlin 2.3.21、Compose BOM 2025.10.01 |
 | ABI | armeabi-v7a、arm64-v8a、x86_64 |
@@ -18,9 +18,9 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 source /etc/profile.d/ibukirpg-dev.sh      # JAVA_HOME / ANDROID_HOME / ANDROID_NDK_HOME
 make android-aar                           # gomobile bind → android/app/libs/ibukirpg.aar
 cd android
-./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.2rc1-debug.apk
+./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.2-rc2-debug.apk
 ./gradlew testDebugUnitTest                # JVM 截图测试（Robolectric + Roborazzi）→ ../build/screenshots/*.png
-./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.1.2rc1.apk
+./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.1.2-rc2.apk
 ```
 
 或在仓库根目录执行 `make apk`（产物复制到 `build/release/`）。
@@ -70,3 +70,9 @@ Android App 集成 `com.google.mediapipe:tasks-genai:0.10.27`。设置页的“�
 - 面板：角色 / 背包 / 人物（信任、畏惧、TA 知道的事及来源、社交行动成功率）/ 日志。
 - 设置：规则离线 / MediaPipe 本地模型 / DeepSeek / 通义千问 / 自定义；MediaPipe 支持本地 `.task` 导入和生成参数，在线 API Key 经 Android Keystore AES-GCM 加密存于 DataStore；文字大小、主题、动态取色（Android 12+）。
 - 动态取色不可用时使用以琥珀色 `#8C4A1C` 为种子的 Material 3 配色；全屏 edge-to-edge；中文字符串全部在 `res/values/strings.xml`；图标按钮均有 contentDescription。
+
+## AI 检索工具与 MCP
+
+手机端不启动 MCP 服务：AI 需要查阅故事包 / 存档时，直接在进程内调用同一套只读检索工具（Tool Gateway，按 NPC / 玩家 / 导演的可见范围过滤）。
+调试时可以通过 JSON API 的 `list_tools` / `call_tool` 请求查看工具列表并手动调用（只读，不会修改存档）。
+桌面端的 MCP 服务（`ibukirpg mcp --save <存档>`）见 [mcp.md](mcp.md)。
