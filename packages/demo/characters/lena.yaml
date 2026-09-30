@@ -27,19 +27,109 @@ relationship_to_player:
   fear: 0
 relationships: {}
 dialogue:
-  greet:
-    - 莉娜抬眼看了看你，又低头盯着酒杯：“有事？没事别挡着火。”
-    - 莉娜用指节敲了敲桌面：“新面孔。这种天气还往边境跑的，要么是傻子，要么是有麻烦的人。”
-  friendly:
-    - 莉娜难得地笑了一下：“坐吧。北边的路最近不太平，你要往那边走，最好结个伴。”
-    - 莉娜把酒杯推到一边：“你倒是个爽快人。以后有用得着我的地方，开口。”
-  wary:
-    - 莉娜的手按上了剑柄：“离我远点。”
-    - 莉娜别过脸去，显然不想再和你说一个字。
-  story:
-    demo:story/lost_purse:
-      - 莉娜冷眼看着奥托：“那商人进门的时候就醉了。钱袋？我看他压根记不清自己放哪儿了。”
-      - 莉娜低声说：“刚才有只灰猫在长椅底下钻来钻去，后来往储藏室那边跑了。”
+  topics:
+    fire: 壁炉边的位置
+    border: 边境的路
+    sword: 她的旧剑
+    purse: 钱袋失窃
+    cat: 灰猫
+    aftermath: 失窃风波
+    warning: 警告
+    smalltalk: 家常
+  lines:
+    - id: purse_drunk
+      topic: purse
+      priority: 60
+      once: true
+      when: 'stories.lost_purse.status == "active"'
+      text: 莉娜冷眼看着奥托：“那商人进门的时候就醉了。钱袋？我看他压根记不清自己放哪儿了。”
+      memory: 说奥托进门时就醉了
+    - id: purse_cat
+      topic: cat
+      priority: 56
+      once: true
+      when: 'stories.lost_purse.status == "active"'
+      text: 莉娜低声说：“刚才有只灰猫在长椅底下钻来钻去，后来往储藏室那边跑了。”
+      memory: 说灰猫往储藏室那边跑了
+      remember: 告诉过{player}灰猫往储藏室跑了
+    - id: purse_impatient
+      topic: purse
+      priority: 50
+      when: 'stories.lost_purse.status == "active"'
+      text: 莉娜不耐烦地敲着桌子：“{player}，光说不练没用。要么去找证据，要么让那商人闭嘴。”
+      memory: 催你去找证据
+    - id: after_truth
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "truth"'
+      text: 莉娜举杯朝你示意：“干得漂亮。一只猫，差点毁了一个姑娘的名声。”
+      memory: 称赞你查明了真相
+    - id: after_calmed
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "calmed"'
+      text: 莉娜哼了一声：“压下去了，可没解决。钱袋还在某个地方躺着呢。”
+      memory: 说事情只是压下去了
+    - id: after_expelled
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "mira_expelled"'
+      text: 莉娜盯着门口：“那丫头冒雨走了。这世道，嗓门大的人说了算。”
+      memory: 为米拉被赶走不平
+    - id: wary
+      topic: warning
+      priority: 40
+      when: 'npc.attitude in ["敌视", "戒备", "畏惧"]'
+      text: 莉娜的手按上了剑柄：“离我远点。”
+      memory: 警告你离她远点
+    - id: first_greet
+      topic: fire
+      priority: 30
+      once: true
+      when: 'npc.talks == 0 && stories.lost_purse.status != "active"'
+      text: 莉娜抬眼看了看你，又低头盯着酒杯：“有事？没事别挡着火。”
+      memory: 嫌你挡着壁炉的火
+    - id: newface
+      topic: border
+      priority: 25
+      once: true
+      when: 'npc.talks >= 1 && stories.lost_purse.status != "active"'
+      text: 莉娜这回没赶你走，用指节敲了敲桌面：“又是你。这种天气还往边境跑的，要么是傻子，要么是有麻烦的人——你是哪种？”
+      memory: 问你是傻子还是有麻烦的人
+    - id: sword
+      topic: sword
+      priority: 18
+      once: true
+      when: 'npc.talks >= 2 && stories.lost_purse.status != "active"'
+      text: 莉娜拍了拍腰间的旧铁剑：“跟了我八年。剑钝了，人也钝了，就剩这杯酒还算锋利。”
+      memory: 讲了她那柄旧铁剑
+    - id: friendly_north
+      topic: border
+      priority: 20
+      once: true
+      when: 'npc.attitude in ["友好", "亲近"]'
+      text: 莉娜难得地笑了一下：“坐吧。北边的路最近不太平，你要往那边走，最好结个伴。”
+      memory: 提醒你北边的路不太平
+    - id: friendly_offer
+      topic: smalltalk
+      priority: 15
+      once: true
+      when: 'npc.attitude in ["友好", "亲近"]'
+      text: 莉娜把酒杯推到一边：“你倒是个爽快人。以后有用得着我的地方，开口。”
+      memory: 说以后有事可以找她
+    - id: small
+      topic: smalltalk
+      priority: 1
+      text: 莉娜望着壁炉里的火，半天才回你一句：“嗯。”
+      memory: 敷衍地应了一声
+  repeat:
+    - 莉娜瞥了你一眼：“{topic}？刚才说过了。我不喜欢把话说两遍。”
+    - 莉娜转着酒杯：“{topic}的事，该说的我都说了，{player}。”
+  callback:
+    - 莉娜淡淡地补了一句：“刚才你{what}。我看见了。”
 secrets:
   - id: demo:secret/lena_debt
     text: 她欠了北方商会一大笔钱。

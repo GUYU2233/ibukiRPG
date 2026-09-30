@@ -53,8 +53,9 @@ var freeformRules = []freeformRule{
 		fr.Effects = append(fr.Effects,
 			command.ProposedEffect{Type: "noise", Value: 6},
 			command.ProposedEffect{Type: "scene_fact", Text: "有人刚刚" + fr.Description, When: "always"})
-		if in.State.NPCs["demo:character/borin"] != nil && in.State.NPCs["demo:character/borin"].Location == in.State.Player.Location {
-			fr.Effects = append(fr.Effects, command.ProposedEffect{Type: "relationship_nudge", Target: "demo:character/borin", Value: -1})
+		// 在店里闹事，店主会不高兴
+		if k := in.Pkg.ShopKeeper(in.State.Player.Location); k != "" && in.State.NPCs[k] != nil && in.State.NPCs[k].Location == in.State.Player.Location {
+			fr.Effects = append(fr.Effects, command.ProposedEffect{Type: "relationship_nudge", Target: k, Value: -1})
 		}
 	}},
 	{"stealth", []string{"偷偷", "偷", "扒", "顺走", "溜进", "潜入", "躲起来", "躲到", "藏起来", "摸走", "尾随", "跟踪"}, func(fr *command.Freeform, target string, in Input) {
@@ -84,8 +85,8 @@ var freeformRules = []freeformRule{
 	{"help", []string{"帮忙", "帮他", "帮她", "擦桌子", "洗杯子", "打扫", "干活", "搭把手", "收拾"}, func(fr *command.Freeform, target string, in Input) {
 		fr.Check = &command.SuggestedCheck{Skill: "athletics", Difficulty: 8}
 		fr.EstimatedMinutes = 10
-		if target == "" && in.State.NPCs["demo:character/borin"] != nil && in.State.NPCs["demo:character/borin"].Location == in.State.Player.Location {
-			target = "demo:character/borin"
+		if k := in.Pkg.ShopKeeper(in.State.Player.Location); target == "" && k != "" && in.State.NPCs[k] != nil && in.State.NPCs[k].Location == in.State.Player.Location {
+			target = k
 			fr.Targets = append(fr.Targets, target)
 		}
 		if target != "" {
@@ -129,9 +130,10 @@ func (Offline) Resolve(_ context.Context, in Input) (Resolution, error) {
 		res.Kind, res.Reasonability, res.Intent = KindReject, Reject, "violence"
 		res.Reason = "试玩版还没有战斗系统。在这里动手只会让局面失控——也许可以试试威吓、说服，或者换个办法？"
 		if target != "" && slices.Contains(present, target) {
-			res.Options = []Option{
-				{Label: "威吓" + p.EntityName(target), Command: command.Command{Kind: command.KindAction, Action: "demo:action/intimidate", Target: target}},
-				{Label: "说服" + p.EntityName(target), Command: command.Command{Kind: command.KindAction, Action: "demo:action/persuade", Target: target}},
+			for _, a := range []struct{ key, label string }{{"intimidate", "威吓"}, {"persuade", "说服"}} {
+				if id := p.ActionID(a.key); id != "" {
+					res.Options = append(res.Options, Option{Label: a.label + p.EntityName(target), Command: command.Command{Kind: command.KindAction, Action: id, Target: target}})
+				}
 			}
 		}
 		res.Confidence = 800
@@ -141,7 +143,7 @@ func (Offline) Resolve(_ context.Context, in Input) (Resolution, error) {
 	// 2) 已声明 Action 的关键词匹配（先算分，移动判定之后再用）
 	best, bestScore := "", 0
 	for _, short := range actionPriority {
-		id := "demo:action/" + short
+		id := p.ActionID(short)
 		d, ok := p.Actions[id]
 		if !ok {
 			continue
@@ -181,7 +183,7 @@ func (Offline) Resolve(_ context.Context, in Input) (Resolution, error) {
 	// “看看莉娜”之类：观察人物 → look(target)
 	if best != "" {
 		d := p.Actions[best]
-		res.Kind, res.Action, res.Intent = KindAction, best, strings.TrimPrefix(best, "demo:action/")
+		res.Kind, res.Action, res.Intent = KindAction, best, loader.Key(best)
 		res.Confidence = 700 + 50*min(bestScore, 4)
 		if len(d.Checks) > 0 {
 			res.Reasonability = AllowWithCheck
@@ -240,10 +242,10 @@ func (Offline) Resolve(_ context.Context, in Input) (Resolution, error) {
 				// 身上没有：如果这里能买到，给出购买选项而不是自动花钱
 				res.Kind, res.Reason = KindClarify, fmt.Sprintf("你身上没有%s。", p.Items[item].Name)
 				if loc := p.Locations[here]; loc.Shop != nil && slices.Contains(loc.Shop.Items, item) {
-					act := "demo:action/buy"
+					act := p.ActionID("buy")
 					label := fmt.Sprintf("购买%s（%d 铜币）", p.Items[item].Name, p.Items[item].Price)
-					if item == "demo:item/ale" {
-						act, label = "demo:action/order_drink", "点一杯麦酒（2 铜币）"
+					if item == p.DrinkItem() {
+						act, label = p.ActionID("order_drink"), fmt.Sprintf("点一杯%s（%d 铜币）", p.Items[item].Name, p.Items[item].Price)
 					}
 					res.Options = []Option{{Label: label, Command: command.Command{Kind: command.KindAction, Action: act, Item: item}}}
 				} else {
@@ -253,7 +255,7 @@ func (Offline) Resolve(_ context.Context, in Input) (Resolution, error) {
 			}
 			res.Item = item
 		default:
-			if best == "demo:action/look" && target != "" && slices.Contains(present, target) {
+			if best == p.ActionID("look") && target != "" && slices.Contains(present, target) {
 				res.Target = target
 			}
 		}

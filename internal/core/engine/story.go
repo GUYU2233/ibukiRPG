@@ -6,6 +6,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
 	"github.com/GUYU2233/ibukiRPG/internal/package/loader"
+	"github.com/GUYU2233/ibukiRPG/internal/perception/witness"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/expression"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/rng"
 )
@@ -106,8 +107,14 @@ func (w *work) advanceStory(story *loader.Story) error {
 			}
 		}
 		text := fmt.Sprintf("《%s》的结局：%s", story.Title, out.Title)
-		if err := w.observe(text, true, event.StoryResolved, "story:"+story.ID, ""); err != nil {
+		if err := w.observe(text, true, event.StoryResolved, "story:"+story.ID, "", ""); err != nil {
 			return err
+		}
+		// 在场者把结局记成情节记忆（亲历者之后的台词可以据此改变）。
+		for _, npc := range witness.Witnesses(w.s, w.pkg(), witness.Visibility{Mode: "local", Location: w.s.Player.Location}) {
+			if err := w.remember(npc, "story:"+loader.Key(story.ID)+":"+out.ID, text, "witness", 3); err != nil {
+				return err
+			}
 		}
 		w.storyTouched = true
 		w.tension -= 300

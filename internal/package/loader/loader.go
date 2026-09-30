@@ -19,7 +19,7 @@ import (
 func Load(fsys fs.FS, ev *expression.Evaluator) (*Package, error) {
 	data, err := fs.ReadFile(fsys, manifest.FileName)
 	if err != nil {
-		return nil, fmt.Errorf("read manifest: %w", err)
+		return nil, fmt.Errorf("读取 manifest.yaml 失败：%w", err)
 	}
 	m, err := manifest.Parse(data)
 	if err != nil {
@@ -89,7 +89,7 @@ func Load(fsys fs.FS, ev *expression.Evaluator) (*Package, error) {
 		p.NPCIDs = append(p.NPCIDs, c.ID)
 	}
 	if p.Player == nil {
-		return nil, errors.New("package: no player character (type: player)")
+		return nil, errors.New("故事包里没有玩家角色（需要一个 type: player 的角色文件）")
 	}
 	for _, f := range m.Content["items"] {
 		var raw struct {
@@ -133,7 +133,23 @@ func Load(fsys fs.FS, ev *expression.Evaluator) (*Package, error) {
 		p.Stories[s.ID] = &s
 		p.StoryIDs = append(p.StoryIDs, s.ID)
 	}
+	for _, f := range m.Content["hud"] {
+		var raw struct {
+			HUD        []HUDField  `yaml:"hud"`
+			Objectives []Objective `yaml:"objectives"`
+		}
+		if err := readYAML(fsys, f, &raw); err != nil {
+			return nil, err
+		}
+		p.HUD = append(p.HUD, raw.HUD...)
+		p.Objectives = append(p.Objectives, raw.Objectives...)
+	}
+	p.Variables = map[string]int{}
+	for k, v := range m.Start.Variables {
+		p.Variables[k] = v
+	}
 	p.tidyText()
+	p.normalizeDialogue()
 	if err := p.validate(ev); err != nil {
 		return nil, err
 	}
@@ -150,6 +166,32 @@ func (p *Package) tidyText() {
 		c := p.Characters[id]
 		c.Description = JoinCJK(c.Description)
 		c.Personality.Description = JoinCJK(c.Personality.Description)
+	}
+}
+
+// normalizeDialogue 把旧格式台词（greet / friendly / wary / story / after_story）转换为带条件的台词池。
+// 旧格式的每一条都变成一条可重复的台词，条件与旧版叙事器的选择顺序一致。
+func (p *Package) normalizeDialogue() {
+	for _, id := range p.NPCIDs {
+		d := &p.Characters[id].Dialogue
+		if len(d.Lines) > 0 {
+			continue
+		}
+		add := func(prefix, topic, when string, prio int, lines []string) {
+			for i, t := range lines {
+				d.Lines = append(d.Lines, DialogueLine{ID: fmt.Sprintf("%s_%d", prefix, i+1), Topic: topic, When: when, Priority: prio, Text: t})
+			}
+		}
+		for _, sid := range p.StoryIDs {
+			k := Key(sid)
+			add("story_"+k, k, fmt.Sprintf(`stories.%s.status == "active"`, k), 50, d.Story[sid])
+			for _, out := range p.Stories[sid].Outcomes {
+				add("after_"+k+"_"+out.ID, k, fmt.Sprintf(`stories.%s.outcome == %q`, k, out.ID), 40, d.AfterStory[sid+"/"+out.ID])
+			}
+		}
+		add("friendly", "smalltalk", `npc.attitude in ["友好", "亲近"]`, 20, d.Friendly)
+		add("wary", "smalltalk", `npc.attitude in ["敌视", "戒备", "畏惧"]`, 20, d.Wary)
+		add("greet", "greeting", "", 0, d.Greet)
 	}
 }
 
@@ -182,47 +224,64 @@ func readYAML(fsys fs.FS, name string, v any) error {
 		return err
 	}
 	if err := yaml.Unmarshal(b, v); err != nil {
-		return fmt.Errorf("%s: %w", name, err)
+		return fmt.Errorf("%s 格式错误：%w", name, err)
 	}
 	return nil
 }
 
 func checkID(m *manifest.Manifest, id, file string) error {
 	if !manifest.ValidID(id) {
-		return fmt.Errorf("%s: invalid id %q", file, id)
+		return fmt.Errorf("%s：ID %q 不合法（应形如 命名空间:类别/名字）", file, id)
 	}
 	if manifest.NamespaceOf(id) != m.Namespace && manifest.NamespaceOf(id) != "core" {
-		return fmt.Errorf("%s: id %q outside namespace %q", file, id, m.Namespace)
+		return fmt.Errorf("%s：ID %q 不在本包的命名空间 %q 内", file, id, m.Namespace)
 	}
 	return nil
+}
+
+func validTone(t string) bool {
+	switch t {
+	case "normal", "warning", "danger", "success":
+		return true
+	}
+	return false
+}
+
+// validBind 报告 HUD 内置绑定是否合法。
+func validBind(b string) bool {
+	switch b {
+	case "location", "time", "clock", "day", "period", "gold", "turn", "story", "objective", "conditions":
+		return true
+	}
+	return strings.HasPrefix(b, "var:") || strings.HasPrefix(b, "flag:")
 }
 
 // validate 做引用完整性校验，并预编译 CEL。
 func (p *Package) validate(ev *expression.Evaluator) error {
 	var errs []error
 	if _, ok := p.Locations[p.Manifest.Start.Location]; !ok {
-		errs = append(errs, fmt.Errorf("start location %q not found", p.Manifest.Start.Location))
+		errs = append(errs, fmt.Errorf("起始地点 %q 不存在（manifest start.location）", p.Manifest.Start.Location))
 	}
 	compile := func(where, expr string) {
 		if ev == nil || expr == "" {
 			return
 		}
 		if _, err := ev.Compile(expr); err != nil {
-			errs = append(errs, fmt.Errorf("%s: %w", where, err))
+			errs = append(errs, fmt.Errorf("%s：表达式错误：%w", where, err))
 		}
 	}
 	for _, id := range p.LocationIDs {
 		l := p.Locations[id]
 		for _, e := range l.Exits {
 			if _, ok := p.Locations[e.To]; !ok {
-				errs = append(errs, fmt.Errorf("%s: exit to unknown location %q", id, e.To))
+				errs = append(errs, fmt.Errorf("%s：出口指向不存在的地点 %q", id, e.To))
 			}
 			compile(id+" exit", e.Requires)
 		}
 		if l.Shop != nil {
 			for _, it := range l.Shop.Items {
 				if _, ok := p.Items[it]; !ok {
-					errs = append(errs, fmt.Errorf("%s: shop item %q not found", id, it))
+					errs = append(errs, fmt.Errorf("%s：商店物品 %q 不存在", id, it))
 				}
 			}
 		}
@@ -230,8 +289,49 @@ func (p *Package) validate(ev *expression.Evaluator) error {
 	for _, id := range p.NPCIDs {
 		c := p.Characters[id]
 		if _, ok := p.Locations[c.Location]; !ok {
-			errs = append(errs, fmt.Errorf("%s: unknown location %q", id, c.Location))
+			errs = append(errs, fmt.Errorf("%s：所在地点 %q 不存在", id, c.Location))
 		}
+		seen := map[string]bool{}
+		for _, l := range c.Dialogue.Lines {
+			switch {
+			case l.ID == "":
+				errs = append(errs, fmt.Errorf("%s：有台词缺少 id", id))
+			case seen[l.ID]:
+				errs = append(errs, fmt.Errorf("%s：台词 id %q 重复", id, l.ID))
+			case strings.TrimSpace(l.Text) == "":
+				errs = append(errs, fmt.Errorf("%s/%s：台词内容为空", id, l.ID))
+			}
+			seen[l.ID] = true
+			compile(id+"/"+l.ID, l.When)
+		}
+	}
+	for _, h := range p.HUD {
+		if h.ID == "" || h.Label == "" {
+			errs = append(errs, fmt.Errorf("HUD：每一项都需要 id 和 label（%s）", h.ID))
+		}
+		if (h.Bind == "") == (h.Value == "") {
+			errs = append(errs, fmt.Errorf("HUD %s：bind 和 value 必须且只能填一个", h.ID))
+		}
+		if h.Bind != "" && !validBind(h.Bind) {
+			errs = append(errs, fmt.Errorf("HUD %s：未知的 bind %q", h.ID, h.Bind))
+		}
+		compile("hud "+h.ID, h.Value)
+		compile("hud "+h.ID+" visible", h.Visible)
+		for tone, expr := range h.Tones {
+			if !validTone(tone) {
+				errs = append(errs, fmt.Errorf("HUD %s：未知的色调 %q", h.ID, tone))
+			}
+			compile("hud "+h.ID+" tone", expr)
+		}
+		if h.Tone != "" && !validTone(h.Tone) {
+			errs = append(errs, fmt.Errorf("HUD %s：未知的色调 %q", h.ID, h.Tone))
+		}
+	}
+	for i, o := range p.Objectives {
+		if strings.TrimSpace(o.Text) == "" {
+			errs = append(errs, fmt.Errorf("第 %d 个主线目标的 text 为空", i+1))
+		}
+		compile(fmt.Sprintf("objective #%d", i+1), o.When)
 	}
 	for _, id := range p.ActionIDs {
 		d := p.Actions[id]
@@ -241,7 +341,7 @@ func (p *Package) validate(ev *expression.Evaluator) error {
 		for _, c := range d.Checks {
 			compile(id, c.Difficulty)
 			if _, ok := p.SkillByID(c.Skill); !ok {
-				errs = append(errs, fmt.Errorf("%s: unknown skill %q", id, c.Skill))
+				errs = append(errs, fmt.Errorf("%s：未知技能 %q", id, c.Skill))
 			}
 		}
 		for _, outs := range d.Outcomes {

@@ -51,6 +51,23 @@ type Manifest struct {
 	Dependencies []Dependency        `yaml:"dependencies"`
 	Content      map[string][]string `yaml:"content"`
 	Start        Start               `yaml:"start"`
+	// 以下为故事包卡片信息（故事包选择界面）。
+	Author  string   `yaml:"author"`
+	Tagline string   `yaml:"tagline"`
+	Cover   string   `yaml:"cover"`  // 包内图片路径（png/jpg/webp），可选
+	Icon    string   `yaml:"icon"`   // 封面图标提示（Material Symbols 名称），可选
+	Accent  string   `yaml:"accent"` // 封面主色，例如 "#8D5A2B"
+	Tags    []string `yaml:"tags"`
+	// SaveCompat 声明本版本能继续读取哪些版本的存档（版本约束，例如 ">=0.1.0"）；为空时只读取同版本存档。
+	SaveCompat string `yaml:"save_compat"`
+}
+
+// AuthorText 返回作者显示文本。
+func (m *Manifest) AuthorText() string {
+	if m.Author != "" {
+		return m.Author
+	}
+	return strings.Join(m.Authors, "、")
 }
 
 // Start 描述世界包的新游戏起点。
@@ -59,7 +76,11 @@ type Start struct {
 	Day      int    `yaml:"day"`
 	Time     string `yaml:"time"`
 	Intro    string `yaml:"intro"`
+	// Variables 是故事变量的初始值（整数）。
+	Variables map[string]int `yaml:"variables"`
 }
+
+var packIDRe = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$`)
 
 var namespaceRe = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$`)
 
@@ -100,13 +121,36 @@ func Load(path string) (*Manifest, error) {
 func (m *Manifest) Validate() error {
 	switch {
 	case m.ID == "":
-		return fmt.Errorf("manifest: id is required")
+		return fmt.Errorf("manifest.yaml 缺少 id")
+	case !packIDRe.MatchString(m.ID):
+		return fmt.Errorf("故事包 id %q 不合法：只能使用小写字母、数字、下划线和点，并以字母开头", m.ID)
 	case !namespaceRe.MatchString(m.Namespace):
-		return fmt.Errorf("manifest %s: invalid namespace %q", m.ID, m.Namespace)
+		return fmt.Errorf("故事包 %s 的命名空间 %q 不合法：只能使用小写字母、数字、下划线和点", m.ID, m.Namespace)
 	case m.Version == "":
-		return fmt.Errorf("manifest %s: version is required", m.ID)
+		return fmt.Errorf("故事包 %s 缺少 version", m.ID)
 	case !validTypes[m.Type]:
-		return fmt.Errorf("manifest %s: unknown type %q", m.ID, m.Type)
+		return fmt.Errorf("故事包 %s 的类型 %q 未知", m.ID, m.Type)
+	}
+	if _, err := ParseVersion(m.Version); err != nil {
+		return fmt.Errorf("故事包 %s 的版本号 %q 不合法（应形如 1.2.0）", m.ID, m.Version)
+	}
+	for _, c := range []struct{ name, expr string }{{"engine", m.Engine}, {"save_compat", m.SaveCompat}} {
+		if c.expr == "" {
+			continue
+		}
+		if _, err := ParseConstraint(c.expr); err != nil {
+			return fmt.Errorf("故事包 %s 的 %s 约束 %q 不合法", m.ID, c.name, c.expr)
+		}
+	}
+	for _, d := range m.Dependencies {
+		if d.ID == "" {
+			return fmt.Errorf("故事包 %s 的依赖缺少 id", m.ID)
+		}
+		if d.Version != "" {
+			if _, err := ParseConstraint(d.Version); err != nil {
+				return fmt.Errorf("故事包 %s 对 %s 的版本约束 %q 不合法", m.ID, d.ID, d.Version)
+			}
+		}
 	}
 	return nil
 }

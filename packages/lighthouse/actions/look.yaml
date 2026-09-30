@@ -1,0 +1,13 @@
+id: fog:action/look
+category: observe
+name: 环顾四周
+description: 观察所在场景：环境、在场的人、可去的地方。
+target: optional_character
+keywords: [环顾, 四周, 周围, 看看, 看一看, 看一下, 观察, 打量, 瞧瞧, 四处看, 看看周围, 这是哪]
+quiet: true
+requirements: []
+checks: []
+cost:
+  time: 1m
+outcomes:
+  success: []

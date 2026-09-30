@@ -1,7 +1,7 @@
 # ibukiRPG — 开发命令
 GO        ?= go
 PKG       := github.com/GUYU2233/ibukiRPG
-VERSION   ?= 0.1.1rc1
+VERSION   ?= 0.1.2rc1
 COMMIT    ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 LDFLAGS   := -s -w -X $(PKG)/internal/buildinfo.Version=$(VERSION) -X $(PKG)/internal/buildinfo.Commit=$(COMMIT)
 BIN       := build/bin
@@ -16,7 +16,7 @@ export PATH := $(subst /,\,$(dir $(SHELL)));$(PATH)
 endif
 endif
 
-.PHONY: all build test lint fmt vet run-cli run-server eval eval-synthesize mobile-smoke android-aar apk apk-debug tidy clean
+.PHONY: all build test lint fmt vet run-cli run-server eval eval-synthesize mobile-smoke android-aar apk apk-debug tidy clean pack-zip
 
 all: fmt vet lint test build
 
@@ -47,6 +47,10 @@ run-server:
 
 eval: ## LLM Eval：离线解析 + 录音回放 + 叙事守卫（不访问网络）
 	$(GO) run ./cmd/eval -v
+
+PACK ?= lighthouse
+pack-zip: ## 校验并打包故事包为可导入的 .zip：make pack-zip PACK=lighthouse（输出到 build/packs/）
+	$(GO) run ./cmd/packzip packages/$(PACK)
 
 eval-synthesize: ## 根据用例 llm_output 重新生成合成录音（Prompt 改动后）
 	$(GO) run ./cmd/eval -synthesize

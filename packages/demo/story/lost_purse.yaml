@@ -17,6 +17,13 @@ intro_effects:
       target: scene
       values:
         fact: 奥托正大声指责米拉偷了他的钱袋
+  # 故事变量：米拉的嫌疑（0-100），显示在 HUD 上
+  - effect:
+      type: var_set
+      target: world
+      values:
+        var: mira_suspicion
+        value: 70
 hints:
   - label: 调查一下周围
     text: 仔细调查一下奥托座位附近
@@ -27,6 +34,7 @@ hints:
 timeout_minutes: 45
 steps:
   - id: cat_hair
+    title: 发现了灰色猫毛
     once: true
     when: 'action.id == "demo:action/investigate" && action.success && world.player_location == "demo:location/rusty_tankard"'
     effects:
@@ -40,8 +48,21 @@ steps:
           target: world
           values:
             flag: purse_clue_cat
+      - effect:
+          type: var_add
+          target: world
+          values:
+            var: mira_suspicion
+            value: -30
+      - effect:
+          type: var_add
+          target: world
+          values:
+            var: clues
+            value: 1
     narration: 你蹲下身，在奥托的椅子下面发现了几根灰色的猫毛，还有一小片被拖动过的灰尘痕迹——一路延伸到储藏室的门缝底下。
   - id: borin_allows
+    title: 伯林同意你去储藏室看看
     once: true
     when: 'action.id == "demo:action/persuade" && action.target == "demo:character/borin" && action.success'
     effects:
@@ -87,6 +108,18 @@ outcomes:
           values:
             fact: 奥托的钱袋找回来了，酒馆里又热闹起来
             persist: true
+      - effect:
+          type: var_set
+          target: world
+          values:
+            var: mira_suspicion
+            value: 0
+      - effect:
+          type: var_add
+          target: world
+          values:
+            var: clues
+            value: 1
     narration: |
       你在酒桶后的猫窝里摸到一个沉甸甸的皮钱袋——袋口还沾着鱼腥味，旁边的灰猫正心虚地舔着爪子。
       你拿着钱袋回到大堂。奥托数了数银币，一个不少，尴尬地挠了挠头，塞给你五枚铜币当作谢礼，又别别扭扭地向米拉道了歉。
@@ -110,6 +143,12 @@ outcomes:
           target: scene
           values:
             fact: 奥托闷闷不乐地坐回了柜台边
+      - effect:
+          type: var_add
+          target: world
+          values:
+            var: mira_suspicion
+            value: -20
     narration: |
       奥托喘着粗气，终于坐了回去：“好，好……我今晚不追究。明天一早我再好好找找。”
       米拉松了一口气，冲你感激地点了点头。钱袋到底去了哪里，暂时没人知道。
@@ -133,6 +172,12 @@ outcomes:
           values:
             fact: 米拉的座位空了，只留下半杯没喝完的热茶
             persist: true
+      - effect:
+          type: var_set
+          target: world
+          values:
+            var: mira_suspicion
+            value: 100
     narration: |
       争吵越来越凶。伯林终于拍了桌子：“米拉，今晚你先出去避一避。”
       米拉咬着嘴唇，一言不发地抱起琴，推门走进了雨里。奥托哼了一声，钱袋依旧不见踪影。

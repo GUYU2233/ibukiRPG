@@ -78,8 +78,18 @@ func (w *work) execFreeform() error {
 		}
 	}
 	notable := hasCheck || mechanical
-	if err := w.observe(summary, notable, event.FreeformPerformed, "player:freeform:"+ff.Description, target); err != nil {
+	if err := w.observe(summary, notable, event.FreeformPerformed, "player:freeform:"+ff.Description, target, "freeform"); err != nil {
 		return err
+	}
+	// 对某人做的事，那个人会记住（对象的情节记忆）。
+	if target != "" {
+		imp := 1
+		if notable {
+			imp = 2
+		}
+		if err := w.remember(target, "player:freeform:"+ff.Description, summary, "experienced", imp); err != nil {
+			return err
+		}
 	}
 	// 防御性断言：Freeform 只能产生白名单事件。
 	for _, e := range w.events[start:] {

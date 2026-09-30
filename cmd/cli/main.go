@@ -31,6 +31,7 @@ type options struct {
 	newGame  bool
 	player   string
 	seed     uint64
+	pack     string
 }
 
 func defaultDataDir() string {
@@ -50,6 +51,7 @@ func main() {
 	flag.BoolVar(&o.newGame, "new", false, "直接开始新游戏")
 	flag.StringVar(&o.player, "name", "", "新游戏的角色名")
 	flag.Uint64Var(&o.seed, "seed", 0, "新游戏的世界种子（0 为随机，用于复现）")
+	flag.StringVar(&o.pack, "pack", "", "新游戏使用的故事包 id（留空为默认故事包；/packs 查看）")
 	flag.Parse()
 	if *showVersion {
 		fmt.Println(buildinfo.String())
@@ -85,6 +87,7 @@ type client struct {
 	sugg  []dto.SuggestionV1
 	opts  []dto.OptionV1
 	saves []dto.SlotV1
+	packs []dto.PackV1
 	// streamed 表示本回合叙事已经流式打印过。
 	streamed bool
 }
@@ -150,7 +153,9 @@ const help = `命令：
   /me            角色面板              /inv     背包与商店
   /npc           人物关系与 NPC 知道的事  /log  日志（事件时间线）
   /saves         存档列表              /load N  读取第 N 个存档
-  /new [名字]    新游戏                /copy    复制当前存档   /del N  删除第 N 个存档
+  /new [名字] [包序号]  新游戏（可选故事包）   /copy  复制当前存档   /del N  删除第 N 个存档
+  /packs         故事包列表            /import <zip路径>  导入故事包   /delpack N  删除导入的故事包
+  /hud           状态栏（故事包定义的实时信息）
   /ai offline|deepseek|qwen|custom [base_url] [model]   切换 AI（密钥用 /key 或环境变量 IBUKI_AI_KEY）
   /key <API Key> 设置密钥（仅内存）    /test    测试 AI 连接
   /help          帮助                  /quit    退出（进度已自动保存）`
@@ -159,7 +164,7 @@ func run(in io.Reader, out io.Writer, o options) error {
 	c := &client{out: out}
 	adapter.SetSink(c.onEvent)
 	defer adapter.SetSink(nil)
-	fmt.Fprintf(out, "%s — 文字冒险《边境酒馆》\n", buildinfo.String())
+	fmt.Fprintf(out, "%s — 中文文字冒险\n", buildinfo.String())
 	var initRes map[string]any
 	if err := c.call("init", "", map[string]string{"data_dir": o.dataDir}, &initRes); err != nil {
 		return err
@@ -171,7 +176,7 @@ func run(in io.Reader, out io.Writer, o options) error {
 	c.listSaves()
 	switch {
 	case o.newGame || len(c.saves) == 0:
-		c.newGame(o.player, o.seed)
+		c.newGame(o.player, o.seed, o.pack)
 	default:
 		// 默认继续最近的存档（与 App 的“继续游戏”一致）。
 		c.load("1")
@@ -254,7 +259,27 @@ func (c *client) handle(line string) bool {
 	case "/load":
 		c.load(arg)
 	case "/new":
-		c.newGame(arg, 0)
+		name, pack := arg, ""
+		if len(f) > 2 {
+			if n, err := strconv.Atoi(f[len(f)-1]); err == nil {
+				if len(c.packs) == 0 {
+					c.listPacks()
+				}
+				if n >= 1 && n <= len(c.packs) {
+					pack = c.packs[n-1].ID
+					name = strings.Join(f[1:len(f)-1], " ")
+				}
+			}
+		}
+		c.newGame(name, 0, pack)
+	case "/packs":
+		c.listPacks()
+	case "/import":
+		c.importPack(arg)
+	case "/delpack":
+		c.deletePack(arg)
+	case "/hud":
+		c.showHud()
 	case "/copy":
 		var sc dto.SceneV1
 		if err := c.call("get_scene", "", nil, &sc); err != nil {
@@ -372,7 +397,7 @@ func (c *client) showTurn(v dto.TurnV1) {
 		c.printf("  （该命令已执行过，未重复执行）\n")
 	}
 	c.sugg = v.Suggestions
-	c.printf("\n— %s · %s · 铜币 %d · 第 %d 回合\n", v.Scene.LocationName, v.Scene.TimeText, v.Scene.Gold, v.Scene.Turn)
+	c.printf("\n%s\n", hudLine(v.Scene))
 	if len(c.opts) == 0 {
 		c.showSuggestions()
 	}
@@ -422,7 +447,7 @@ func (c *client) showBundle(b struct {
 		}
 	}
 	c.sugg = b.Suggestions
-	c.printf("\n— %s · %s · 铜币 %d · 第 %d 回合\n", b.Scene.LocationName, b.Scene.TimeText, b.Scene.Gold, b.Scene.Turn)
+	c.printf("\n%s\n", hudLine(b.Scene))
 	c.showSuggestions()
 }
 
@@ -432,13 +457,13 @@ type bundleT = struct {
 	Suggestions []dto.SuggestionV1 `json:"suggestions"`
 }
 
-func (c *client) newGame(name string, seed uint64) {
+func (c *client) newGame(name string, seed uint64, pack string) {
 	var b bundleT
-	if err := c.call("new_game", "", map[string]any{"player_name": name, "seed": seed}, &b); err != nil {
+	if err := c.call("new_game", "", map[string]any{"player_name": name, "seed": seed, "pack_id": pack}, &b); err != nil {
 		c.printf("新游戏失败：%v\n", err)
 		return
 	}
-	c.printf("\n=== 新的旅程：%s ===\n", b.Scene.SaveName)
+	c.printf("\n=== 新的旅程：%s ·《%s》 ===\n", b.Scene.SaveName, b.Scene.PackName)
 	c.showBundle(b)
 }
 
@@ -458,8 +483,15 @@ func (c *client) listSaves() {
 		if s.Current {
 			cur = " ← 当前"
 		}
-		c.printf("  %d) %s · %s · %s · 第 %d 回合 · %s%s\n", i+1, s.Name, s.Location, s.Time, s.Turn,
+		pack := s.PackName
+		if pack == "" {
+			pack = s.PackID
+		}
+		c.printf("  %d) %s ·《%s》v%s · %s · %s · 第 %d 回合 · %s%s\n", i+1, s.Name, pack, s.PackVersion, s.Location, s.Time, s.Turn,
 			time.UnixMilli(s.UpdatedAt).Format("01-02 15:04"), cur)
+		if s.PackProblem != "" {
+			c.printf("     ⚠ %s\n", s.PackProblem)
+		}
 	}
 }
 
@@ -583,6 +615,9 @@ func (c *client) showNPCs() {
 				c.printf("    %s 成功率约 %d%%\n", a.Label, a.Chance)
 			}
 		}
+		for _, m := range n.Memories {
+			c.printf("    记得：%s\n", m)
+		}
 		for _, b := range n.Beliefs {
 			c.printf("    知道：%s（%s，%s）\n", b.Text, b.Source, b.When)
 		}
@@ -602,4 +637,98 @@ func (c *client) showJournal() {
 	for _, j := range js[start:] {
 		c.printf("[%s] %s\n", j.Time, j.Text)
 	}
+}
+
+func (c *client) listPacks() {
+	c.packs = nil
+	if err := c.call("list_packs", "", nil, &c.packs); err != nil {
+		c.printf("%v\n", err)
+		return
+	}
+	c.printf("故事包：\n")
+	for i, p := range c.packs {
+		kind := "导入"
+		if p.Builtin {
+			kind = "内置"
+		}
+		c.printf("  %d)《%s》v%s · %s · 作者 %s · %s · %d 个存档\n", i+1, p.Name, p.Version, p.ID, p.Author, kind, p.SaveCount)
+		if p.Tagline != "" {
+			c.printf("     %s\n", p.Tagline)
+		}
+		if p.Error != "" {
+			c.printf("     ⚠ 不可用：%s\n", p.Error)
+		}
+	}
+	c.printf("（/new 名字 N 用第 N 个故事包开始新游戏）\n")
+}
+
+func (c *client) importPack(path string) {
+	if path == "" {
+		c.printf("用法：/import <故事包 .zip 路径>\n")
+		return
+	}
+	var r struct {
+		Pack     dto.PackV1 `json:"pack"`
+		Replaced bool       `json:"replaced"`
+		Previous string     `json:"previous_version"`
+	}
+	if err := c.call("import_pack", "", map[string]string{"path": path}, &r); err != nil {
+		c.printf("导入失败：%v\n", err)
+		return
+	}
+	if r.Replaced {
+		c.printf("已更新故事包《%s》：v%s → v%s\n", r.Pack.Name, r.Previous, r.Pack.Version)
+	} else {
+		c.printf("已导入故事包《%s》v%s\n", r.Pack.Name, r.Pack.Version)
+	}
+	c.listPacks()
+}
+
+func (c *client) deletePack(arg string) {
+	if len(c.packs) == 0 {
+		c.listPacks()
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(arg))
+	if err != nil || n < 1 || n > len(c.packs) {
+		c.printf("请指定故事包序号（/packs 查看）。\n")
+		return
+	}
+	if err := c.call("delete_pack", "", map[string]string{"id": c.packs[n-1].ID}, nil); err != nil {
+		c.printf("删除失败：%v\n", err)
+		return
+	}
+	c.printf("已删除故事包。\n")
+	c.listPacks()
+}
+
+func (c *client) showHud() {
+	var hud []dto.HudFieldV1
+	if err := c.call("get_hud", "", nil, &hud); err != nil {
+		c.printf("%v\n", err)
+		return
+	}
+	for _, h := range hud {
+		c.printf("  %s：%s\n", h.Label, h.Value)
+	}
+}
+
+// hudLine 把故事包定义的状态栏（HUD）压成一行：宽字段（如当前目标）单独一行在前。
+func hudLine(sc dto.SceneV1) string {
+	var wide, parts []string
+	for _, h := range sc.Hud {
+		switch {
+		case h.Wide:
+			wide = append(wide, "▶ "+h.Label+"："+h.Value)
+		case h.Compact:
+			parts = append(parts, h.Label+" "+h.Value)
+		}
+	}
+	if len(parts) == 0 {
+		parts = []string{sc.LocationName, sc.TimeText, fmt.Sprintf("铜币 %d", sc.Gold)}
+	}
+	line := "— " + strings.Join(parts, " · ") + fmt.Sprintf(" · 第 %d 回合", sc.Turn)
+	if len(wide) > 0 {
+		line = strings.Join(wide, "\n") + "\n" + line
+	}
+	return line
 }

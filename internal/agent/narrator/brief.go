@@ -37,24 +37,76 @@ type Brief struct {
 	Base       string          `json:"base"` // 模板事实稿，也是降级时的最终叙事
 	Guard      guard.Context   `json:"-"`
 	Checks     []checks.Result `json:"-"`
+	// Memories 是本回合涉及的 NPC 的记忆（NPCScope：只含该 NPC 自己经历、听到、看到的事，不含秘密）。
+	Memories []NPCMemory `json:"npc_memory,omitempty"`
+}
+
+// NPCMemory 是 AI 上下文中某个 NPC 的记忆摘要。
+type NPCMemory struct {
+	Name      string   `json:"name"`
+	Attitude  string   `json:"attitude"`
+	Talks     int      `json:"talks"`
+	SinceLast string   `json:"since_last,omitempty"` // 距上次交谈，例如“12 分钟前”
+	Exchanges []string `json:"exchanges,omitempty"`  // 最近的交谈摘要（旧 → 新）
+	Topics    []string `json:"topics,omitempty"`
+	Episodes  []string `json:"episodes,omitempty"` // 关键情节记忆（重要的在前）
+	Seen      []string `json:"seen,omitempty"`     // 自上次交谈后看到的玩家行为
+	Intent    string   `json:"intent,omitempty"`   // 本回合台词要表达的意思（引擎挑选的台词摘要）
+	Line      string   `json:"line,omitempty"`     // 模板台词原文（供 AI 改写）
+	Repeat    bool     `json:"repeat,omitempty"`
+}
+
+// MaxMemoryItems 限制每类记忆写入 AI 上下文的条数（本地小模型上下文有限）。
+const MaxMemoryItems = 4
+
+// BuildMemory 为 NPC 构造记忆摘要（使用本回合开始前的状态：NPC 在开口前记得什么）。
+func BuildMemory(p *loader.Package, before *state.State, id string, dlg *event.Data) NPCMemory {
+	c := p.Characters[id]
+	n := before.NPCs[id]
+	m := NPCMemory{Name: c.Name(), Attitude: n.Attitude(), Talks: n.Talks}
+	if n.Talks > 0 {
+		m.SinceLast = fmt.Sprintf("%d 分钟前", before.Minute-n.LastTalkMinute)
+	}
+	ex := n.Exchanges
+	if len(ex) > MaxMemoryItems {
+		ex = ex[len(ex)-MaxMemoryItems:]
+	}
+	for _, e := range ex {
+		m.Exchanges = append(m.Exchanges, fmt.Sprintf("%s（%s）", e.Text, worldtime.Clock(e.Minute)))
+	}
+	var topics []string
+	for t := range n.Topics {
+		topics = append(topics, c.Dialogue.TopicName(t))
+	}
+	slices.Sort(topics)
+	m.Topics = topics
+	eps := slices.Clone(n.Episodes)
+	slices.SortStableFunc(eps, func(a, b state.Episode) int {
+		if a.Importance != b.Importance {
+			return b.Importance - a.Importance
+		}
+		return b.Turn - a.Turn
+	})
+	for i, e := range eps {
+		if i >= MaxMemoryItems {
+			break
+		}
+		m.Episodes = append(m.Episodes, e.Text)
+	}
+	if what, ok := recentDeed(p, before, id); ok {
+		m.Seen = append(m.Seen, "你"+what)
+	}
+	if dlg != nil && dlg.Target == id {
+		m.Intent, m.Repeat = dlg.Text, dlg.Repeat
+		if l := c.Dialogue.Line(dlg.Step); l != nil {
+			m.Line = engine.FillLine(l.Text, c, before.Player.Name)
+		}
+	}
+	return m
 }
 
 // Attitude 把关系数值翻译成文字。
-func Attitude(n *state.NPC) string {
-	switch {
-	case n.Fear >= 10 && n.Fear > n.Trust:
-		return "畏惧"
-	case n.Trust >= 15:
-		return "友好"
-	case n.Trust >= 5:
-		return "亲近"
-	case n.Trust <= -5:
-		return "敌视"
-	case n.Trust < 0:
-		return "戒备"
-	}
-	return "中立"
-}
+func Attitude(n *state.NPC) string { return n.Attitude() }
 
 func pick(seed string, salt string, options []string) string {
 	if len(options) == 0 {
@@ -126,6 +178,30 @@ func Build(p *loader.Package, before, after *state.State, cmd command.Command, r
 	}
 	b.Facts = f
 	b.Base = compose(p, before, after, cmd, res, b)
+	// NPC 记忆：本回合交谈 / 被针对的 NPC（只在其在场时）。
+	var dlg *event.Data
+	var involved []string
+	for i := range res.Events {
+		e := res.Events[i]
+		switch e.Type {
+		case event.DialogueOccurred:
+			d := e.Data
+			dlg = &d
+			involved = append(involved, d.Target)
+		case event.ActionPerformed, event.FreeformPerformed:
+			if _, ok := p.Characters[e.Data.Target]; ok {
+				involved = append(involved, e.Data.Target)
+			}
+		}
+	}
+	for _, id := range involved {
+		if slices.ContainsFunc(b.Memories, func(m NPCMemory) bool { return m.Name == p.Characters[id].Name() }) {
+			continue
+		}
+		if before.NPCs[id] != nil {
+			b.Memories = append(b.Memories, BuildMemory(p, before, id, dlg))
+		}
+	}
 	// Guard 上下文
 	gc := guard.Context{Base: b.Base}
 	for n := range allowed {
@@ -178,7 +254,7 @@ var freeformLines = map[string]map[string][]string{
 		"failure": {"你%s，但什么特别的也没注意到。", "你%s，可周围太嘈杂，你什么也没听清。"},
 	},
 	"help": {
-		"success": {"你%s。伯林看了你一眼，点点头：“手脚挺麻利。”", "你%s，忙完时出了一身薄汗，心里倒挺踏实。"},
+		"success": {"你%s。旁边有人看了你一眼，点点头：“手脚挺麻利。”", "你%s，忙完时出了一身薄汗，心里倒挺踏实。"},
 		"failure": {"你%s，结果笨手笨脚地碰倒了一摞杯子。", "你%s，却越帮越忙，只好讪讪地退到一边。"},
 	},
 	"misc": {
@@ -190,13 +266,16 @@ func compose(p *loader.Package, before, after *state.State, cmd command.Command,
 	var parts []string
 	seed := cmd.ID
 	loc := p.Locations[after.Player.Location]
-	var act *event.Data
+	var act, dlg *event.Data
 	for i := range res.Events {
 		e := res.Events[i]
 		switch e.Type {
 		case event.ActionPerformed, event.FreeformPerformed:
 			d := e.Data
 			act = &d
+		case event.DialogueOccurred:
+			d := e.Data
+			dlg = &d
 		}
 	}
 	moved := before.Player.Location != after.Player.Location
@@ -204,7 +283,7 @@ func compose(p *loader.Package, before, after *state.State, cmd command.Command,
 	case cmd.Kind == command.KindMove:
 		parts = append(parts, arrival(p, after, loc))
 	case act != nil && act.Action != "":
-		parts = append(parts, actionText(p, before, after, seed, *act, p.Locations[before.Player.Location]))
+		parts = append(parts, actionText(p, before, after, seed, *act, dlg, p.Locations[before.Player.Location]))
 	case act != nil:
 		parts = append(parts, freeformText(p, after, seed, *act, cmd, loc))
 	}
@@ -295,13 +374,17 @@ func exitsLine(p *loader.Package, loc *loader.Location) string {
 	return "从这里可以去：" + strings.Join(ex, "、") + "。"
 }
 
-func actionText(p *loader.Package, before, after *state.State, seed string, d event.Data, loc *loader.Location) string {
+func actionText(p *loader.Package, before, after *state.State, seed string, d event.Data, dlg *event.Data, loc *loader.Location) string {
 	def := p.Actions[d.Action]
 	target := p.EntityName(d.Target)
 	fill := func(s string) string {
 		return strings.NewReplacer("{target}", target, "{item}", p.EntityName(d.Item), "{actor}", "你").Replace(s)
 	}
-	switch strings.TrimPrefix(d.Action, "demo:action/") {
+	key := loader.Key(d.Action)
+	if def != nil && def.Dialogue {
+		key = "talk"
+	}
+	switch key {
 	case "look":
 		if d.Target != "" {
 			c := p.Characters[d.Target]
@@ -314,7 +397,7 @@ func actionText(p *loader.Package, before, after *state.State, seed string, d ev
 		}
 		return text + presentLine(p, after, loc.ID) + exitsLine(p, loc)
 	case "talk":
-		return talkLine(p, after, seed, d.Target)
+		return talkLine(p, before, after, seed, d.Target, dlg)
 	case "use_item":
 		if it, ok := p.Items[d.Item]; ok && it.Use != nil && it.Use.Text != "" {
 			return it.Use.Text
@@ -348,48 +431,90 @@ func attitudeWord(n *state.NPC) string {
 	return "还算客气"
 }
 
-// talkLine 选择 NPC 台词：进行中的事件 > 事件结局后 > 目击到的事 > 态度。
-func talkLine(p *loader.Package, s *state.State, seed, id string) string {
+// talkLine 渲染本回合的交谈：台词由引擎按对话记忆挑选（DialogueOccurred），这里只负责把它讲出来。
+// 同一句话再次被挑中（repeat）时，NPC 会提起“刚才说过”；自上次交谈后目击到的玩家行为会被顺带提起。
+func talkLine(p *loader.Package, before, after *state.State, seed, id string, dlg *event.Data) string {
 	c := p.Characters[id]
+	nb := before.NPCs[id]
+	if dlg == nil || dlg.Step == "" {
+		return fmt.Sprintf("%s和你随便聊了几句。", c.Name())
+	}
+	line := c.Dialogue.Line(dlg.Step)
+	if line == nil {
+		return fmt.Sprintf("%s和你随便聊了几句。", c.Name())
+	}
+	lastSaid, lastTopic := "", "刚才的事"
+	if ex := nb.LastExchange(); ex != nil {
+		lastSaid = ex.Text
+		if ex.Topic != "" {
+			lastTopic = c.Dialogue.TopicName(ex.Topic)
+		}
+	}
+	what, hasWhat := recentDeed(p, before, id)
+	fill := func(t string) string {
+		return strings.NewReplacer(
+			"{player}", after.Player.Name, "{name}", c.Name(), "{last_said}", lastSaid, "{last_topic}", lastTopic,
+			"{said}", dlg.Text, "{what}", what, "{talks}", fmt.Sprint(nb.Talks), "{topic}", topicOf(c, line),
+		).Replace(t)
+	}
+	var text string
+	if dlg.Repeat {
+		tpls := c.Dialogue.Repeat
+		if len(tpls) == 0 {
+			tpls = defaultRepeat
+		}
+		text = fill(pick(seed, id+"|repeat", tpls))
+	} else {
+		text = fill(line.Text)
+	}
+	// 台词本身已经在回应“看到了什么”（引用 {what} 或以 npc.seen 为条件）时，不再追加。
+	if hasWhat && !strings.Contains(line.Text, "{what}") && !strings.Contains(line.When, "npc.seen") {
+		tpls := c.Dialogue.Callback
+		if len(tpls) == 0 {
+			tpls = defaultCallback
+		}
+		text += "\n\n" + fill(pick(seed, id+"|callback", tpls))
+	}
+	return text
+}
+
+func topicOf(c *loader.Character, l *loader.DialogueLine) string {
+	if l.Topic == "" {
+		return "这件事"
+	}
+	return c.Dialogue.TopicName(l.Topic)
+}
+
+var defaultRepeat = []string{
+	"{name}摆摆手：“{player}，{topic}的事我刚才就跟你说过了，别的我也不知道更多了。”",
+	"{name}看了你一眼：“还想听一遍{topic}？刚才说的就是全部了。”",
+}
+
+var defaultCallback = []string{"{name}又补了一句：“刚才你{what}，我可都看见了。”"}
+
+// recentDeed 返回 NPC 自上次与玩家交谈以来亲眼看到的、玩家做的一件事（最近的一件）。
+// 第一次交谈时只提显眼的事。不含针对该 NPC 本人的行为与普通交谈、进出门。
+func recentDeed(p *loader.Package, s *state.State, id string) (string, bool) {
 	n := s.NPCs[id]
-	for _, sid := range p.StoryIDs {
-		st := s.Stories[sid]
-		if st.Status == state.StoryActive {
-			if lines := c.Dialogue.Story[sid]; len(lines) > 0 {
-				return pick(seed, id, lines)
-			}
+	talk := p.DialogueAction()
+	for i := len(n.Memories) - 1; i >= 0; i-- {
+		m := n.Memories[i]
+		if n.Talks > 0 && m.Turn <= n.LastTalkTurn {
+			break
 		}
-		if st.Status == state.StoryResolved {
-			if lines := c.Dialogue.AfterStory[sid+"/"+st.Outcome]; len(lines) > 0 {
-				return pick(seed, id, lines)
-			}
+		if m.Action == "" || m.Target == id || m.Action == talk || m.Action == p.ActionID("look") {
+			continue
 		}
+		if n.Talks == 0 && !m.Notable {
+			continue
+		}
+		what := m.Text
+		if j := strings.Index(what, "（"); j > 0 {
+			what = what[:j]
+		}
+		return strings.TrimPrefix(what, s.Player.Name), true
 	}
-	base := c.Dialogue.Greet
-	switch Attitude(n) {
-	case "友好", "亲近":
-		if len(c.Dialogue.Friendly) > 0 {
-			base = c.Dialogue.Friendly
-		}
-	case "敌视", "戒备", "畏惧":
-		if len(c.Dialogue.Wary) > 0 {
-			base = c.Dialogue.Wary
-		}
-	}
-	line := pick(seed, id, base)
-	// 目击过玩家的显眼行为：可以沿 Event → Observation → Belief 解释 NPC 为什么知道
-	for i := len(n.Beliefs) - 1; i >= 0; i-- {
-		bl := n.Beliefs[i]
-		if strings.HasPrefix(bl.Key, "player:") && !strings.HasSuffix(bl.Key, id) && s.Turn-bl.Turn <= 6 {
-			what := bl.Text
-			if j := strings.Index(what, "（"); j > 0 {
-				what = what[:j]
-			}
-			what = strings.TrimPrefix(what, s.Player.Name)
-			return fmt.Sprintf("%s\n\n%s又补了一句：“刚才你%s，我可都看见了。”", line, c.Name(), what)
-		}
-	}
-	return line
+	return "", false
 }
 
 func freeformText(p *loader.Package, s *state.State, seed string, d event.Data, cmd command.Command, loc *loader.Location) string {

@@ -37,5 +37,5 @@ narration:
     - 你把两枚铜币拍在柜台上。伯林利落地打满一杯麦酒推到你面前，泡沫顺着杯沿淌下来。
     - 伯林接过铜币，从酒桶里接了满满一杯麦酒：“慢用。”
 witness:
-  summary: "{actor}向伯林买了一杯麦酒"
+  summary: "{actor}点了一杯麦酒"
   notable: false

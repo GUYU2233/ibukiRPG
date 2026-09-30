@@ -59,7 +59,7 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		return dto.TurnV1{}, ErrBusy
 	}
 	defer s.turnMu.Unlock()
-	slot, st, err := s.current()
+	slot, st, g, err := s.current()
 	if err != nil {
 		return dto.TurnV1{}, err
 	}
@@ -71,7 +71,7 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		return dto.TurnV1{}, err
 	} else if ok {
 		if !rec.HasNarr {
-			if err := s.repairNarrations(ctx, slot); err != nil {
+			if err := s.repairNarrations(ctx, slot, g); err != nil {
 				return dto.TurnV1{}, err
 			}
 		}
@@ -88,11 +88,11 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		cmd = *quick
 	} else {
 		rctx, cancel := context.WithTimeout(ctx, s.opts.ResolverTimeout)
-		r, err := res.Resolve(rctx, resolver.Input{Text: input, Pkg: s.pkg, State: st})
+		r, err := res.Resolve(rctx, resolver.Input{Text: input, Pkg: g.pkg, State: st})
 		cancel()
 		if err != nil {
 			// 离线解析器不会失败；这里只是防御
-			r, _ = resolver.Offline{}.Resolve(ctx, resolver.Input{Text: input, Pkg: s.pkg, State: st})
+			r, _ = resolver.Offline{}.Resolve(ctx, resolver.Input{Text: input, Pkg: g.pkg, State: st})
 		}
 		resolverName = r.Source
 		c, ok := r.Command(input, "resolver:"+r.Source)
@@ -102,21 +102,21 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		cmd = c
 	}
 	cmd.ID = cmdID
-	result, after, err := s.eng.Execute(st, cmd)
+	result, after, err := g.eng.Execute(st, cmd)
 	if err != nil {
 		return dto.TurnV1{}, err
 	}
 	if !result.Accepted {
 		return s.commitRejection(ctx, slot, cmdID, input, st.Turn+1, result.Reason, nil, resolverName)
 	}
-	entries := s.q.TurnEntries(st, after, result, input)
+	entries := g.q.TurnEntries(st, after, result, input)
 	var ses []eventstore.Entry
 	for _, e := range entries {
 		ses = append(ses, fromEntry(e))
 	}
 	if err := s.store.CommitTurn(ctx, slot, eventstore.Commit{
 		CommandID: cmdID, Accepted: true, Command: cmd, Result: result, Events: result.Events, After: after,
-		Entries: ses, Summary: s.summary(after),
+		Entries: ses, Summary: g.summary(after),
 	}); err != nil {
 		if errors.Is(err, eventstore.ErrDuplicateCommand) {
 			v, verr := s.view(ctx, slot, cmdID, true)
@@ -132,7 +132,7 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 	s.mu.Unlock()
 
 	// 叙事：流式输出 → Guard → 必要时模板兜底
-	brief := narrator.Build(s.pkg, st, after, cmd, result)
+	brief := narrator.Build(g.pkg, st, after, cmd, result)
 	nctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.opts.NarratorTimeout)
 	out := nar.Narrate(nctx, brief, func(d string) {
 		s.emit(dto.StreamEventV1{Type: "narration_delta", CommandID: cmdID, Text: d})
@@ -184,10 +184,10 @@ func (s *Session) commitRejection(ctx context.Context, slot, cmdID, input string
 func (s *Session) currentSummary() eventstore.Summary {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	if s.st == nil {
+	if s.st == nil || s.g == nil {
 		return eventstore.Summary{}
 	}
-	return s.summary(s.st)
+	return s.g.summary(s.st)
 }
 
 func (s *Session) view(ctx context.Context, slot, cmdID string, accepted bool) (dto.TurnV1, error) {

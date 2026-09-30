@@ -66,6 +66,8 @@ const narratorSystem = `[CORE_RULES]
 - 不在 [PRESENT] 中的人物不能出场。不要透露任何人物的秘密或来历。
 - 人物台词可以润色，但态度与含义必须与事实稿一致。
 - 不要写骰子数字、不要列选项、不要跳出角色解释规则（系统会单独展示）。
+- 若有 [NPC_MEMORY]：人物记得之前和你聊过什么、看到过什么。台词要符合这些记忆与“本回合要表达的意思”，
+  可以自然地提起上次的话题或刚才看到的事；不要把说过的开场白原样再说一遍，也不要让人物知道记忆之外的事。
 [STYLE]
 简洁、有画面感的奇幻小说笔调，细节克制，结尾留一点让玩家想接着行动的余味。`
 
@@ -76,9 +78,46 @@ func BuildMessages(b Brief) []provider.Message {
 	for _, p := range b.Present {
 		present = append(present, fmt.Sprintf("%s（%s，对你%s）：%s", p.Name, p.Role, p.Attitude, p.Description))
 	}
-	user := fmt.Sprintf("[SCENE]\n地点：%s；时间：%s\n场景事实：%s\n[PRESENT]\n%s\n[IMMUTABLE_FACTS]\n%s\n[RESOLVED_EVENTS]（事实稿，请据此改写）\n%s\n[PLAYER_INPUT]\n%s",
-		b.Location, b.Time, strings.Join(b.SceneFacts, "；"), strings.Join(present, "\n"), facts, b.Base, b.Input)
+	user := fmt.Sprintf("[SCENE]\n地点：%s；时间：%s\n场景事实：%s\n[PRESENT]\n%s\n%s[IMMUTABLE_FACTS]\n%s\n[RESOLVED_EVENTS]（事实稿，请据此改写）\n%s\n[PLAYER_INPUT]\n%s",
+		b.Location, b.Time, strings.Join(b.SceneFacts, "；"), strings.Join(present, "\n"), MemorySection(b.Memories), facts, b.Base, b.Input)
 	return []provider.Message{{Role: "system", Content: narratorSystem}, {Role: "user", Content: user}}
+}
+
+// MemorySection 渲染 [NPC_MEMORY] 段落（没有记忆时为空串）。
+func MemorySection(ms []NPCMemory) string {
+	if len(ms) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString("[NPC_MEMORY]（只包含该人物自己知道的事）\n")
+	for _, m := range ms {
+		fmt.Fprintf(&sb, "%s（对你%s；", m.Name, m.Attitude)
+		if m.Talks == 0 {
+			sb.WriteString("第一次和你交谈）\n")
+		} else {
+			fmt.Fprintf(&sb, "已和你交谈 %d 次，上次在%s）\n", m.Talks, m.SinceLast)
+		}
+		if len(m.Exchanges) > 0 {
+			sb.WriteString("- 最近的交谈：" + strings.Join(m.Exchanges, "；") + "\n")
+		}
+		if len(m.Topics) > 0 {
+			sb.WriteString("- 谈过的话题：" + strings.Join(m.Topics, "、") + "\n")
+		}
+		if len(m.Episodes) > 0 {
+			sb.WriteString("- 记得的事：" + strings.Join(m.Episodes, "；") + "\n")
+		}
+		if len(m.Seen) > 0 {
+			sb.WriteString("- 上次交谈后看到：" + strings.Join(m.Seen, "；") + "\n")
+		}
+		if m.Intent != "" {
+			note := "新话题"
+			if m.Repeat {
+				note = "之前说过，这次应表现出“说过了”"
+			}
+			fmt.Fprintf(&sb, "- 本回合要表达的意思：%s（%s）\n", m.Intent, note)
+		}
+	}
+	return sb.String()
 }
 
 // Narrate 实现 Narrator。

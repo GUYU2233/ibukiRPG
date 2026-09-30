@@ -9,7 +9,8 @@ import (
 
 // Evaluator 编译并缓存 CEL 表达式，用于 Action requirements、Story 条件等。
 //
-// 可用变量（均为 map<string, dyn>）：actor、target、scene、world、npcs、item、action、story。
+// 可用变量（均为 map<string, dyn>）：actor、target、scene、world、npcs、item、action、story、
+// stories（按故事短名索引的全部故事状态）、npc（台词条件中的说话者及其记忆）。
 // 表达式只做判定与简单数值计算，不演化为通用脚本。
 type Evaluator struct {
 	env   *cel.Env
@@ -31,6 +32,8 @@ func New() (*Evaluator, error) {
 		cel.Variable("item", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("action", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("story", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("stories", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("npc", cel.MapType(cel.StringType, cel.DynType)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create cel env: %w", err)
@@ -67,14 +70,16 @@ func (e *Evaluator) Eval(expr string, vars Vars) (any, error) {
 		return nil, err
 	}
 	in := map[string]any{
-		"actor":  map[string]any{},
-		"target": map[string]any{},
-		"scene":  map[string]any{},
-		"world":  map[string]any{},
-		"npcs":   map[string]any{},
-		"item":   map[string]any{},
-		"action": map[string]any{},
-		"story":  map[string]any{},
+		"actor":   map[string]any{},
+		"target":  map[string]any{},
+		"scene":   map[string]any{},
+		"world":   map[string]any{},
+		"npcs":    map[string]any{},
+		"item":    map[string]any{},
+		"action":  map[string]any{},
+		"story":   map[string]any{},
+		"stories": map[string]any{},
+		"npc":     map[string]any{},
 	}
 	for k, v := range vars {
 		in[k] = v

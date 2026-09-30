@@ -68,6 +68,20 @@ func TestGameAPI(t *testing.T) {
 	if r["ok"] != true {
 		t.Fatalf("quick: %v", r)
 	}
+	r = call(t, `{"version":"v1","type":"list_packs"}`)
+	if packs, _ := r["data"].([]any); r["ok"] != true || len(packs) < 2 || packs[0].(map[string]any)["id"] != "demo" {
+		t.Fatalf("list_packs: %v", r)
+	}
+	if r = call(t, `{"version":"v1","type":"import_pack","payload":{"path":"/nonexistent/pack.zip"}}`); r["ok"] != false || r["error"] == "" {
+		t.Fatalf("import of a missing file should fail: %v", r)
+	}
+	if r = call(t, `{"version":"v1","type":"delete_pack","payload":{"id":"demo"}}`); r["ok"] != false {
+		t.Fatalf("deleting a builtin pack should fail: %v", r)
+	}
+	r = call(t, `{"version":"v1","type":"get_hud"}`)
+	if hud, _ := r["data"].([]any); r["ok"] != true || len(hud) < 4 {
+		t.Fatalf("get_hud: %v", r)
+	}
 	for _, typ := range []string{"get_scene", "get_suggestions", "get_character", "get_inventory", "get_npcs", "get_journal", "get_transcript", "ai_status", "presets", "list_saves", "version"} {
 		if r := call(t, `{"version":"v1","type":"`+typ+`"}`); r["ok"] != true {
 			t.Errorf("%s: %v", typ, r)

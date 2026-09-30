@@ -1,0 +1,9 @@
+profile: slow_burn
+quiet_turns_for_nudge: 3
+ambient:
+  - location: fog:location/dock
+    text: 雾号低沉地响了一声，海鸥被惊起，扑棱棱地消失在雾里。
+    fact: 刚才雾号响过一声
+  - location: fog:location/lighthouse
+    text: 头顶的灯室里传来齿轮“咔哒”的转动声，光又暗了一分。
+    fact: 灯塔的光越来越暗

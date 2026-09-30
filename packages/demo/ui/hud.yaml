@@ -1,0 +1,70 @@
+# 故事包 HUD：聊天界面顶部的实时状态区（见 docs/story-pack-format.md「HUD」）。
+# 每项二选一：bind（内置绑定）或 value（CEL 表达式）。visible 为 CEL；compact: false 只在展开时显示；
+# wide: true 在紧凑模式下占一整行（适合“当前目标”这类长文本）。
+hud:
+  - id: objective
+    label: 主线
+    icon: flag
+    bind: objective
+    wide: true
+    order: 0
+  - id: location
+    label: 位置
+    icon: place
+    bind: location
+    order: 10
+  - id: time
+    label: 时间
+    icon: schedule
+    bind: time
+    order: 20
+  - id: gold
+    label: 铜币
+    icon: payments
+    bind: gold
+    order: 30
+  - id: suspicion
+    label: 米拉的嫌疑
+    icon: report
+    value: world.vars.mira_suspicion
+    format: "{value}%"
+    max: 100
+    visible: 'stories.lost_purse.status != "inactive"'
+    tone: warning
+    tones:
+      danger: world.vars.mira_suspicion >= 70
+      success: world.vars.mira_suspicion == 0
+    order: 40
+  - id: clues
+    label: 线索
+    icon: search
+    value: world.vars.clues
+    format: "{value}/2"
+    visible: 'stories.lost_purse.status == "active"'
+    order: 45
+  - id: conditions
+    label: 状态
+    icon: mood
+    bind: conditions
+    visible: size(actor.conditions) > 0
+    compact: false
+    order: 60
+
+# 主线目标：从上到下取第一个 when 成立的（HUD bind: objective）
+objectives:
+  - when: 'stories.lost_purse.status == "inactive"'
+    text: 在酒馆里坐坐，和客人们聊聊
+  - when: 'stories.lost_purse.status == "active" && world.player_location == "demo:location/back_room"'
+    text: 在储藏室里仔细搜查，找到钱袋
+  - when: 'stories.lost_purse.status == "active" && !("purse_clue_cat" in world.flags)'
+    text: 查明钱袋的下落——调查奥托座位附近，或问问在场的人
+  - when: 'stories.lost_purse.status == "active" && !("backroom_allowed" in world.flags) && npcs["demo:character/borin"].trust < 15'
+    text: 猫毛一路通向储藏室——说服伯林让你进去看看
+  - when: 'stories.lost_purse.status == "active"'
+    text: 去储藏室搜查，找到钱袋
+  - when: 'stories.lost_purse.outcome == "truth"'
+    text: 真相大白。和大家聊聊，或者四处走走
+  - when: 'stories.lost_purse.outcome == "calmed"'
+    text: 风波暂时平息，钱袋仍下落不明
+  - when: 'stories.lost_purse.outcome == "mira_expelled"'
+    text: 米拉被赶走了——去广场找她谈谈

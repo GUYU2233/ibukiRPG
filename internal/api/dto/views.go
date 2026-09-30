@@ -97,6 +97,24 @@ type SceneV1 struct {
 	Facts        []string      `json:"facts"`
 	Conditions   []string      `json:"conditions"`
 	Story        *StoryBriefV1 `json:"story,omitempty"`
+	// Hud 是故事包声明的实时状态（每回合重新求值）。
+	Hud []HudFieldV1 `json:"hud"`
+	// PackID / PackName 是当前存档绑定的故事包。
+	PackID   string `json:"pack_id,omitempty"`
+	PackName string `json:"pack_name,omitempty"`
+}
+
+// HudFieldV1 是 HUD 的一项。
+type HudFieldV1 struct {
+	ID      string `json:"id"`
+	Label   string `json:"label"`
+	Icon    string `json:"icon,omitempty"`
+	Value   string `json:"value"`
+	Compact bool   `json:"compact"`
+	Wide    bool   `json:"wide,omitempty"`
+	Tone    string `json:"tone,omitempty"`
+	// Progress 为 0-1000 的千分比；-1 表示不是进度条。
+	Progress int `json:"progress"`
 }
 
 // TurnV1 是一次提交的返回。
@@ -178,6 +196,9 @@ type NPCV1 struct {
 	Attitude     string        `json:"attitude"`
 	Beliefs      []BeliefV1    `json:"beliefs"`
 	Actions      []NPCActionV1 `json:"actions"`
+	// Talks 是和玩家交谈过的次数；Memories 是 NPC 对玩家的记忆摘要（最近的交谈 + 重要经历，新的在前）。
+	Talks    int      `json:"talks"`
+	Memories []string `json:"memories"`
 }
 
 // JournalEntryV1 是日志条目（来自事件流）。
@@ -202,6 +223,32 @@ type SlotV1 struct {
 	UpdatedAt  int64  `json:"updated_at"`
 	CreatedAt  int64  `json:"created_at"`
 	Current    bool   `json:"current"`
+	// 存档绑定的故事包；PackProblem 非空表示故事包缺失或不兼容（此时无法读取）。
+	PackID      string `json:"pack_id"`
+	PackName    string `json:"pack_name"`
+	PackVersion string `json:"pack_version"`
+	PackProblem string `json:"pack_problem,omitempty"`
+}
+
+// PackV1 是故事包选择界面的一张卡片。
+type PackV1 struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Type        string   `json:"type"`
+	Author      string   `json:"author"`
+	Tagline     string   `json:"tagline,omitempty"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
+	Icon        string   `json:"icon,omitempty"`
+	Accent      string   `json:"accent,omitempty"`
+	Cover       string   `json:"cover,omitempty"` // base64 编码的封面图片
+	Engine      string   `json:"engine,omitempty"`
+	Builtin     bool     `json:"builtin"`
+	Playable    bool     `json:"playable"`
+	Error       string   `json:"error,omitempty"`
+	SaveCount   int      `json:"save_count"`
+	IsDefault   bool     `json:"is_default,omitempty"`
 }
 
 // AIStatusV1 是 AI 设置状态（永不返回密钥）。

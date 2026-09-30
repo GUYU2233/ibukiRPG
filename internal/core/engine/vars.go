@@ -21,9 +21,13 @@ func Vars(p *loader.Package, s *state.State, target, item string) expression.Var
 	for k, v := range s.Player.Skills {
 		skills[k] = int64(v)
 	}
+	inv := map[string]any{}
+	for k, v := range s.Player.Inventory {
+		inv[k] = int64(v)
+	}
 	actor := map[string]any{
 		"id": loader.PlayerID, "name": s.Player.Name, "gold": int64(s.Player.Gold),
-		"can_speak": true, "location": s.Player.Location, "conditions": conds, "skills": skills,
+		"can_speak": true, "location": s.Player.Location, "conditions": conds, "skills": skills, "inventory": inv,
 	}
 	tgt := map[string]any{"id": "", "key": "", "type": "none", "name": ""}
 	if c, ok := p.Characters[target]; ok {
@@ -72,16 +76,96 @@ func Vars(p *loader.Package, s *state.State, target, item string) expression.Var
 			flags[k] = true
 		}
 	}
+	vars := map[string]any{}
+	for k, v := range p.Variables {
+		vars[k] = int64(v)
+	}
+	for k, v := range s.Vars {
+		vars[k] = int64(v)
+	}
 	world := map[string]any{
 		"turn": int64(s.Turn + 1), "minute": s.Minute, "day": int64(worldtime.Day(s.Minute)),
-		"hour": int64(worldtime.Hour(s.Minute)), "flags": flags, "player_location": s.Player.Location,
+		"hour": int64(worldtime.Hour(s.Minute)), "flags": flags, "player_location": s.Player.Location, "vars": vars,
 	}
 	npcs := map[string]any{}
 	for _, id := range p.NPCIDs {
 		n := s.NPCs[id]
 		npcs[id] = map[string]any{"location": n.Location, "trust": int64(n.Trust), "fear": int64(n.Fear), "name": p.Characters[id].Name()}
 	}
-	return expression.Vars{"actor": actor, "target": tgt, "item": itm, "scene": scene, "world": world, "npcs": npcs}
+	return expression.Vars{"actor": actor, "target": tgt, "item": itm, "scene": scene, "world": world, "npcs": npcs, "stories": Stories(p, s)}
+}
+
+// Stories 按故事短名（demo:story/lost_purse → lost_purse）构造全部故事状态，供 CEL 使用。
+func Stories(p *loader.Package, s *state.State) map[string]any {
+	out := map[string]any{}
+	for _, id := range p.StoryIDs {
+		st := s.Stories[id]
+		if st == nil {
+			st = &state.Story{Status: state.StoryInactive}
+		}
+		steps := make([]any, 0, len(st.Steps))
+		for _, x := range st.Steps {
+			steps = append(steps, x)
+		}
+		elapsed := int64(0)
+		if st.Status == state.StoryActive {
+			elapsed = s.Minute - st.StartedMinute
+		}
+		out[loader.Key(id)] = map[string]any{
+			"id": id, "title": p.Stories[id].Title, "status": st.Status, "outcome": st.Outcome,
+			"steps": steps, "elapsed_minutes": elapsed,
+		}
+	}
+	return out
+}
+
+// NPCVars 构造台词条件中的 npc 变量：说话者的关系、对话记忆与情节记忆（NPCScope：只含该 NPC 自己知道的事）。
+func NPCVars(p *loader.Package, s *state.State, id string) map[string]any {
+	n := s.NPCs[id]
+	c := p.Characters[id]
+	if n == nil || c == nil {
+		return map[string]any{}
+	}
+	said := []any{}
+	for k := range n.Said {
+		said = append(said, k)
+	}
+	slices.SortFunc(said, func(a, b any) int { return strings.Compare(a.(string), b.(string)) })
+	topics := map[string]any{}
+	for k, v := range n.Topics {
+		topics[k] = int64(v)
+	}
+	memories := []any{}
+	for _, e := range n.Episodes {
+		memories = append(memories, e.Key)
+	}
+	seen, seenAll := []any{}, []any{}
+	for _, m := range n.Memories {
+		if m.Action == "" {
+			continue
+		}
+		k := loader.Key(m.Action)
+		seenAll = append(seenAll, k)
+		if n.Talks == 0 || m.Turn > n.LastTalkTurn {
+			seen = append(seen, k)
+		}
+	}
+	lastTopic, lastLine := "", ""
+	if ex := n.LastExchange(); ex != nil {
+		lastTopic, lastLine = ex.Topic, ex.Line
+	}
+	turnsSince, minutesSince := int64(-1), int64(-1)
+	if n.Talks > 0 {
+		turnsSince = int64(s.Turn + 1 - n.LastTalkTurn)
+		minutesSince = s.Minute - n.LastTalkMinute
+	}
+	return map[string]any{
+		"id": id, "key": loader.Key(id), "name": c.Name(), "trust": int64(n.Trust), "fear": int64(n.Fear),
+		"attitude": n.Attitude(), "present": n.Location == s.Player.Location, "location": n.Location,
+		"talks": int64(n.Talks), "turns_since_talk": turnsSince, "minutes_since_talk": minutesSince,
+		"last_topic": lastTopic, "last_line": lastLine, "said": said, "topics": topics,
+		"memories": memories, "seen": seen, "seen_all": seenAll,
+	}
 }
 
 func (w *work) vars(target, item string) expression.Vars { return Vars(w.pkg(), w.s, target, item) }

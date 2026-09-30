@@ -28,19 +28,148 @@ relationship_to_player:
 relationships:
   demo:character/lena:
     trust: 20
+# 台词池：引擎按 when（CEL）过滤、优先级从高到低、没说过的优先挑选一句，
+# 并把说过的台词 / 话题写入伯林的对话记忆（DialogueOccurred 事件）。见 docs/story-pack-format.md。
 dialogue:
-  greet:
-    - 伯林把一只擦得锃亮的杯子放下：“外乡人？要喝点什么？麦酒两个铜币，面包三个。”
-    - 伯林头也不抬：“雨天生意冷清，你坐吧。想吃想喝跟我说。”
-  friendly:
-    - 伯林咧嘴一笑：“你这人不错。有什么想打听的，尽管问我老伯林。”
-    - 伯林压低声音：“莉娜那丫头嘴硬心软，米拉那孩子来历不简单——当然，这些话你别往外说。”
-  wary:
-    - 伯林把抹布往肩上一甩，冷冷地盯着你：“在我店里，规矩点。”
-    - 伯林哼了一声，没有接话，只是把柜台下的木棍往外挪了挪。
-  story:
-    demo:story/lost_purse:
-      - 伯林揉着太阳穴：“我这店开了二十年，从没出过贼。那孩子天天在这弹琴，我不信是她。可奥托不依不饶……”
-      - 伯林瞥了一眼储藏室的门，嘀咕道：“最近店里老丢鱼干，我还以为是耗子。”
+  topics:
+    prices: 酒价和吃食
+    tavern: 酒馆的来历
+    fish: 丢鱼干的怪事
+    lena: 莉娜
+    mira: 米拉
+    purse: 钱袋失窃
+    aftermath: 失窃风波
+    rules: 店里的规矩
+    smalltalk: 家常
+  lines:
+    # —— 失窃事件进行中 ——
+    - id: purse_worry
+      topic: purse
+      priority: 60
+      once: true
+      when: 'stories.lost_purse.status == "active"'
+      text: 伯林揉着太阳穴：“我这店开了二十年，从没出过贼。那孩子天天在这弹琴，我不信是她。可奥托不依不饶……”
+      memory: 说自己不信米拉会偷东西
+    - id: purse_after_clue
+      topic: fish
+      priority: 58
+      once: true
+      when: 'stories.lost_purse.status == "active" && "purse_clue_cat" in world.flags'
+      text: 伯林听你说起猫毛，愣了一下：“灰猫？那只馋猫是常往储藏室钻……要不是我走不开，早去翻个底朝天了。”
+      memory: 听你说了猫毛的线索，承认灰猫常钻储藏室
+    - id: purse_fish_hint
+      topic: fish
+      priority: 55
+      once: true
+      when: 'stories.lost_purse.status == "active" && !("dialogue:fish_rumor" in npc.memories)'
+      text: 伯林瞥了一眼储藏室的门，嘀咕道：“说起来，最近店里老丢鱼干，我还以为是耗子……”
+      memory: 提到最近店里老丢鱼干
+      remember: 跟{player}说过储藏室丢鱼干的事
+    - id: purse_fish_again
+      topic: fish
+      priority: 55
+      once: true
+      when: 'stories.lost_purse.status == "active" && "dialogue:fish_rumor" in npc.memories'
+      text: 伯林突然停下擦杯子的手：“等等——我前面跟你说丢鱼干的事，你还记得吧？奥托的钱袋……会不会也是那个小贼干的？”
+      memory: 想起之前说过的丢鱼干，怀疑和钱袋有关
+    - id: purse_backroom_open
+      topic: purse
+      priority: 52
+      once: true
+      when: 'stories.lost_purse.status == "active" && "backroom_allowed" in world.flags'
+      text: 伯林冲储藏室努努嘴：“门给你开着呢。动作轻点，别碰我的酒桶。”
+      memory: 催你去储藏室看看
+    - id: purse_nudge_backroom
+      topic: purse
+      priority: 50
+      when: 'stories.lost_purse.status == "active" && !("backroom_allowed" in world.flags)'
+      text: 伯林压低声音：“{player}，你要真想帮那孩子，就好好跟我说说——储藏室的门，也不是不能开。”
+      memory: 暗示好好说服他就能进储藏室
+    # —— 结局之后 ——
+    - id: after_truth
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "truth"'
+      text: 伯林给你倒了一杯，推过来：“这杯我请。那只馋猫……我明天就去给储藏室换把锁。你帮了那孩子一个大忙。”
+      memory: 谢你找回钱袋，请你喝了一杯
+    - id: after_calmed
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "calmed"'
+      text: 伯林叹了口气：“总算没闹大。可钱袋没找着，这事就像根刺扎在我店里。”
+      memory: 说钱袋没找到，心里不踏实
+    - id: after_expelled
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "mira_expelled"'
+      text: 伯林闷头擦着杯子，半天才说：“让那孩子冒雨出去……是我做得不地道。她要是还在广场，你替我给她带块面包。”
+      memory: 后悔让米拉冒雨离开，托你照看她
+    # —— 态度 ——
+    - id: wary
+      topic: rules
+      priority: 40
+      when: 'npc.attitude in ["敌视", "戒备", "畏惧"]'
+      text: 伯林把抹布往肩上一甩，冷冷地盯着你：“在我店里，规矩点。”
+      memory: 警告你在店里规矩点
+    # —— 平常闲聊（按交谈次数逐步深入）——
+    - id: first_greet
+      topic: prices
+      priority: 30
+      once: true
+      when: 'npc.talks == 0 && stories.lost_purse.status != "active"'
+      text: 伯林把一只擦得锃亮的杯子放下：“外乡人？要喝点什么？麦酒两个铜币，面包三个。”
+      memory: 告诉你麦酒两个铜币、面包三个
+    - id: after_drink
+      topic: prices
+      priority: 28
+      once: true
+      when: 'npc.talks > 0 && "order_drink" in npc.seen_all'
+      text: 伯林瞅了眼你手里的杯子：“怎么样，我这麦酒还够劲吧？刚才那杯可是今晚新开的桶，边境上找不到第二家。”
+      memory: 问你刚才那杯麦酒合不合口味
+    - id: tavern_history
+      topic: tavern
+      priority: 20
+      once: true
+      when: 'npc.talks >= 1 && stories.lost_purse.status != "active"'
+      text: 伯林朝墙上那面褪色的旗子扬了扬下巴：“刚才光顾着报酒价了——我年轻时跟着佣兵团跑过几年，攒够了钱才盘下这间店。二十年了，一次贼都没进过。”
+      memory: 讲了自己当过佣兵、开店二十年的往事
+    - id: about_lena
+      topic: lena
+      priority: 18
+      once: true
+      when: 'npc.talks >= 2 && stories.lost_purse.status != "active"'
+      text: 伯林压低声音：“壁炉边那个莉娜，嘴硬心软。她以前是我老战友手下的兵——有麻烦找她，比找治安官靠谱。”
+      memory: 说莉娜嘴硬心软、靠得住
+    - id: fish_rumor
+      topic: fish
+      priority: 16
+      once: true
+      when: 'npc.talks >= 2 && stories.lost_purse.status == "inactive"'
+      text: 伯林抱怨道：“最近储藏室老丢鱼干，我还以为是耗子。可耗子哪叼得动整条鱼？”
+      memory: 抱怨储藏室老丢鱼干
+      remember: 跟{player}说过储藏室丢鱼干的事
+    - id: friendly_confide
+      topic: mira
+      priority: 15
+      once: true
+      when: 'npc.attitude in ["友好", "亲近"]'
+      text: 伯林咧嘴一笑：“你这人不错。莉娜那丫头嘴硬心软，米拉那孩子来历不简单——当然，这些话你别往外说。”
+      memory: 私下说米拉来历不简单
+    - id: small_busy
+      topic: smalltalk
+      priority: 1
+      when: 'stories.lost_purse.status != "active"'
+      text: 伯林头也不抬：“雨天生意冷清，你坐吧。想吃想喝跟我说。”
+      memory: 招呼你随便坐
+  # 能说的都说过了：提起说过的话题，而不是原样重复
+  repeat:
+    - 伯林摆摆手：“{player}，刚才不是跟你聊过{topic}了吗？我这儿还得招呼别的客人。”
+    - 伯林一边擦杯子一边说：“{topic}的事，我知道的刚才都说了。你要是想喝点什么，倒是可以再聊聊。”
+  # 自上次交谈后看到你做了什么
+  callback:
+    - 伯林又瞥了你一眼：“对了，刚才你{what}，我在柜台后面都看着呢。”
 secrets: []
 tags: [npc, merchant]

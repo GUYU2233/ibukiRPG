@@ -153,7 +153,7 @@ func LookupID(p *loader.Package, kind, v string) string {
 		ids, al = p.LocationIDs, locationAliases(p)
 	case "action":
 		for _, id := range p.ActionIDs {
-			if id == v || p.Actions[id].Name == v || strings.TrimPrefix(id, "demo:action/") == v {
+			if id == v || p.Actions[id].Name == v || loader.Key(id) == v {
 				return id
 			}
 		}

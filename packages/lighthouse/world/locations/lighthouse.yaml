@@ -1,0 +1,19 @@
+id: fog:location/lighthouse
+type: location
+name: 灯塔底层
+aliases: [灯塔, 塔底, 塔里]
+tags: [indoor]
+description: >
+  螺旋石阶盘旋向上，墙边堆着油桶和缆绳。一张旧木桌上摆着航海日志，抽屉半开着。
+short: 石阶盘旋向上，空气里是灯油和海盐的味道。
+properties:
+  search_dc: 10
+exits:
+  - to: fog:location/dock
+    label: 雾港码头
+    minutes: 5
+scene_facts:
+  - 木桌的抽屉半开着
+search:
+  success: 你拉开抽屉，在航海日志下面找到一封泛黄的信，收信人写着“苏”。
+  failure: 你翻了翻桌上的航海日志，字迹潦草，一时看不出什么。

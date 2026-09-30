@@ -32,6 +32,12 @@ const (
 	AmbientEvent          = "AmbientEvent"
 	NoMechanicalEffect    = "NoMechanicalEffect"
 	TurnCompleted         = "TurnCompleted"
+	// DialogueOccurred 记录玩家与 NPC 的一次交谈：NPC 说了哪条台词、谈到什么话题（对话记忆）。
+	DialogueOccurred = "DialogueOccurred"
+	// MemoryRecorded 记录 NPC 的一条情节记忆（Episodic Memory），只写给亲历 / 目击者。
+	MemoryRecorded = "MemoryRecorded"
+	// VarChanged 修改故事变量（整数，Delta 形式，保证可重放）。
+	VarChanged = "VarChanged"
 )
 
 // FreeformWhitelist 是 FreeformAction 允许产生的轻量事件（第 6.1 节）。
@@ -50,6 +56,7 @@ var FreeformWhitelist = map[string]bool{
 	PacingUpdated:         true,
 	AmbientEvent:          true,
 	TurnCompleted:         true,
+	MemoryRecorded:        true,
 }
 
 // Event 是一条不可变的领域事件。Seq 由 Event Store 分配（单存档内单调递增）。
@@ -106,4 +113,5 @@ type Data struct {
 	Remove     bool           `json:"remove,omitempty"`
 	Notable    bool           `json:"notable,omitempty"`
 	Nudge      bool           `json:"nudge,omitempty"`
+	Repeat     bool           `json:"repeat,omitempty"`
 }

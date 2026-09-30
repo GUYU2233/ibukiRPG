@@ -27,27 +27,124 @@ relationship_to_player:
   fear: 0
 relationships: {}
 dialogue:
-  greet:
-    - 米拉眨眨眼：“你从哪儿来？给我讲讲路上的故事吧，我拿一首歌跟你换。”
-    - 米拉拨了一下琴弦：“新客人！你看起来像是有故事的人。”
-  friendly:
-    - 米拉凑过来小声说：“我在找一个人……如果你往北走，能帮我留意一个眉心有颗痣的少年吗？”
-    - 米拉笑着给你弹了一段轻快的曲子：“这首送你，不收钱。”
-  wary:
-    - 米拉抱紧了琴，往墙角缩了缩：“我、我没做什么……”
-    - 米拉避开你的目光，假装专心调弦。
-  story:
-    demo:story/lost_purse:
-      - 米拉的眼圈红了：“我没偷！我整晚都在弹琴，所有人都看见了……”
-      - 米拉咬着嘴唇：“我看见一只灰猫从奥托的椅子底下窜过去，可是没人信我。”
-  after_story:
-    demo:story/lost_purse/truth:
-      - 米拉抱着琴冲你笑：“谢谢你相信我。作为回报——我在找我哥哥，他三个月前在北方商路上失踪了。广场的告示板上有他的画像。”
-    demo:story/lost_purse/calmed:
-      - 米拉小声说：“谢谢你帮我说话……可钱袋没找到，奥托看我的眼神还是像看贼。”
-    demo:story/lost_purse/mira_expelled:
-      - 米拉缩在井边的屋檐下，浑身湿透：“你来干什么？看我笑话吗？……我真的没偷。”
-      - 米拉抱着琴，声音发哑：“那只灰猫……我明明看见它从奥托的椅子底下钻出去的。”
+  topics:
+    travel: 旅途故事
+    brother: 失踪的哥哥
+    purse: 钱袋失窃
+    cat: 灰猫
+    aftermath: 失窃风波
+    song: 歌
+    fear: 害怕
+    smalltalk: 家常
+  lines:
+    - id: purse_innocent
+      topic: purse
+      priority: 60
+      once: true
+      when: 'stories.lost_purse.status == "active"'
+      text: 米拉的眼圈红了：“我没偷！我整晚都在弹琴，所有人都看见了……”
+      memory: 哭着说自己没偷钱袋
+    - id: purse_thanks_clue
+      topic: cat
+      priority: 58
+      once: true
+      when: 'stories.lost_purse.status == "active" && "purse_clue_cat" in world.flags'
+      text: 米拉眼睛一亮：“猫毛？你也发现了！我就说……求你了，去储藏室找找吧。”
+      memory: 听说猫毛的线索后求你去储藏室找找
+    - id: purse_cat
+      topic: cat
+      priority: 57
+      once: true
+      when: 'stories.lost_purse.status == "active"'
+      text: 米拉咬着嘴唇：“我看见一只灰猫从奥托的椅子底下窜过去，可是没人信我。”
+      memory: 说看见灰猫从奥托的椅子底下窜过去
+      remember: 告诉过{player}灰猫的事
+    - id: purse_plead
+      topic: purse
+      priority: 50
+      when: 'stories.lost_purse.status == "active"'
+      text: 米拉抱紧了琴，声音很轻：“{player}，你会帮我的，对吧？刚才我跟你说的那些，全是真的。”
+      memory: 求你帮她洗清嫌疑
+    - id: after_truth
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "truth"'
+      text: 米拉抱着琴冲你笑：“谢谢你相信我。这首曲子，就当是谢礼。”
+      memory: 为你弹了一首曲子道谢
+    - id: after_truth_brother
+      topic: brother
+      priority: 44
+      once: true
+      when: 'stories.lost_purse.outcome == "truth"'
+      text: 米拉犹豫了一下：“其实……我在找我哥哥，他三个月前在北方商路上失踪了。广场的告示板上有他的画像。”
+      memory: 告诉你她在找失踪的哥哥
+      remember: 把寻找哥哥的事告诉了{player}
+    - id: after_calmed
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "calmed"'
+      text: 米拉小声说：“谢谢你帮我说话……可钱袋没找到，奥托看我的眼神还是像看贼。”
+      memory: 谢你帮她说话，但仍被当成贼
+    - id: after_expelled
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "mira_expelled"'
+      text: 米拉缩在井边的屋檐下，浑身湿透：“你来干什么？看我笑话吗？……我真的没偷。”
+      memory: 冒雨被赶出去后，委屈地说自己没偷
+    - id: after_expelled_cat
+      topic: cat
+      priority: 44
+      once: true
+      when: 'stories.lost_purse.outcome == "mira_expelled"'
+      text: 米拉抱着琴，声音发哑：“那只灰猫……我明明看见它从奥托的椅子底下钻出去的。”
+      memory: 仍坚持看见了灰猫
+    - id: wary
+      topic: fear
+      priority: 40
+      when: 'npc.attitude in ["敌视", "戒备", "畏惧"]'
+      text: 米拉抱紧了琴，往墙角缩了缩：“我、我没做什么……”
+      memory: 害怕地躲着你
+    - id: first_greet
+      topic: travel
+      priority: 30
+      once: true
+      when: 'npc.talks == 0 && stories.lost_purse.status != "active"'
+      text: 米拉眨眨眼：“你从哪儿来？给我讲讲路上的故事吧，我拿一首歌跟你换。”
+      memory: 想用一首歌换你的旅途故事
+    - id: owe_story
+      topic: travel
+      priority: 25
+      once: true
+      when: 'npc.talks >= 1 && "travel" in npc.topics && stories.lost_purse.status != "active"'
+      text: 米拉拨了一下琴弦，歪着头看你：“说好的，一个故事换一首歌——{player}，你还欠我一个故事呢。”
+      memory: 提醒你还欠她一个故事
+    - id: friendly_brother
+      topic: brother
+      priority: 20
+      once: true
+      when: 'npc.attitude in ["友好", "亲近"]'
+      text: 米拉凑过来小声说：“我在找一个人……如果你往北走，能帮我留意一个眉心有颗痣的少年吗？”
+      memory: 托你留意一个眉心有痣的少年
+      remember: 托{player}留意眉心有痣的少年
+    - id: friendly_song
+      topic: song
+      priority: 15
+      when: 'npc.attitude in ["友好", "亲近"]'
+      text: 米拉笑着给你弹了一段轻快的曲子：“这首送你，不收钱。”
+      memory: 送了你一首曲子
+    - id: small
+      topic: smalltalk
+      priority: 1
+      text: 米拉哼着一段不成调的旋律，冲你点点头：“雨什么时候才停呀。”
+      memory: 跟你抱怨这场雨
+  repeat:
+    - 米拉歪着头：“{topic}？刚才不是说过了嘛，{player}。你是不是没认真听？”
+    - 米拉拨了拨琴弦：“{topic}的事我都告诉你了……要不，换你说点什么？”
+  callback:
+    - 米拉小声补了一句：“刚才你{what}，我都看见啦。”
 secrets:
   - id: demo:secret/mira_noble
     text: 她是一个没落贵族家族的私生女。

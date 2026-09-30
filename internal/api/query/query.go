@@ -49,7 +49,9 @@ func (q *Q) Scene(s *state.State) dto.SceneV1 {
 		TimeText: worldtime.Format(s.Minute), Clock: worldtime.Clock(s.Minute), Day: worldtime.Day(s.Minute),
 		Period: worldtime.Period(s.Minute), Turn: s.Turn, Gold: s.Player.Gold, PlayerName: s.Player.Name,
 		Present: []dto.NPCBriefV1{}, Exits: []dto.ExitV1{}, Conditions: []string{},
+		PackID: p.Manifest.ID, PackName: p.Manifest.Name,
 	}
+	v.Hud = q.Hud(s)
 	for _, id := range s.NPCsAt(p, loc.ID) {
 		c := p.Characters[id]
 		v.Present = append(v.Present, dto.NPCBriefV1{ID: id, Name: c.Name(), Role: c.Identity.Role, Attitude: narrator.Attitude(s.NPCs[id])})
@@ -84,7 +86,9 @@ func (q *Q) Suggestions(s *state.State) []dto.SuggestionV1 {
 			add(dto.SuggestionV1{Label: h.Label, Icon: "auto_stories", Action: dto.QuickActionV1{Kind: "text", Text: h.Text, Label: h.Text}})
 		}
 	}
-	add(dto.SuggestionV1{Label: "环顾四周", Icon: "visibility", Action: dto.QuickActionV1{Kind: "action", Action: "demo:action/look", Label: "环顾四周"}})
+	if look := p.ActionID("look"); look != "" {
+		add(dto.SuggestionV1{Label: "环顾四周", Icon: "visibility", Action: dto.QuickActionV1{Kind: "action", Action: look, Label: "环顾四周"}})
+	}
 	// 事件相关人物排在前面
 	ordered := append([]string{}, present...)
 	if story != nil {
@@ -99,33 +103,38 @@ func (q *Q) Suggestions(s *state.State) []dto.SuggestionV1 {
 			return 0
 		})
 	}
+	talk := p.DialogueAction()
 	for i, id := range ordered {
-		if i >= 3 {
+		if i >= 3 || talk == "" {
 			break
 		}
 		name := p.Characters[id].Name()
-		add(dto.SuggestionV1{Label: "与" + name + "交谈", Icon: "chat", Action: dto.QuickActionV1{Kind: "action", Action: "demo:action/talk", Target: id, Label: "和" + name + "聊聊"}})
+		add(dto.SuggestionV1{Label: "与" + name + "交谈", Icon: "chat", Action: dto.QuickActionV1{Kind: "action", Action: talk, Target: id, Label: "和" + name + "聊聊"}})
 	}
-	if bartender, _ := loc.Properties["has_bartender"].(bool); bartender && s.Player.Inventory["demo:item/ale"] == 0 && s.NPCs["demo:character/borin"].Location == loc.ID {
-		sg := dto.SuggestionV1{Label: "点酒", Icon: "local_bar", Hint: "2 铜币", Action: dto.QuickActionV1{Kind: "action", Action: "demo:action/order_drink", Label: "点一杯麦酒"}}
-		if s.Player.Gold < 2 {
+	drink, keeper := p.DrinkItem(), p.ShopKeeper(loc.ID)
+	if bartender, _ := loc.Properties["has_bartender"].(bool); bartender && drink != "" && s.Player.Inventory[drink] == 0 && keeper != "" && s.NPCs[keeper].Location == loc.ID {
+		price := p.Items[drink].Price
+		sg := dto.SuggestionV1{Label: "点酒", Icon: "local_bar", Hint: fmt.Sprintf("%d 铜币", price), Action: dto.QuickActionV1{Kind: "action", Action: p.ActionID("order_drink"), Label: "点一杯" + p.Items[drink].Name}}
+		if s.Player.Gold < price {
 			sg.Disabled, sg.Hint = true, "铜币不足"
 		}
 		add(sg)
 	}
 	for _, id := range p.ItemIDs {
 		it := p.Items[id]
-		if s.Player.Inventory[id] > 0 && it.Use != nil && it.Use.Condition != "" && !s.HasCondition(it.Use.Condition) {
-			add(dto.SuggestionV1{Label: it.Use.Verb + it.Name, Icon: "backpack", Action: dto.QuickActionV1{Kind: "action", Action: "demo:action/use_item", Item: id, Label: it.Use.Verb + it.Name}})
+		if use := p.ActionID("use_item"); use != "" && s.Player.Inventory[id] > 0 && it.Use != nil && it.Use.Condition != "" && !s.HasCondition(it.Use.Condition) {
+			add(dto.SuggestionV1{Label: it.Use.Verb + it.Name, Icon: "backpack", Action: dto.QuickActionV1{Kind: "action", Action: use, Item: id, Label: it.Use.Verb + it.Name}})
 			break
 		}
 	}
 	storyHere := story != nil && story.Location == loc.ID && len(story.Hints) > 0
-	inv := dto.SuggestionV1{Label: "调查", Icon: "search", Action: dto.QuickActionV1{Kind: "action", Action: "demo:action/investigate", Label: "仔细调查周围"}}
-	if dc, err := q.Eval.EvalInt(p.Actions["demo:action/investigate"].Checks[0].Difficulty, engine.Vars(p, s, "", "")); err == nil {
-		inv.Hint = fmt.Sprintf("成功率 %d%%", checks.Chance(q.modifier(s, "perception"), checks.ClampDC(int(dc))))
-	}
-	if !storyHere {
+	if invID := p.ActionID("investigate"); invID != "" && !storyHere {
+		inv := dto.SuggestionV1{Label: "调查", Icon: "search", Action: dto.QuickActionV1{Kind: "action", Action: invID, Label: "仔细调查周围"}}
+		if def := p.Actions[invID]; len(def.Checks) > 0 {
+			if dc, err := q.Eval.EvalInt(def.Checks[0].Difficulty, engine.Vars(p, s, "", "")); err == nil {
+				inv.Hint = fmt.Sprintf("成功率 %d%%", checks.Chance(q.modifier(s, def.Checks[0].Skill), checks.ClampDC(int(dc))))
+			}
+		}
 		add(inv)
 	}
 	for _, e := range loc.Exits {
@@ -136,7 +145,9 @@ func (q *Q) Suggestions(s *state.State) []dto.SuggestionV1 {
 		}
 		add(sg)
 	}
-	add(dto.SuggestionV1{Label: "休息片刻", Icon: "hourglass", Hint: "30 分钟", Action: dto.QuickActionV1{Kind: "action", Action: "demo:action/rest", Label: "找个地方歇一会儿"}})
+	if rest := p.ActionID("rest"); rest != "" {
+		add(dto.SuggestionV1{Label: "休息片刻", Icon: "hourglass", Hint: "30 分钟", Action: dto.QuickActionV1{Kind: "action", Action: rest, Label: "找个地方歇一会儿"}})
+	}
 	return out
 }
 
@@ -189,9 +200,9 @@ func (q *Q) Inventory(s *state.State) dto.InventoryV1 {
 		}
 		it := p.Items[id]
 		iv := dto.ItemV1{ID: id, Name: it.Name, Qty: n, Price: it.Price, Description: it.Description}
-		if it.Use != nil {
+		if use := p.ActionID("use_item"); it.Use != nil && use != "" {
 			iv.UseLabel = it.Use.Verb
-			iv.Use = &dto.QuickActionV1{Kind: "action", Action: "demo:action/use_item", Item: id, Label: it.Use.Verb + it.Name}
+			iv.Use = &dto.QuickActionV1{Kind: "action", Action: use, Item: id, Label: it.Use.Verb + it.Name}
 		}
 		v.Items = append(v.Items, iv)
 	}
@@ -200,9 +211,12 @@ func (q *Q) Inventory(s *state.State) dto.InventoryV1 {
 		v.ShopSeller = p.EntityName(loc.Shop.Seller)
 		for _, id := range loc.Shop.Items {
 			it := p.Items[id]
-			act := &dto.QuickActionV1{Kind: "action", Action: "demo:action/buy", Item: id, Label: "购买" + it.Name}
-			if id == "demo:item/ale" {
-				act = &dto.QuickActionV1{Kind: "action", Action: "demo:action/order_drink", Label: "点一杯麦酒"}
+			var act *dto.QuickActionV1
+			if buy := p.ActionID("buy"); buy != "" {
+				act = &dto.QuickActionV1{Kind: "action", Action: buy, Item: id, Label: "购买" + it.Name}
+			}
+			if id == p.DrinkItem() {
+				act = &dto.QuickActionV1{Kind: "action", Action: p.ActionID("order_drink"), Label: "点一杯" + it.Name}
 			}
 			v.Shop = append(v.Shop, dto.ItemV1{ID: id, Name: it.Name, Price: it.Price, Description: it.Description, Affordable: s.Player.Gold >= it.Price, Buy: act})
 		}
@@ -211,6 +225,26 @@ func (q *Q) Inventory(s *state.State) dto.InventoryV1 {
 }
 
 var sourceNames = map[string]string{"witness": "亲眼所见", "dialogue": "听人说起", "rumor": "传闻"}
+
+// npcMemories 把 NPC 的对话记忆与经历记忆整理成面板文字（新的在前，最多 6 条）。
+func npcMemories(n *state.NPC) []string {
+	out := []string{}
+	seen := map[string]bool{}
+	add := func(t string) {
+		if t != "" && !seen[t] && len(out) < 6 {
+			seen[t] = true
+			out = append(out, t)
+		}
+	}
+	for i := len(n.Exchanges) - 1; i >= 0 && i >= len(n.Exchanges)-3; i-- {
+		e := n.Exchanges[i]
+		add(worldtime.Clock(e.Minute) + " 交谈：" + e.Text)
+	}
+	for i := len(n.Episodes) - 1; i >= 0; i-- {
+		add(n.Episodes[i].Text)
+	}
+	return out
+}
 
 // NPCs 构造人物关系面板：只列出玩家见过的人；包含 NPC 知道的事及其来源（可解释性）。
 func (q *Q) NPCs(s *state.State) []dto.NPCV1 {
@@ -224,14 +258,21 @@ func (q *Q) NPCs(s *state.State) []dto.NPCV1 {
 			continue
 		}
 		v := dto.NPCV1{ID: id, Name: c.Name(), Role: c.Identity.Role, Description: c.Description, LocationName: p.EntityName(n.Location),
-			Present: present, Trust: n.Trust, Fear: n.Fear, Attitude: narrator.Attitude(n), Beliefs: []dto.BeliefV1{}, Actions: []dto.NPCActionV1{}}
+			Present: present, Trust: n.Trust, Fear: n.Fear, Attitude: narrator.Attitude(n), Beliefs: []dto.BeliefV1{}, Actions: []dto.NPCActionV1{},
+			Talks: n.Talks, Memories: npcMemories(n)}
 		for i := len(n.Beliefs) - 1; i >= 0; i-- {
 			b := n.Beliefs[i]
 			v.Beliefs = append(v.Beliefs, dto.BeliefV1{Text: b.Text, Source: sourceNames[b.Source], When: worldtime.Format(b.Minute), Confidence: b.Confidence})
 		}
 		if present {
 			for _, a := range []string{"talk", "persuade", "intimidate", "deceive"} {
-				def := p.Actions["demo:action/"+a]
+				def := p.Actions[p.ActionID(a)]
+				if a == "talk" {
+					def = p.Actions[p.DialogueAction()]
+				}
+				if def == nil {
+					continue
+				}
 				label := strings.ReplaceAll(def.Label, "{target}", "")
 				if label == "" {
 					label = def.Name
@@ -305,11 +346,12 @@ func (q *Q) Journal(events []event.Event, playerName string) []dto.JournalEntryV
 }
 
 func stepTitle(p *loader.Package, story, step string) string {
-	switch step {
-	case "cat_hair":
-		return "发现了灰色猫毛"
-	case "borin_allows":
-		return "伯林同意你去储藏室看看"
+	if st, ok := p.Stories[story]; ok {
+		for _, x := range st.Steps {
+			if x.ID == step && x.Title != "" {
+				return x.Title
+			}
+		}
 	}
 	return step
 }

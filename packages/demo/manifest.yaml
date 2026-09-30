@@ -1,19 +1,32 @@
-# Demo 世界包：Phase 0 Vertical Slice（1 个酒馆 + 2 个相邻地点、3 个主要 NPC、1 个小事件、少量 Action）
+# 故事包：边境酒馆 ·《失窃的钱袋》（1 个酒馆 + 2 个相邻地点、4 个 NPC、1 个小事件、少量 Action）
+# 格式说明见 docs/story-pack-format.md。id 保持为 demo，以兼容 0.1.x 的旧存档。
 id: demo
 namespace: demo
 name: "边境酒馆"
-version: 0.1.0
-type: world
-engine: ">=0.1.0"
+version: 0.2.0
+type: story
+# 最低引擎版本
+engine: ">=0.1.2"
+# 能继续读取的旧存档版本
+save_compat: ">=0.1.0"
+tagline: 《失窃的钱袋》——雨夜的酒馆里，一只钱袋不见了。
 description: >
-  边境小镇的一个夜晚。用于验证“输入 → Resolver → 判定 → Event → Narrator → Guard → 输出”闭环的最小世界包。
+  边境小镇的一个秋雨夜。锈酒杯酒馆里，外乡商人的钱袋不翼而飞，矛头指向了抱着琴的吟游诗人米拉。
+  调查、说服、威吓……你的选择决定她的去留。约 15-30 分钟。
+author: guyu2233
 authors:
   - guyu2233
+icon: sports_bar
+accent: "#8D5A2B"
+tags: [奇幻, 推理, 短篇, 新手友好]
 dependencies: []
 start:
   location: demo:location/rusty_tankard
   day: 1
   time: "19:00"
+  variables:
+    mira_suspicion: 0
+    clues: 0
   intro: |
     秋夜，冷雨敲打着边境小镇的石板路。你推开“锈酒杯”酒馆厚重的木门，暖意和麦酒的香气一齐涌来。
     壁炉旁有人低声交谈，柜台后的老板抬头打量了你一眼。
@@ -47,3 +60,5 @@ content:
     - actions/rest.yaml
   stories:
     - story/lost_purse.yaml
+  hud:
+    - ui/hud.yaml

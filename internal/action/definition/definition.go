@@ -85,6 +85,8 @@ type Definition struct {
 	Outcomes     map[string][]Outcome `yaml:"outcomes"`
 	Narration    map[string][]string  `yaml:"narration"`
 	Witness      Witness              `yaml:"witness"`
+	// Dialogue 标记交谈类动作：执行时引擎从目标 NPC 的台词池挑选台词并写入对话记忆。
+	Dialogue bool `yaml:"dialogue"`
 }
 
 // NeedsTarget 报告动作是否必须指定目标。

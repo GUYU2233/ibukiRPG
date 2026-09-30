@@ -1,0 +1,19 @@
+id: fog:location/dock
+type: location
+name: 雾港码头
+aliases: [码头, 栈道, 港口, 渔港]
+tags: [outdoor]
+description: >
+  几条渔船拴在长满藤壶的木桩上，随着浪轻轻摇晃。雾气贴着水面流动，十步之外就看不清人影。
+short: 海雾贴着水面流动，渔船轻轻摇晃。
+properties:
+  search_dc: 12
+exits:
+  - to: fog:location/lighthouse
+    label: 灯塔
+    minutes: 5
+scene_facts:
+  - 码头边拴着三条渔船
+search:
+  success: 你在栈道的缝隙里摸到一枚生锈的铜扣，像是很多年前掉的；除此之外，只有湿漉漉的渔网。
+  failure: 雾太浓了，你在栈道上摸索了一阵，只摸到一手冰凉的海水。

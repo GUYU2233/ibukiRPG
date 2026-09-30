@@ -85,13 +85,57 @@ type Secret struct {
 	Keywords []string `yaml:"keywords"`
 }
 
-// Dialogue 是模板叙事器使用的台词库（叙事内容，不是游戏事实）。
+// DialogueLine 是台词池中的一条台词：由 CEL 条件（when）决定能否说，
+// 引擎按优先级与“说过没有”挑选，并以 DialogueOccurred 事件记录（对话记忆）。
+type DialogueLine struct {
+	ID       string `yaml:"id"`
+	Topic    string `yaml:"topic"`
+	When     string `yaml:"when"`
+	Priority int    `yaml:"priority"`
+	// Once 表示只说一次；否则说过之后仍可重复（但未说过的台词总是优先）。
+	Once bool   `yaml:"once"`
+	Text string `yaml:"text"`
+	// Memory 是这次交谈的摘要，写入 NPC 的对话记忆（以及 AI 上下文）。为空时使用话题名。
+	Memory string `yaml:"memory"`
+	// Remember 非空时，同时写入一条 NPC 的情节记忆（例如“把储藏室的怪事告诉了玩家”）。
+	Remember string `yaml:"remember"`
+}
+
+// Dialogue 是台词库（叙事内容，不是游戏事实）。
+//
+// 推荐使用 lines（带条件的台词池）；greet / friendly / wary / story / after_story 是旧格式，
+// 加载时会自动转换为 lines。
 type Dialogue struct {
 	Greet      []string            `yaml:"greet"`
 	Friendly   []string            `yaml:"friendly"`
 	Wary       []string            `yaml:"wary"`
 	Story      map[string][]string `yaml:"story"`
 	AfterStory map[string][]string `yaml:"after_story"`
+	// Topics：话题 ID → 中文名。
+	Topics map[string]string `yaml:"topics"`
+	Lines  []DialogueLine    `yaml:"lines"`
+	// Repeat：没有新话可说时使用的模板，可用 {last_said} {last_topic} {player} {name}。
+	Repeat []string `yaml:"repeat"`
+	// Callback：NPC 提起自上次交谈后目击到的玩家行为，可用 {what} {player} {name}。
+	Callback []string `yaml:"callback"`
+}
+
+// Line 按 ID 查找台词。
+func (d *Dialogue) Line(id string) *DialogueLine {
+	for i := range d.Lines {
+		if d.Lines[i].ID == id {
+			return &d.Lines[i]
+		}
+	}
+	return nil
+}
+
+// TopicName 返回话题中文名（未声明则原样返回）。
+func (d *Dialogue) TopicName(id string) string {
+	if n, ok := d.Topics[id]; ok {
+		return n
+	}
+	return id
 }
 
 // Character 是角色定义（NPC 与玩家模板共用）。
@@ -146,6 +190,39 @@ type StoryStep struct {
 	Narration string               `yaml:"narration"`
 }
 
+// HUDField 是故事包声明的一项实时状态显示（第 3 项：HUD）。
+//
+// 值来源二选一：bind（内置绑定：location / time / clock / day / period / gold / turn / story /
+// objective / conditions / var:<名字> / flag:<名字>）或 value（CEL 表达式）。
+type HUDField struct {
+	ID      string `yaml:"id"`
+	Label   string `yaml:"label"`
+	Icon    string `yaml:"icon"`
+	Bind    string `yaml:"bind"`
+	Value   string `yaml:"value"`
+	Format  string `yaml:"format"`  // 例如 "{value}%"
+	Visible string `yaml:"visible"` // CEL；为空总是显示
+	Order   int    `yaml:"order"`
+	// Compact 为 false 时只在展开的状态卡中显示（默认 true）。
+	Compact *bool `yaml:"compact"`
+	// Max > 0 时渲染为进度条（值 / Max）。
+	Max  int    `yaml:"max"`
+	Tone string `yaml:"tone"` // normal / warning / danger / success
+	// Tones：色调 → CEL 条件（按 danger、warning、success 的顺序取第一个成立的），覆盖 Tone。
+	Tones map[string]string `yaml:"tones"`
+	// Wide 为 true 时在紧凑模式下单独占一行（适合“当前目标”等长文本）。
+	Wide bool `yaml:"wide"`
+}
+
+// IsCompact 报告字段是否出现在紧凑行。
+func (h HUDField) IsCompact() bool { return h.Compact == nil || *h.Compact }
+
+// Objective 是主线目标：按顺序取第一个 when 成立的目标。
+type Objective struct {
+	When string `yaml:"when"`
+	Text string `yaml:"text"`
+}
+
 // Hint 是故事提示（会作为快捷建议出现）。
 type Hint struct {
 	Label string `yaml:"label"`
@@ -186,6 +263,45 @@ type Package struct {
 	ActionIDs   []string
 	Stories     map[string]*Story
 	StoryIDs    []string
+	// HUD 是故事包声明的状态栏；为空时查询层使用默认 HUD。
+	HUD        []HUDField
+	Objectives []Objective
+	// Variables 是故事变量及其初始值（manifest start.variables）。
+	Variables map[string]int
+}
+
+// Key 返回命名空间化 ID 的最后一段，例如 demo:action/talk → talk。
+func Key(id string) string {
+	for i := len(id) - 1; i >= 0; i-- {
+		if id[i] == '/' || id[i] == ':' {
+			return id[i+1:]
+		}
+	}
+	return id
+}
+
+// ActionID 返回本包中某类动作的完整 ID（例如 talk → demo:action/talk）；不存在时返回空串。
+func (p *Package) ActionID(key string) string {
+	id := p.Manifest.Namespace + ":action/" + key
+	if _, ok := p.Actions[id]; ok {
+		return id
+	}
+	for _, aid := range p.ActionIDs {
+		if Key(aid) == key {
+			return aid
+		}
+	}
+	return ""
+}
+
+// DialogueAction 返回标记为 dialogue 的交谈动作 ID（没有则回退到 key 为 talk 的动作）。
+func (p *Package) DialogueAction() string {
+	for _, id := range p.ActionIDs {
+		if p.Actions[id].Dialogue {
+			return id
+		}
+	}
+	return p.ActionID("talk")
 }
 
 // SkillByID 查找技能。
@@ -233,3 +349,27 @@ func (p *Package) EntityName(id string) string {
 
 // PlayerID 是玩家角色的固定 ID。
 const PlayerID = "player"
+
+// DrinkItem 返回 order_drink 动作提供的饮品物品 ID（没有则为空）。
+func (p *Package) DrinkItem() string {
+	id := p.ActionID("order_drink")
+	if id == "" {
+		return ""
+	}
+	for _, o := range p.Actions[id].Outcomes["success"] {
+		if o.Effect.Type == "item_add" {
+			if it, ok := o.Effect.Values["item"].(string); ok {
+				return it
+			}
+		}
+	}
+	return ""
+}
+
+// ShopKeeper 返回地点的店主（没有商店为空）。
+func (p *Package) ShopKeeper(loc string) string {
+	if l, ok := p.Locations[loc]; ok && l.Shop != nil {
+		return l.Shop.Seller
+	}
+	return ""
+}

@@ -1,0 +1,55 @@
+id: fog:story/letter
+title: 守灯人的信
+priority: minor
+constraint: soft
+location: fog:location/lighthouse
+trigger: 'world.turn >= 1'
+intro: |
+  雾号远远地响了一声。你隐约觉得，这座灯塔和码头上的姑娘之间，藏着一件没说完的事。
+hints:
+  - label: 去灯塔
+    text: 去灯塔看看
+  - label: 翻翻抽屉
+    text: 仔细调查木桌的抽屉
+steps:
+  - id: found
+    title: 找到了一封泛黄的信
+    once: true
+    when: 'action.id == "fog:action/investigate" && action.success && world.player_location == "fog:location/lighthouse"'
+    effects:
+      - effect:
+          type: item_add
+          target: actor
+          values:
+            item: fog:item/letter
+            qty: 1
+      - effect:
+          type: flag_set
+          target: world
+          values:
+            flag: letter_found
+    narration: 信封很旧了，封口压着一枚干枯的海石竹。你把它小心地收进怀里。
+outcomes:
+  - id: delivered
+    title: 信送到了
+    when: '"letter_found" in world.flags && action.id == "fog:action/talk" && action.target == "fog:character/su"'
+    effects:
+      - effect:
+          type: item_remove
+          target: actor
+          values:
+            item: fog:item/letter
+            qty: 1
+      - effect:
+          type: relationship_delta
+          target: fog:character/su
+          values:
+            trust: 6
+      - effect:
+          type: gold_delta
+          target: actor
+          values:
+            gold: 3
+    narration: |
+      你把信递给苏。她愣了很久，才用颤抖的手拆开。读到一半，她忽然抬头望向灯塔——雾里的那点光，好像亮了一些。
+      她往你手里塞了三枚铜币：“拿着，就当是……送信的钱。”

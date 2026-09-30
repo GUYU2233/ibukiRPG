@@ -1,0 +1,7 @@
+items:
+  - id: fog:item/letter
+    name: 泛黄的信
+    aliases: [信, 旧信, 信封]
+    price: 0
+    unsellable: true
+    description: 封口处压着一枚干枯的海石竹，收信人写着“苏”。

@@ -26,19 +26,107 @@ relationship_to_player:
   fear: 0
 relationships: {}
 dialogue:
-  greet:
-    - 奥托打了个酒嗝：“你也是做生意的？这鬼地方，连杯像样的葡萄酒都没有。”
-    - 奥托上下打量你：“别靠这么近，朋友，我的货可不便宜。”
-  friendly:
-    - 奥托拍拍你的肩：“你够意思！下回到南边，报我奥托的名字。”
-  wary:
-    - 奥托往后缩了缩，把手按在腰间：“你、你想干什么？这里可是有人看着的！”
-  story:
-    demo:story/lost_purse:
-      - 奥托涨红了脸：“就是她！那个弹琴的丫头，一直在我旁边转悠！我的钱袋里有十二枚银币！”
-      - 奥托嚷嚷：“要是找不回来，我就去找镇上的治安官！”
-  after_story:
-    demo:story/lost_purse/truth:
-      - 奥托不好意思地搓着手：“哎，都怪那只馋猫……这杯我请！”
+  topics:
+    wine: 葡萄酒
+    trade: 生意
+    purse: 钱袋
+    cat: 灰猫
+    aftermath: 失窃风波
+    fear: 害怕
+    smalltalk: 家常
+  lines:
+    - id: purse_accuse
+      topic: purse
+      priority: 60
+      once: true
+      when: 'stories.lost_purse.status == "active"'
+      text: 奥托涨红了脸：“就是她！那个弹琴的丫头，一直在我旁边转悠！我的钱袋里有十二枚银币！”
+      memory: 一口咬定是米拉偷了钱袋
+    - id: purse_doubt
+      topic: cat
+      priority: 57
+      once: true
+      when: 'stories.lost_purse.status == "active" && "purse_clue_cat" in world.flags'
+      text: 奥托将信将疑：“猫？你是说一只猫叼走了我的钱袋？荒唐！……不过，那袋子里是装着几条给我女儿捎的鱼干。”
+      memory: 承认钱袋里装着鱼干
+      remember: 跟{player}承认过钱袋里有鱼干
+    - id: purse_threat
+      topic: purse
+      priority: 55
+      once: true
+      when: 'stories.lost_purse.status == "active"'
+      text: 奥托嚷嚷：“要是找不回来，我就去找镇上的治安官！”
+      memory: 威胁要找治安官
+    - id: purse_wait
+      topic: purse
+      priority: 50
+      when: 'stories.lost_purse.status == "active"'
+      text: 奥托不停地摸着腰间空荡荡的地方：“{player}，你要是能帮我找回钱袋，我不会亏待你。”
+      memory: 许诺找回钱袋会有酬谢
+    - id: after_truth
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "truth"'
+      text: 奥托不好意思地搓着手：“哎，都怪那只馋猫……这杯我请！”
+      memory: 为冤枉米拉难为情，要请你喝酒
+    - id: after_calmed
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "calmed"'
+      text: 奥托闷闷地说：“今晚算了。明天一早我再好好找找……你说，会不会真是我自己掉哪儿了？”
+      memory: 开始怀疑是不是自己弄丢了钱袋
+    - id: after_expelled
+      topic: aftermath
+      priority: 45
+      once: true
+      when: 'stories.lost_purse.outcome == "mira_expelled"'
+      text: 奥托哼了一声，可声音没什么底气：“走了也好……可钱袋还是没找着。”
+      memory: 心虚地说钱袋还是没找着
+    - id: wary
+      topic: fear
+      priority: 40
+      when: 'npc.attitude in ["敌视", "戒备", "畏惧"]'
+      text: 奥托往后缩了缩，把手按在腰间：“你、你想干什么？这里可是有人看着的！”
+      memory: 害怕地提防着你
+    - id: first_greet
+      topic: wine
+      priority: 30
+      once: true
+      when: 'npc.talks == 0 && stories.lost_purse.status != "active"'
+      text: 奥托打了个酒嗝：“你也是做生意的？这鬼地方，连杯像样的葡萄酒都没有。”
+      memory: 抱怨这里没有像样的葡萄酒
+    - id: wine_promise
+      topic: wine
+      priority: 25
+      once: true
+      when: 'npc.talks >= 1 && "wine" in npc.topics && stories.lost_purse.status != "active"'
+      text: 奥托又凑过来：“刚才说到哪儿了？哦，葡萄酒——等我回了南边，给你捎一瓶真正的好货。”
+      memory: 许诺给你捎一瓶南边的葡萄酒
+    - id: trade
+      topic: trade
+      priority: 18
+      once: true
+      when: 'npc.talks >= 2 && stories.lost_purse.status != "active"'
+      text: 奥托压低声音：“我这趟是去北边收皮货的。一路上可没少听说山贼的事……”
+      memory: 说自己去北边收皮货
+    - id: friendly
+      topic: trade
+      priority: 20
+      once: true
+      when: 'npc.attitude in ["友好", "亲近"]'
+      text: 奥托拍拍你的肩：“你够意思！下回到南边，报我奥托的名字。”
+      memory: 让你去南边时报他的名字
+    - id: small
+      topic: smalltalk
+      priority: 1
+      text: 奥托上下打量你：“别靠这么近，朋友，我的货可不便宜。”
+      memory: 提防地打量你
+  repeat:
+    - 奥托不耐烦地摆手：“{topic}？刚才不都说过了嘛！”
+    - 奥托打了个酒嗝：“你怎么老问{topic}……该说的我都说了。”
+  callback:
+    - 奥托眯起眼：“刚才你{what}，我可瞧见了。”
 secrets: []
 tags: [npc, minor]

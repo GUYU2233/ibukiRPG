@@ -1,0 +1,17 @@
+id: fog:action/rest
+category: time
+name: 休息片刻
+description: 找个地方坐下歇一会儿，让时间流逝（约 30 分钟）。
+target: none
+keywords: [休息, 等待, 等一会, 等等, 歇会, 歇一歇, 坐下, 打盹, 发呆, 小憩]
+quiet: true
+requirements: []
+checks: []
+cost:
+  time: 30m
+outcomes:
+  success: []
+narration:
+  success:
+    - 你靠着潮湿的石墙坐下，听着海浪一下下拍打礁石，时间慢慢流过。
+    - 你裹紧外衣闭目养神，雾号远远地响了两声。

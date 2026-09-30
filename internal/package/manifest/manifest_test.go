@@ -13,7 +13,7 @@ func TestLoadDemoManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if m.Namespace != "demo" || m.Type != TypeWorld {
+	if m.Namespace != "demo" || m.Type != TypeStory {
 		t.Fatalf("unexpected manifest: %+v", m)
 	}
 	if got := len(m.Content["characters"]); got < 4 {
@@ -56,5 +56,35 @@ func TestValidID(t *testing.T) {
 	}
 	if NamespaceOf("magic.mod:effect/x") != "magic.mod" {
 		t.Error("NamespaceOf")
+	}
+}
+
+func TestVersionConstraints(t *testing.T) {
+	cases := []struct {
+		v, c string
+		want bool
+	}{
+		{"0.1.2rc1", ">=0.1.0", true},
+		{"0.1.2-rc1", ">=0.2.0", false},
+		{"0.2.0", ">=0.1.0 <0.3.0", true},
+		{"0.3.0", ">=0.1.0, <0.3.0", false},
+		{"1.4.0", "^1.2", true},
+		{"2.0.0", "^1.2", false},
+		{"0.1.0", "", true},
+		{"dev", ">=9.0.0", true},
+	}
+	for _, c := range cases {
+		got, err := Satisfies(c.v, c.c)
+		if err != nil || got != c.want {
+			t.Errorf("Satisfies(%q,%q)=%v,%v want %v", c.v, c.c, got, err, c.want)
+		}
+	}
+	if _, err := ParseConstraint(">=abc"); err == nil {
+		t.Error("expected invalid constraint")
+	}
+	a, _ := ParseVersion("0.1.2rc1")
+	b, _ := ParseVersion("0.1.2")
+	if a.Compare(b) >= 0 {
+		t.Error("prerelease should sort before release")
 	}
 }

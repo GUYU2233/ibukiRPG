@@ -256,3 +256,51 @@ func TestRejections(t *testing.T) {
 		t.Fatal("should not afford a drink")
 	}
 }
+
+// 对话记忆：同一 NPC 每次交谈挑选不同的台词；台词池耗尽后才会重复（并标记 repeat）。
+func TestDialogueMemory(t *testing.T) {
+	eng, s := setup(t)
+	re := s.Clone()
+	r := &runner{t: t, eng: eng, s: s}
+	lines := map[string]bool{}
+	var repeated bool
+	for i := range 12 {
+		res := r.do(act("talk", lena))
+		var d *event.Event
+		for j := range res.Events {
+			if res.Events[j].Type == event.DialogueOccurred {
+				d = &res.Events[j]
+			}
+		}
+		if d == nil {
+			t.Fatalf("talk %d: no DialogueOccurred", i)
+		}
+		if d.Data.Repeat {
+			repeated = true
+		} else if lines[d.Data.Step] {
+			t.Fatalf("talk %d: line %q said twice without repeat flag", i, d.Data.Step)
+		}
+		lines[d.Data.Step] = true
+	}
+	n := r.s.NPCs[lena]
+	if n.Talks != 12 || len(n.Exchanges) == 0 || len(n.Exchanges) > 8 {
+		t.Fatalf("npc memory: talks=%d exchanges=%d", n.Talks, len(n.Exchanges))
+	}
+	if len(lines) < 3 {
+		t.Fatalf("expected several distinct lines, got %v", lines)
+	}
+	if !repeated {
+		t.Log("line pool not exhausted in 12 talks")
+	}
+	// 事件溯源：从事件重放得到同样的记忆
+	for _, e := range r.all {
+		if err := state.Apply(re, e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	a, _ := r.s.Marshal()
+	b, _ := re.Marshal()
+	if !bytes.Equal(a, b) {
+		t.Fatal("replayed memory differs")
+	}
+}

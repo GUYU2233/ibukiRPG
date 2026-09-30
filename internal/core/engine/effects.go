@@ -109,6 +109,30 @@ func (w *work) applyOutcome(o definition.Outcome, target, item string) error {
 			return nil // 不在场景中的短期事实没有意义（持久事实已进入 Canon）
 		}
 		return w.emit(event.SceneFactChanged, event.Data{Location: tgt, Text: fact})
+	case "var_add", "var_set":
+		key := str("var")
+		if key == "" || strings.Contains(key, "{") {
+			return fmt.Errorf("%s: missing var", eff.Type)
+		}
+		n, err := num("value", 0)
+		if err != nil {
+			return err
+		}
+		// 旧存档里可能还没有这个变量：语义值取包内初始值，但 Delta 相对状态中的实际值（0）计算。
+		stored, ok := w.s.Vars[key]
+		cur := stored
+		if !ok {
+			cur = w.pkg().Variables[key]
+		}
+		want := cur + n
+		if eff.Type == "var_set" {
+			want = n
+		}
+		delta := want - stored
+		if delta == 0 {
+			return nil
+		}
+		return w.emit(event.VarChanged, event.Data{Key: key, Delta: delta})
 	case "flag_set":
 		return w.emit(event.FlagSet, event.Data{Flag: str("flag"), Remove: eff.Values["value"] == false})
 	case "condition_add":

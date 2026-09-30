@@ -1,0 +1,46 @@
+# 示例故事包：雾港灯塔 ·《守灯人的信》——展示最小可玩故事包的结构（2 个地点、2 个 NPC、1 个小事件）。
+# 本包没有声明 HUD，聊天界面会显示引擎的默认状态栏（位置 / 时间 / 铜币 / 进行中的事件）。
+id: fog_lighthouse
+namespace: fog
+name: "雾港灯塔"
+version: 0.1.0
+type: story
+engine: ">=0.1.2"
+tagline: 《守灯人的信》——一封寄不出去的信，一盏快要熄灭的灯。
+description: >
+  海雾吞没了小小的渔港。老守灯人哈罗托你找一样东西，而码头上的渔女苏似乎一直在等一封信。
+  一个约 10 分钟的小故事，也是故事包格式的最小示例。
+author: guyu2233
+icon: lighthouse
+accent: "#2F5D7C"
+tags: [温情, 短篇, 示例]
+dependencies: []
+start:
+  location: fog:location/dock
+  day: 1
+  time: "06:30"
+  intro: |
+    天刚蒙蒙亮，海雾浓得化不开。你踩着湿滑的木栈道走上雾港码头，远处灯塔的光一圈圈扫过雾面，却越来越暗。
+    码头边，一个裹着头巾的姑娘正望着海面发呆。
+    ——你想做什么？试试“和姑娘打个招呼”“去灯塔看看”。
+content:
+  rules:
+    - rules/skills.yaml
+    - rules/pacing.yaml
+  locations:
+    - world/locations/dock.yaml
+    - world/locations/lighthouse.yaml
+  characters:
+    - characters/player.yaml
+    - characters/harrow.yaml
+    - characters/su.yaml
+  items:
+    - items/items.yaml
+  actions:
+    - actions/look.yaml
+    - actions/talk.yaml
+    - actions/investigate.yaml
+    - actions/persuade.yaml
+    - actions/rest.yaml
+  stories:
+    - story/letter.yaml

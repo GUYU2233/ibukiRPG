@@ -18,6 +18,9 @@ import (
 // DBFileName 是数据目录下的存档数据库文件名。
 const DBFileName = "ibukirpg.db"
 
+// PackDirName 是数据目录下存放导入故事包的子目录。
+const PackDirName = "packs"
+
 var (
 	sessMu   sync.Mutex
 	sess     *orchestrator.Session
@@ -91,7 +94,7 @@ func initSession(ctx context.Context, dataDir string) (any, error) {
 		_ = sess.Close()
 		sess = nil
 	}
-	s, err := orchestrator.Open(ctx, orchestrator.Options{DBPath: path, Package: packages.Demo(), Sink: emit})
+	s, err := orchestrator.Open(ctx, orchestrator.Options{DBPath: path, Packs: packages.Builtin(), PackDir: filepath.Join(dataDir, PackDirName), Sink: emit})
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +155,8 @@ func gameDispatch(ctx context.Context, req dto.RequestV1) (any, bool, error) {
 		"configure_ai": true, "ai_status": true, "test_ai": true, "list_saves": true, "new_game": true, "load_game": true,
 		"delete_save": true, "copy_save": true, "rename_save": true, "submit_text": true, "quick_action": true,
 		"get_scene": true, "get_suggestions": true, "get_character": true, "get_inventory": true, "get_npcs": true,
-		"get_journal": true, "get_transcript": true, "get_bundle": true,
+		"get_journal": true, "get_transcript": true, "get_bundle": true, "get_hud": true,
+		"list_packs": true, "import_pack": true, "delete_pack": true,
 	}
 	if !handled[req.Type] {
 		return nil, false, nil
@@ -195,6 +199,7 @@ func gameRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV1
 		return s.ListSaves(ctx)
 	case "new_game":
 		p, err := decode[struct {
+			PackID     string `json:"pack_id"`
 			SaveName   string `json:"save_name"`
 			PlayerName string `json:"player_name"`
 			Seed       uint64 `json:"seed"`
@@ -202,7 +207,7 @@ func gameRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV1
 		if err != nil {
 			return nil, err
 		}
-		if _, err := s.NewGame(ctx, p.SaveName, p.PlayerName, p.Seed); err != nil {
+		if _, err := s.NewGameIn(ctx, p.PackID, p.SaveName, p.PlayerName, p.Seed); err != nil {
 			return nil, err
 		}
 		return bundle(ctx, s)
@@ -252,6 +257,30 @@ func gameRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV1
 		return s.Quick(ctx, req.CommandID, qa)
 	case "get_scene":
 		return s.Scene(ctx)
+	case "get_hud":
+		sc, err := s.Scene(ctx)
+		return sc.Hud, err
+	case "list_packs":
+		return s.Packs(ctx), nil
+	case "import_pack":
+		p, err := decode[struct {
+			Path string `json:"path"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		if p.Path == "" {
+			return nil, errors.New("请选择要导入的 .zip 文件")
+		}
+		return s.ImportPack(ctx, p.Path)
+	case "delete_pack":
+		p, err := decode[struct {
+			ID string `json:"id"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]bool{"deleted": true}, s.DeletePack(ctx, p.ID)
 	case "get_suggestions":
 		return s.Suggestions()
 	case "get_character":

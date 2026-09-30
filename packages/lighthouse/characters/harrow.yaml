@@ -1,0 +1,78 @@
+id: fog:character/harrow
+type: character
+identity:
+  name: 哈罗
+  age: 71
+  role: 老守灯人
+aliases: [哈罗, 守灯人, 老人, 老守灯人, 老头]
+location: fog:location/lighthouse
+description: 背驼得厉害的老人，手上满是灯油烫出的疤，说话时总要停下来咳两声。
+attributes:
+  strength: 6
+  agility: 6
+  intelligence: 13
+  resolve: 12
+skills:
+  insight: 12
+personality:
+  description: >
+    固执、嘴硬，心里压着一件多年的心事。
+relationship_to_player:
+  trust: 0
+  fear: 0
+dialogue:
+  topics:
+    lamp: 灯塔
+    letter: 那封信
+    su: 苏
+    thanks: 道谢
+    smalltalk: 家常
+  lines:
+    - id: after_delivered
+      topic: thanks
+      priority: 45
+      once: true
+      when: 'stories.letter.outcome == "delivered"'
+      text: 哈罗望着窗外的雾，很久才开口：“她……收下了？好，好。这盏灯，我还能再守几年。”
+      memory: 听说苏收下了信，松了口气
+    - id: letter_found
+      topic: letter
+      priority: 40
+      once: true
+      when: '"letter_found" in world.flags && stories.letter.status == "active"'
+      text: 哈罗看见你手里的信，脸色一变，又慢慢缓和下来：“二十年了，我一直没勇气寄出去。替我……交给码头上的苏吧。”
+      memory: 托你把信交给码头上的苏
+      remember: 把信托付给了{player}
+    - id: first_greet
+      topic: lamp
+      priority: 30
+      once: true
+      when: 'npc.talks == 0'
+      text: 哈罗咳了两声：“外乡人？灯油快烧完了，我的眼神也不行了。你要是手脚利索，帮我在桌上找找东西。”
+      memory: 请你帮忙在桌上找东西
+    - id: ask_again
+      topic: lamp
+      priority: 25
+      once: true
+      when: 'npc.talks >= 1 && !("letter_found" in world.flags)'
+      text: 哈罗敲了敲木桌：“刚才跟你说的，找着没有？就在这抽屉附近……我老了，弯不下腰。”
+      memory: 催你去翻翻木桌的抽屉
+    - id: about_su
+      topic: su
+      priority: 20
+      once: true
+      when: 'npc.talks >= 2'
+      text: 哈罗叹了口气：“码头上那姑娘，每天天不亮就去看海。她娘当年……唉，不说了。”
+      memory: 欲言又止地提到了苏的母亲
+    - id: small
+      topic: smalltalk
+      priority: 1
+      text: 哈罗往灯里添了一勺油：“雾大的日子，灯就是船的眼睛。”
+      memory: 说起灯塔对船的意义
+  repeat:
+    - 哈罗摆摆手：“{topic}的事，刚才不是说过了？我记性差，你记性总该好些。”
+secrets:
+  - id: fog:secret/harrow_su
+    text: 他是苏的父亲。
+    keywords: [苏的父亲, 是她父亲, 亲生父亲]
+tags: [npc]

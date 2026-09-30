@@ -220,14 +220,30 @@ func (w *work) execAction() error {
 	}); err != nil {
 		return err
 	}
+	// 交谈：先按“交谈前”的记忆挑选台词（DialogueOccurred），再结算动作效果。
+	if def.Dialogue && target != "" && success {
+		if err := w.converse(target); err != nil {
+			return err
+		}
+	}
 	for _, o := range def.Outcomes[outcome] {
 		if err := w.applyOutcome(o, target, item); err != nil {
 			return err
 		}
 	}
 	if summary != "" {
-		if err := w.observe(summary, def.Witness.Notable, event.ActionPerformed, "player:"+def.ID+":"+target, target); err != nil {
+		if err := w.observe(summary, def.Witness.Notable, event.ActionPerformed, "player:"+def.ID+":"+target, target, def.ID); err != nil {
 			return err
+		}
+		// 被针对的 NPC 会把显眼的遭遇记成情节记忆（交谈本身由对话记忆负责）。
+		if target != "" && def.Witness.Notable && !def.Dialogue {
+			imp := 2
+			if !success {
+				imp = 1
+			}
+			if err := w.remember(target, "player:"+loader.Key(def.ID), summary, "experienced", imp); err != nil {
+				return err
+			}
 		}
 	}
 	if len(def.Checks) > 0 && !success {
@@ -304,7 +320,7 @@ func (w *work) execMove() error {
 			return reject("%s", msg)
 		}
 	}
-	if err := w.observe(fmt.Sprintf("%s离开了，往%s去了", w.s.Player.Name, w.name(to)), false, event.LocationChanged, "", ""); err != nil {
+	if err := w.observe(fmt.Sprintf("%s离开了，往%s去了", w.s.Player.Name, w.name(to)), false, event.LocationChanged, "", "", ""); err != nil {
 		return err
 	}
 	if exit.Minutes > 0 {
@@ -348,16 +364,16 @@ func (w *work) movePlayer(to string) error {
 			return err
 		}
 	}
-	return w.observe(fmt.Sprintf("%s走了进来", w.s.Player.Name), false, event.LocationChanged, "", "")
+	return w.observe(fmt.Sprintf("%s走了进来", w.s.Player.Name), false, event.LocationChanged, "", "", "")
 }
 
 // ---------- Observation / Witness ----------
 
 // observe 让玩家所在地点的 NPC 观察一个客观事件：写入观察记忆；
 // notable 事件还会更新信念（Event → Observation → Belief，第 15 节）。
-func (w *work) observe(text string, notable bool, sourceEvent, key, target string) error {
+func (w *work) observe(text string, notable bool, sourceEvent, key, target, action string) error {
 	for _, npc := range witness.Witnesses(w.s, w.pkg(), witness.Visibility{Mode: "local", Location: w.s.Player.Location}) {
-		if err := w.emit(event.ObservedEventCreated, event.Data{Witness: npc, Text: text, Reason: sourceEvent}); err != nil {
+		if err := w.emit(event.ObservedEventCreated, event.Data{Witness: npc, Text: text, Reason: sourceEvent, Action: action, Target: target, Notable: notable}); err != nil {
 			return err
 		}
 		if notable && key != "" {
@@ -370,6 +386,14 @@ func (w *work) observe(text string, notable bool, sourceEvent, key, target strin
 		}
 	}
 	return nil
+}
+
+// remember 为 NPC 写入一条情节记忆（MemoryRecorded）。
+func (w *work) remember(npc, key, text, source string, importance int) error {
+	if _, ok := w.s.NPCs[npc]; !ok || strings.TrimSpace(text) == "" {
+		return nil
+	}
+	return w.emit(event.MemoryRecorded, event.Data{Witness: npc, Key: key, Text: text, Source: source, Delta: importance})
 }
 
 // ---------- 模板 ----------

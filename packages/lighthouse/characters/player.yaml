@@ -1,0 +1,20 @@
+id: fog:character/player
+type: player
+identity:
+  name: 旅人
+  role: 搭渔船路过的旅人
+attributes:
+  strength: 10
+  agility: 11
+  intelligence: 12
+  charisma: 12
+  resolve: 10
+skills:
+  persuasion: 3
+  perception: 3
+  insight: 2
+  performance: 1
+  stealth: 2
+  athletics: 1
+gold: 5
+inventory: {}

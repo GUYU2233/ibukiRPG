@@ -1,0 +1,40 @@
+id: fog:action/persuade
+category: social
+name: 说服
+label: 说服{target}
+description: 以理服人或以情动人，让目标接受你的请求（说服检定）。
+target: character
+keywords: [说服, 劝, 劝说, 劝劝, 恳求, 请求, 求求, 求, 安抚, 冷静, 讲道理, 调解]
+requirements:
+  - expr: actor.can_speak == true
+    message: 你现在说不出话。
+  - expr: target.type == "character"
+    message: 只能说服一个人。
+checks:
+  - skill: persuasion
+    difficulty: '8 + target.resolve / 2 - target.trust / 10'
+cost:
+  time: 1m
+outcomes:
+  success:
+    - effect:
+        type: relationship_delta
+        target: target
+        values:
+          trust: 3
+  failure:
+    - effect:
+        type: relationship_delta
+        target: target
+        values:
+          trust: -1
+narration:
+  success:
+    - 你放缓语气，把道理一条条摆在{target}面前。{target}沉默片刻，终于点了点头。
+    - 你的话说到了点子上。{target}的神情明显松动了。
+  failure:
+    - 你说得口干舌燥，{target}却只是摇头，显然没被打动。
+    - "{target}皱着眉听完，冷淡地回了一句：“说完了？”"
+witness:
+  summary: "{actor}试图说服{target}（{outcome}）"
+  notable: true

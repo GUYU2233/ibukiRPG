@@ -20,6 +20,10 @@ const (
 	RelMax = 100
 	// MaxMemories 是每个 NPC 保留的最近观察条数。
 	MaxMemories = 12
+	// MaxExchanges 是每个 NPC 保留的最近交谈条数（对话记忆）。
+	MaxExchanges = 8
+	// MaxEpisodes 是每个 NPC 保留的情节记忆条数（超出时先丢弃最不重要、最旧的）。
+	MaxEpisodes = 16
 )
 
 // Player 是玩家角色的可变状态。
@@ -49,6 +53,30 @@ type Memory struct {
 	Text   string `json:"text"`
 	Turn   int    `json:"turn"`
 	Minute int64  `json:"minute"`
+	// Source 是被观察的客观事件类型；Action 是动作 ID（若有），供台词条件与“回忆”使用。
+	Source  string `json:"source,omitempty"`
+	Action  string `json:"action,omitempty"`
+	Target  string `json:"target,omitempty"`
+	Notable bool   `json:"notable,omitempty"`
+}
+
+// Exchange 是 NPC 与玩家的一次交谈记录（对话记忆）。
+type Exchange struct {
+	Line   string `json:"line"`
+	Topic  string `json:"topic,omitempty"`
+	Text   string `json:"text"` // 这次交谈的摘要（NPC 说了什么）
+	Turn   int    `json:"turn"`
+	Minute int64  `json:"minute"`
+}
+
+// Episode 是 NPC 的一条情节记忆：亲历或目击的重要事情（第 13、15 节）。
+type Episode struct {
+	Key        string `json:"key"`
+	Text       string `json:"text"`
+	Source     string `json:"source"`
+	Importance int    `json:"importance"`
+	Turn       int    `json:"turn"`
+	Minute     int64  `json:"minute"`
 }
 
 // NPC 是 NPC 的可变状态。
@@ -58,6 +86,44 @@ type NPC struct {
 	Fear     int      `json:"fear"`
 	Beliefs  []Belief `json:"beliefs"`
 	Memories []Memory `json:"memories"`
+	// 对话记忆：交谈次数、最后交谈时间、说过的台词（ID → 最后一次说的回合）、谈过的话题次数。
+	Talks          int            `json:"talks,omitempty"`
+	LastTalkTurn   int            `json:"last_talk_turn,omitempty"`
+	LastTalkMinute int64          `json:"last_talk_minute,omitempty"`
+	Said           map[string]int `json:"said,omitempty"`
+	Topics         map[string]int `json:"topics,omitempty"`
+	Exchanges      []Exchange     `json:"exchanges,omitempty"`
+	Episodes       []Episode      `json:"episodes,omitempty"`
+}
+
+// LastExchange 返回最近一次交谈（没有则 nil）。
+func (n *NPC) LastExchange() *Exchange {
+	if len(n.Exchanges) == 0 {
+		return nil
+	}
+	return &n.Exchanges[len(n.Exchanges)-1]
+}
+
+// Attitude 把关系数值翻译成文字（友好 / 亲近 / 中立 / 戒备 / 敌视 / 畏惧）。
+func (n *NPC) Attitude() string {
+	switch {
+	case n.Fear >= 10 && n.Fear > n.Trust:
+		return "畏惧"
+	case n.Trust >= 15:
+		return "友好"
+	case n.Trust >= 5:
+		return "亲近"
+	case n.Trust <= -5:
+		return "敌视"
+	case n.Trust < 0:
+		return "戒备"
+	}
+	return "中立"
+}
+
+// HasEpisode 报告 NPC 是否记得某件事。
+func (n *NPC) HasEpisode(key string) bool {
+	return slices.ContainsFunc(n.Episodes, func(e Episode) bool { return e.Key == key })
 }
 
 // Story 是 Story Node 的运行状态。
@@ -99,6 +165,7 @@ type State struct {
 	Stories        map[string]*Story   `json:"stories"`
 	Pacing         Pacing              `json:"pacing"`
 	Noise          map[string]int      `json:"noise"`
+	Vars           map[string]int      `json:"vars,omitempty"` // 故事变量（例如嫌疑值）
 	RNG            rng.Counters        `json:"rng"`
 	LastSeq        int64               `json:"last_seq"`
 }
@@ -129,7 +196,11 @@ func New(p *loader.Package, seed uint64, playerName string) *State {
 		Flags:      map[string]bool{},
 		Stories:    map[string]*Story{},
 		Noise:      map[string]int{},
+		Vars:       map[string]int{},
 		RNG:        rng.Counters{},
+	}
+	for k, v := range p.Variables {
+		s.Vars[k] = v
 	}
 	for id, n := range p.Player.Inventory {
 		s.Player.Inventory[id] = n
@@ -199,6 +270,9 @@ func Unmarshal(b []byte) (*State, error) {
 	}
 	if s.RNG == nil {
 		s.RNG = rng.Counters{}
+	}
+	if s.Vars == nil {
+		s.Vars = map[string]int{}
 	}
 	return &s, nil
 }
@@ -315,7 +389,7 @@ func Apply(s *State, e event.Event) error {
 		if !ok {
 			return fmt.Errorf("unknown witness %q", d.Witness)
 		}
-		n.Memories = append(n.Memories, Memory{Text: d.Text, Turn: e.Turn, Minute: e.Minute})
+		n.Memories = append(n.Memories, Memory{Text: d.Text, Turn: e.Turn, Minute: e.Minute, Source: d.Reason, Action: d.Action, Target: d.Target, Notable: d.Notable})
 		if len(n.Memories) > MaxMemories {
 			n.Memories = n.Memories[len(n.Memories)-MaxMemories:]
 		}
@@ -349,6 +423,54 @@ func Apply(s *State, e event.Event) error {
 		if d.Nudge {
 			s.Pacing.LastNudgeTurn = e.Turn
 		}
+	case event.DialogueOccurred:
+		n, ok := s.NPCs[d.Target]
+		if !ok {
+			return fmt.Errorf("unknown npc %q", d.Target)
+		}
+		n.Talks++
+		n.LastTalkTurn, n.LastTalkMinute = e.Turn, e.Minute
+		if n.Said == nil {
+			n.Said = map[string]int{}
+		}
+		if d.Step != "" {
+			n.Said[d.Step] = e.Turn
+		}
+		if d.Key != "" {
+			if n.Topics == nil {
+				n.Topics = map[string]int{}
+			}
+			n.Topics[d.Key]++
+		}
+		n.Exchanges = append(n.Exchanges, Exchange{Line: d.Step, Topic: d.Key, Text: d.Text, Turn: e.Turn, Minute: e.Minute})
+		if len(n.Exchanges) > MaxExchanges {
+			n.Exchanges = n.Exchanges[len(n.Exchanges)-MaxExchanges:]
+		}
+	case event.MemoryRecorded:
+		n, ok := s.NPCs[d.Witness]
+		if !ok {
+			return fmt.Errorf("unknown npc %q", d.Witness)
+		}
+		ep := Episode{Key: d.Key, Text: d.Text, Source: d.Source, Importance: d.Delta, Turn: e.Turn, Minute: e.Minute}
+		if i := slices.IndexFunc(n.Episodes, func(x Episode) bool { return x.Key == d.Key }); i >= 0 {
+			n.Episodes = slices.Delete(n.Episodes, i, i+1)
+		}
+		n.Episodes = append(n.Episodes, ep)
+		for len(n.Episodes) > MaxEpisodes {
+			// 丢弃最不重要的一条（同等重要时丢最旧的）
+			drop := 0
+			for i, x := range n.Episodes {
+				if x.Importance < n.Episodes[drop].Importance {
+					drop = i
+				}
+			}
+			n.Episodes = slices.Delete(n.Episodes, drop, drop+1)
+		}
+	case event.VarChanged:
+		if s.Vars == nil {
+			s.Vars = map[string]int{}
+		}
+		s.Vars[d.Key] += d.Delta
 	case event.TurnCompleted:
 		s.Turn = e.Turn
 	default:
