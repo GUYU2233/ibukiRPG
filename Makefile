@@ -8,14 +8,23 @@ BIN       := build/bin
 ANDROID_API ?= 24
 AAR       := build/android/ibukirpg.aar
 
+# Windows：产物加 .exe 后缀 + POSIX shell 目录前置（否则 System32 的 find/sort 会遮蔽 Unix 版）
+ifeq ($(OS),Windows_NT)
+EXE := .exe
+ifneq ($(findstring sh.exe,$(SHELL)),)
+export PATH := $(subst /,\,$(dir $(SHELL)));$(PATH)
+endif
+endif
+
 .PHONY: all build test lint fmt vet run-cli run-server eval eval-synthesize mobile-smoke android-aar apk apk-debug tidy clean
 
 all: fmt vet lint test build
 
 build: ## 编译全部包与可执行文件
+	@mkdir -p $(BIN)
 	$(GO) build ./...
-	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN)/ibukirpg ./cmd/cli
-	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN)/ibukirpg-server ./cmd/server
+	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN)/ibukirpg$(EXE) ./cmd/cli
+	$(GO) build -ldflags "$(LDFLAGS)" -o $(BIN)/ibukirpg-server$(EXE) ./cmd/server
 
 test: ## 运行单元测试（含 race 检测需 CGO，可用 make test RACE=1）
 	$(GO) test $(if $(RACE),-race,) -count=1 ./...

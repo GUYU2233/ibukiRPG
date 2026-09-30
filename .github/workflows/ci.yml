@@ -5,27 +5,33 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linux:
-    name: build / vet / test / lint / eval (ubuntu)
+    name: build / vet / test / eval / lint (ubuntu)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: true
       - name: Build
-        run: go build ./...
+        run: make build
       - name: Vet
-        run: go vet ./...
+        run: make vet
       - name: Test
-        run: go test -count=1 ./...
+        run: make test
       - name: Eval (recorded transport, offline resolver, narrative guard)
-        run: go run ./cmd/eval
+        run: make eval
       - name: Lint
         uses: golangci/golangci-lint-action@v8
         with:
@@ -39,11 +45,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: true
       - name: Build
+        shell: pwsh
         run: |
+          New-Item -ItemType Directory -Force build/bin | Out-Null
           go build ./...
-          go build -o build/bin/ibukirpg.exe ./cmd/cli
-          go build -o build/bin/ibukirpg-server.exe ./cmd/server
+          go build -ldflags "-s -w -X github.com/GUYU2233/ibukiRPG/internal/buildinfo.Version=ci -X github.com/GUYU2233/ibukiRPG/internal/buildinfo.Commit=$env:GITHUB_SHA" -o build/bin/ibukirpg.exe ./cmd/cli
+          go build -ldflags "-s -w -X github.com/GUYU2233/ibukiRPG/internal/buildinfo.Version=ci -X github.com/GUYU2233/ibukiRPG/internal/buildinfo.Commit=$env:GITHUB_SHA" -o build/bin/ibukirpg-server.exe ./cmd/server
       - name: Test
         run: go test -count=1 ./...
 
@@ -55,10 +64,12 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: true
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
       - name: Install gomobile (version pinned by go.mod)
         run: |
           go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
@@ -80,3 +91,57 @@ jobs:
         with:
           name: screenshots
           path: build/screenshots/*.png
+          if-no-files-found: ignore
+
+  release:
+    name: package and publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, windows, android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build versioned CLI binaries
+        env:
+          VERSION: ${{ github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for target in linux/amd64 linux/arm64 windows/amd64 darwin/amd64 darwin/arm64; do
+            os="${target%/*}"
+            arch="${target#*/}"
+            ext=""
+            if [ "$os" = windows ]; then ext=".exe"; fi
+            name="ibukirpg-${VERSION}-${os}-${arch}${ext}"
+            GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 \
+              go build -trimpath -ldflags="-s -w -X github.com/GUYU2233/ibukiRPG/internal/buildinfo.Version=${VERSION} -X github.com/GUYU2233/ibukiRPG/internal/buildinfo.Commit=${COMMIT}" \
+              -o "dist/${name}" ./cmd/cli
+          done
+      - name: Package installable Android debug APK
+        run: |
+          set -euo pipefail
+          export ANDROID_NDK_HOME="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_HOME}"
+          go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          gomobile init
+          make android-aar
+          cd android
+          ./gradlew --no-daemon assembleDebug
+          cd ..
+          cp android/app/build/outputs/apk/debug/*.apk "dist/ibukiRPG-${GITHUB_REF_NAME}-android-debug.apk"
+      - name: Create checksums
+        run: sha256sum dist/* > dist/SHA256SUMS.txt
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "${GITHUB_REF_NAME}" dist/* --generate-notes --verify-tag
