@@ -1,0 +1,44 @@
+[
+  {
+    "accent": "#8D5A2B",
+    "author": "guyu2233",
+    "builtin": true,
+    "description": "边境小镇的一个秋雨夜。锈酒杯酒馆里，外乡商人的钱袋不翼而飞，矛头指向了抱着琴的吟游诗人米拉。调查、说服、威吓……你的选择决定她的去留。约 15-30 分钟。",
+    "engine": "\u003e=0.1.2",
+    "icon": "sports_bar",
+    "id": "demo",
+    "is_default": true,
+    "name": "边境酒馆",
+    "playable": true,
+    "save_count": 1,
+    "tagline": "《失窃的钱袋》——雨夜的酒馆里，一只钱袋不见了。",
+    "tags": [
+      "奇幻",
+      "推理",
+      "短篇",
+      "新手友好"
+    ],
+    "type": "story",
+    "version": "0.2.0"
+  },
+  {
+    "accent": "#2F5D7C",
+    "author": "guyu2233",
+    "builtin": true,
+    "description": "海雾吞没了小小的渔港。老守灯人哈罗托你找一样东西，而码头上的渔女苏似乎一直在等一封信。一个约 10 分钟的小故事，也是故事包格式的最小示例。",
+    "engine": "\u003e=0.1.2",
+    "icon": "lighthouse",
+    "id": "fog_lighthouse",
+    "name": "雾港灯塔",
+    "playable": true,
+    "save_count": 1,
+    "tagline": "《守灯人的信》——一封寄不出去的信，一盏快要熄灭的灯。",
+    "tags": [
+      "温情",
+      "短篇",
+      "示例"
+    ],
+    "type": "story",
+    "version": "0.1.0"
+  }
+]

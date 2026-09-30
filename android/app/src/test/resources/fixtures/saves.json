@@ -1,15 +1,34 @@
 [
   {
-    "created_at": 1790765250569,
+    "created_at": 1790797130251,
     "current": true,
     "gold": 13,
-    "id": "slot-1790765250569-a5791fcb",
+    "id": "slot-1790797130251-17a9312f",
     "location": "锈酒杯酒馆",
     "name": "阿澈的旅程",
+    "pack_id": "demo",
+    "pack_name": "边境酒馆",
+    "pack_version": "0.2.0",
     "player_name": "阿澈",
     "story": "失窃的钱袋",
-    "time": "第1天 19:12 · 夜晚",
+    "time": "第1天 19:14 · 夜晚",
     "turn": 5,
-    "updated_at": 1790765250574
+    "updated_at": 1790797130256
+  },
+  {
+    "created_at": 1790797130249,
+    "current": false,
+    "gold": 5,
+    "id": "slot-1790797130249-f3d0cdbb",
+    "location": "雾港码头",
+    "name": "小雾的旅程",
+    "pack_id": "fog_lighthouse",
+    "pack_name": "雾港灯塔",
+    "pack_version": "0.1.0",
+    "player_name": "小雾",
+    "story": "守灯人的信",
+    "time": "第1天 06:33 · 清晨",
+    "turn": 1,
+    "updated_at": 1790797130250
   }
 ]

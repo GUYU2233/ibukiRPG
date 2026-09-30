@@ -1,11 +1,8 @@
 package com.guyu2233.ibukirpg.app.ui.game
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,9 +30,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Send
-import androidx.compose.material.icons.outlined.AutoStories
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.outlined.PersonOutline
 import androidx.compose.material3.AssistChip
@@ -120,6 +114,7 @@ fun GameContent(
     onRetry: () -> Unit,
     onErrorShown: () -> Unit,
     initialPanels: Boolean = false,
+    initialHudExpanded: Boolean = false,
 ) {
     val snackbar = remember { SnackbarHostState() }
     var showPanels by rememberSaveable { mutableStateOf(initialPanels) }
@@ -169,7 +164,7 @@ fun GameContent(
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 )
-                s.scene.story?.let { StoryStrip(it.title, it.hints) }
+                if (!s.loading) HudBar(s.scene.hud, s.scene.story, initiallyExpanded = initialHudExpanded)
                 if (s.pending != null) LinearProgressIndicator(Modifier.fillMaxWidth()) else HorizontalDivider()
             }
         },
@@ -256,44 +251,17 @@ fun GameContent(
 private fun SceneTitle(scene: SceneV1) {
     Column {
         Text(scene.locationName, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        val sub = buildString {
+            if (scene.packName.isNotBlank()) append("《").append(scene.packName).append("》 · ")
+            append(stringResource(R.string.saves_turn, scene.turn))
+        }
         Text(
-            buildString {
-                append(scene.timeText)
-                append(" · ").append(stringResource(R.string.game_gold, scene.gold))
-            },
+            sub,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-@Composable
-private fun StoryStrip(title: String, hints: List<String>) {
-    var open by rememberSaveable { mutableStateOf(false) }
-    Surface(color = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clickable(enabled = hints.isNotEmpty()) { open = !open }
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.AutoStories, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.size(8.dp))
-                Text(stringResource(R.string.game_story, title), style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-                if (hints.isNotEmpty()) {
-                    Icon(if (open) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, contentDescription = stringResource(R.string.game_hints_title))
-                }
-            }
-            AnimatedVisibility(open, enter = expandVertically(), exit = shrinkVertically()) {
-                Column(Modifier.padding(start = 26.dp, top = 4.dp)) {
-                    Text(stringResource(R.string.game_hints_title), style = MaterialTheme.typography.labelMedium)
-                    hints.forEach { Text("· $it", style = MaterialTheme.typography.bodySmall) }
-                }
-            }
-        }
     }
 }
 

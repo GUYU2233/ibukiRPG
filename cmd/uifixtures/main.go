@@ -45,8 +45,11 @@ func main() {
 	}
 	defer func() { _ = os.RemoveAll(dir) }()
 	call("init", "", map[string]string{"data_dir": dir})
+	// 另一个故事包的存档（存档列表 / 故事包卡片上的存档数）
+	call("new_game", "", map[string]any{"player_name": "小雾", "seed": *seed, "pack_id": "fog_lighthouse"})
+	call("submit_text", "fixture-fog", map[string]string{"text": "和姑娘打个招呼"})
 	call("new_game", "", map[string]any{"player_name": "阿澈", "seed": *seed})
-	inputs := []string{"和老板打个招呼", "来一杯麦酒", "环顾四周", "仔细搜查奥托的座位附近", "说服伯林让我去储藏室看看"}
+	inputs := []string{"和老板打个招呼", "来一杯麦酒", "和伯林聊聊", "仔细搜查奥托的座位附近", "说服伯林让我去储藏室看看"}
 	for i, in := range inputs {
 		call("submit_text", fmt.Sprintf("fixture-%d", i+1), map[string]string{"text": in})
 	}
@@ -58,6 +61,7 @@ func main() {
 		"journal.json":   call("get_journal", "", nil),
 		"saves.json":     call("list_saves", "", nil),
 		"presets.json":   call("presets", "", nil),
+		"packs.json":     call("list_packs", "", nil),
 	}
 	if err := os.MkdirAll(*out, 0o750); err != nil {
 		panic(err)

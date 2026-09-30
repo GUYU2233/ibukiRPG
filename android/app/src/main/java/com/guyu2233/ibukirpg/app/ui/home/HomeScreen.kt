@@ -67,13 +67,13 @@ import com.guyu2233.ibukirpg.app.data.SlotV1
 import com.guyu2233.ibukirpg.app.ui.common.formatTime
 
 @Composable
-fun HomeScreen(vm: HomeViewModel, onGameReady: () -> Unit, onSaves: () -> Unit, onSettings: () -> Unit) {
+fun HomeScreen(vm: HomeViewModel, onGameReady: () -> Unit, onNewGame: () -> Unit, onSaves: () -> Unit, onSettings: () -> Unit) {
     val s by vm.state.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refresh() }
     HomeContent(
         s = s,
         onContinue = { vm.continueLatest(onGameReady) },
-        onNewGame = { name -> vm.newGame(name, onGameReady) },
+        onNewGame = onNewGame,
         onSaves = onSaves,
         onSettings = onSettings,
         onErrorShown = vm::dismissError,
@@ -85,12 +85,11 @@ fun HomeScreen(vm: HomeViewModel, onGameReady: () -> Unit, onSaves: () -> Unit, 
 fun HomeContent(
     s: HomeState,
     onContinue: () -> Unit,
-    onNewGame: (String) -> Unit,
+    onNewGame: () -> Unit,
     onSaves: () -> Unit,
     onSettings: () -> Unit,
     onErrorShown: () -> Unit,
 ) {
-    var showNew by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(s.error) {
         s.error?.let { onErrorShown(); snackbar.showSnackbar(it) }
@@ -149,7 +148,7 @@ fun HomeContent(
                         }
                         Spacer(Modifier.height(12.dp))
                         FilledTonalButton(
-                            onClick = { showNew = true }, enabled = !s.working,
+                            onClick = onNewGame, enabled = !s.working,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                         ) {
                             Icon(Icons.Outlined.Add, contentDescription = null)
@@ -163,7 +162,7 @@ fun HomeContent(
                         )
                         Spacer(Modifier.height(16.dp))
                         Button(
-                            onClick = { showNew = true }, enabled = !s.working,
+                            onClick = onNewGame, enabled = !s.working,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp), shape = RoundedCornerShape(20.dp),
                         ) {
                             Icon(Icons.Outlined.Add, contentDescription = null)
@@ -192,12 +191,6 @@ fun HomeContent(
                 )
             }
         }
-    }
-    if (showNew) {
-        NewGameDialog(
-            onDismiss = { showNew = false },
-            onStart = { name -> showNew = false; onNewGame(name) },
-        )
     }
 }
 
@@ -230,6 +223,12 @@ private fun LastSaveCard(slot: SlotV1) {
             Text(stringResource(R.string.home_last_played), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(6.dp))
             Text(slot.name, style = MaterialTheme.typography.titleLarge)
+            if (slot.packName.isNotBlank()) {
+                Text(
+                    stringResource(R.string.saves_pack, slot.packName, slot.packVersion),
+                    style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary,
+                )
+            }
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Place, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -256,7 +255,7 @@ private fun LastSaveCard(slot: SlotV1) {
 }
 
 @Composable
-fun NewGameDialog(onDismiss: () -> Unit, onStart: (String) -> Unit) {
+fun NewGameDialog(packName: String, onDismiss: () -> Unit, onStart: (String) -> Unit) {
     val default = stringResource(R.string.new_game_name_default)
     var name by rememberSaveable { mutableStateOf(default) }
     val submit = { onStart(name.ifBlank { default }) }
@@ -265,7 +264,7 @@ fun NewGameDialog(onDismiss: () -> Unit, onStart: (String) -> Unit) {
         title = { Text(stringResource(R.string.new_game_title)) },
         text = {
             Column {
-                Text(stringResource(R.string.new_game_hint), style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.new_game_hint, packName), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = name, onValueChange = { if (it.length <= 12) name = it },

@@ -232,6 +232,17 @@ private fun LazyListScope.peopleTab(npcs: List<NPCV1>, busy: Boolean, onAction: 
                 Text("态度：${n.attitude}", style = MaterialTheme.typography.bodyMedium)
                 Meter(stringResource(R.string.panel_trust), n.trust, MaterialTheme.colorScheme.primary)
                 Meter(stringResource(R.string.panel_fear), n.fear, MaterialTheme.colorScheme.error)
+                Text(
+                    if (n.talks > 0) stringResource(R.string.panel_memories_count, n.talks) else stringResource(R.string.panel_memories),
+                    style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp),
+                )
+                if (n.memories.isEmpty()) {
+                    Text(stringResource(R.string.panel_no_memories), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    n.memories.take(4).forEach { m ->
+                        Text("· $m", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 Text(stringResource(R.string.panel_beliefs), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
                 if (n.beliefs.isEmpty()) {
                     Text(stringResource(R.string.panel_no_beliefs), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

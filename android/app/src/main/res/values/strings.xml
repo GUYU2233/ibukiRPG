@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ibukiRPG</string>
-    <string name="app_subtitle">边境酒馆 · 文字冒险</string>
+    <string name="app_subtitle">中文文字冒险</string>
     <string name="app_tagline">用你自己的话行动，骰子与规则决定结果。</string>
 
     <!-- 首页 -->
@@ -21,7 +21,7 @@
     <string name="new_game_title">开始新的旅程</string>
     <string name="new_game_name_label">你的名字</string>
     <string name="new_game_name_default">旅人</string>
-    <string name="new_game_hint">故事发生在边境小镇的“锈酒杯”酒馆。存档会自动保存。</string>
+    <string name="new_game_hint">故事：《%1$s》。每一回合都会自动保存。</string>
     <string name="new_game_start">出发</string>
     <string name="cancel">取消</string>
     <string name="confirm">确定</string>
@@ -44,6 +44,34 @@
     <string name="saves_rename_title">重命名存档</string>
     <string name="saves_copied">已复制存档</string>
     <string name="saves_deleted">已删除存档</string>
+    <string name="saves_pack">《%1$s》v%2$s</string>
+    <string name="saves_pack_problem">无法读取：%1$s</string>
+
+    <!-- 故事包 -->
+    <string name="packs_title">选择故事</string>
+    <string name="packs_subtitle">每个存档都绑定一个故事包及其版本</string>
+    <string name="packs_import">导入</string>
+    <string name="packs_import_desc">导入故事包（.zip）</string>
+    <string name="packs_importing">正在校验并导入故事包…</string>
+    <string name="packs_imported">已导入《%1$s》v%2$s</string>
+    <string name="packs_updated">已更新《%1$s》：v%2$s → v%3$s</string>
+    <string name="packs_import_failed">导入失败</string>
+    <string name="packs_start">开始新游戏</string>
+    <string name="packs_builtin">内置</string>
+    <string name="packs_user">已导入</string>
+    <string name="packs_author">作者 %1$s</string>
+    <string name="packs_version">v%1$s</string>
+    <string name="packs_saves">%1$d 个存档</string>
+    <string name="packs_delete">删除故事包</string>
+    <string name="packs_delete_title">删除故事包？</string>
+    <string name="packs_delete_msg">《%1$s》将从本机移除。</string>
+    <string name="packs_delete_msg_saves">《%1$s》将从本机移除。使用它的 %2$d 个存档会保留，但在重新导入前无法读取。</string>
+    <string name="packs_deleted">已删除故事包</string>
+    <string name="packs_unavailable">不可用：%1$s</string>
+    <string name="packs_more_title">想玩更多故事？</string>
+    <string name="packs_more_text">故事包是一个包含 manifest.yaml 的 .zip 文件。点右上角“导入”，在文件选择器里选中它即可；导入前会检查格式、命名空间、依赖和引擎版本。</string>
+    <string name="packs_read_more">展开全文</string>
+    <string name="packs_empty">没有可用的故事包</string>
 
     <!-- 游戏 -->
     <string name="game_input_hint">你想做什么？</string>
@@ -63,6 +91,9 @@
     <string name="game_present">在场：%1$s</string>
     <string name="game_hints_title">可以试试</string>
     <string name="game_scroll_bottom">回到最新</string>
+    <string name="hud_title">状态</string>
+    <string name="hud_expand">展开状态</string>
+    <string name="hud_collapse">收起状态</string>
 
     <!-- 面板 -->
     <string name="tab_character">角色</string>
@@ -79,6 +110,9 @@
     <string name="panel_buy">买（%1$d 铜币）</string>
     <string name="panel_trust">信任</string>
     <string name="panel_fear">畏惧</string>
+    <string name="panel_memories">TA 记得的事</string>
+    <string name="panel_memories_count">TA 记得的事（交谈过 %1$d 次）</string>
+    <string name="panel_no_memories">还没和你说过话</string>
     <string name="panel_beliefs">TA 知道的事</string>
     <string name="panel_no_beliefs">还没对你留下什么印象</string>
     <string name="panel_present">在场</string>

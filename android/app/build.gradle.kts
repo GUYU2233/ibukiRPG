@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-val appVersionName = "0.1.1rc1"
+val appVersionName = "0.1.2rc1"
 
 // 发布签名：密钥库放在仓库之外（默认 ~/.ibukirpg/keystore.properties），见 docs/android.md。
 val keystorePropsFile = providers.environmentVariable("IBUKIRPG_KEYSTORE_PROPERTIES")
@@ -26,7 +26,7 @@ android {
         applicationId = "com.guyu2233.ibukirpg"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
+        versionCode = 3
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -87,7 +87,7 @@ kotlin {
     }
 }
 
-// 输出文件名：ibukiRPG-v0.1.1rc1.apk
+// 输出文件名：ibukiRPG-v0.1.2rc1.apk
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->

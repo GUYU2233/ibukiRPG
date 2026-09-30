@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FolderOff
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -57,16 +58,38 @@ import com.guyu2233.ibukirpg.app.R
 import com.guyu2233.ibukirpg.app.data.SlotV1
 import com.guyu2233.ibukirpg.app.ui.common.formatTime
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavesScreen(vm: SavesViewModel, onBack: () -> Unit, onGameReady: () -> Unit) {
     val s by vm.state.collectAsStateWithLifecycle()
+    SavesContent(
+        s = s,
+        onBack = onBack,
+        onOpen = { vm.load(it, onGameReady) },
+        onCopy = { slot, msg -> vm.copy(slot, msg) },
+        onRename = { slot, name -> vm.rename(slot, name) },
+        onDelete = { slot, msg -> vm.delete(slot, msg) },
+        onMessageShown = vm::consumeMessage,
+    )
+}
+
+/** 无状态的存档列表（便于截图测试）。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SavesContent(
+    s: SavesState,
+    onBack: () -> Unit,
+    onOpen: (SlotV1) -> Unit,
+    onCopy: (SlotV1, String) -> Unit,
+    onRename: (SlotV1, String) -> Unit,
+    onDelete: (SlotV1, String) -> Unit,
+    onMessageShown: () -> Unit,
+) {
     val snackbar = remember { SnackbarHostState() }
     var confirmDelete by remember { mutableStateOf<SlotV1?>(null) }
     var renaming by remember { mutableStateOf<SlotV1?>(null) }
     val deletedMsg = stringResource(R.string.saves_deleted)
     val copiedMsg = stringResource(R.string.saves_copied)
-    LaunchedEffect(s.message) { s.message?.let { snackbar.showSnackbar(it); vm.consumeMessage() } }
+    LaunchedEffect(s.message) { s.message?.let { snackbar.showSnackbar(it); onMessageShown() } }
     val scroll = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
@@ -101,8 +124,8 @@ fun SavesScreen(vm: SavesViewModel, onBack: () -> Unit, onGameReady: () -> Unit)
                         SlotCard(
                             slot = slot,
                             enabled = !s.working,
-                            onOpen = { vm.load(slot, onGameReady) },
-                            onCopy = { vm.copy(slot, copiedMsg) },
+                            onOpen = { onOpen(slot) },
+                            onCopy = { onCopy(slot, copiedMsg) },
                             onRename = { renaming = slot },
                             onDelete = { confirmDelete = slot },
                         )
@@ -120,7 +143,7 @@ fun SavesScreen(vm: SavesViewModel, onBack: () -> Unit, onGameReady: () -> Unit)
             text = { Text(stringResource(R.string.saves_delete_msg, slot.name)) },
             confirmButton = {
                 Button(
-                    onClick = { confirmDelete = null; vm.delete(slot, deletedMsg) },
+                    onClick = { confirmDelete = null; onDelete(slot, deletedMsg) },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
                 ) { Text(stringResource(R.string.saves_delete)) }
             },
@@ -136,7 +159,7 @@ fun SavesScreen(vm: SavesViewModel, onBack: () -> Unit, onGameReady: () -> Unit)
                 OutlinedTextField(value = name, onValueChange = { if (it.length <= 24) name = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
             },
             confirmButton = {
-                Button(onClick = { renaming = null; vm.rename(slot, name) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.confirm)) }
+                Button(onClick = { renaming = null; onRename(slot, name) }, enabled = name.isNotBlank()) { Text(stringResource(R.string.confirm)) }
             },
             dismissButton = { TextButton(onClick = { renaming = null }) { Text(stringResource(R.string.cancel)) } },
         )
@@ -163,6 +186,12 @@ private fun SlotCard(
                         SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.saves_current)) }, enabled = false)
                     }
                 }
+                if (slot.packName.isNotBlank() || slot.packId.isNotBlank()) {
+                    Text(
+                        stringResource(R.string.saves_pack, slot.packName.ifBlank { slot.packId }, slot.packVersion),
+                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
                 Text(
                     "${slot.location} · ${slot.time}",
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -179,6 +208,13 @@ private fun SlotCard(
                     stringResource(R.string.saves_updated, formatTime(slot.updatedAt)),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
                 )
+                slot.packProblem?.takeIf { it.isNotBlank() }?.let { problem ->
+                    Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.Top) {
+                        Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.size(4.dp))
+                        Text(stringResource(R.string.saves_pack_problem, problem), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                }
             }
             Box {
                 IconButton(onClick = { menu = true }, enabled = enabled) {

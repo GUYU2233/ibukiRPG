@@ -48,8 +48,6 @@ class HomeViewModel(private val engine: Engine, private val settings: SettingsSt
         run(onReady) { engine.loadGame(slot.id) }
     }
 
-    fun newGame(name: String, onReady: () -> Unit) = run(onReady) { engine.newGame(name.trim()) }
-
     private fun run(onReady: () -> Unit, block: suspend () -> Unit) {
         if (_state.value.working) return
         _state.update { it.copy(working = true, error = null) }

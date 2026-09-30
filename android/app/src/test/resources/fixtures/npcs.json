@@ -48,16 +48,22 @@
         "confidence": 1000,
         "source": "亲眼所见",
         "text": "阿澈试图说服伯林（成功）",
-        "when": "第1天 19:12 · 夜晚"
+        "when": "第1天 19:14 · 夜晚"
       }
     ],
     "description": "围着油腻围裙的壮实男人，胡子花白，擦杯子的动作又快又稳。",
     "fear": 0,
     "id": "demo:character/borin",
     "location_name": "锈酒杯酒馆",
+    "memories": [
+      "19:08 交谈：问你刚才那杯麦酒合不合口味",
+      "19:03 交谈：告诉你麦酒两个铜币、面包三个",
+      "阿澈试图说服伯林（成功）"
+    ],
     "name": "伯林",
     "present": true,
     "role": "锈酒杯酒馆老板",
+    "talks": 2,
     "trust": 5
   },
   {
@@ -109,16 +115,18 @@
         "confidence": 900,
         "source": "亲眼所见",
         "text": "阿澈试图说服伯林（成功）",
-        "when": "第1天 19:12 · 夜晚"
+        "when": "第1天 19:14 · 夜晚"
       }
     ],
     "description": "坐在壁炉边的短发女人，腰间挂着一柄旧铁剑，面前的酒杯几乎没动过。",
     "fear": 0,
     "id": "demo:character/lena",
     "location_name": "锈酒杯酒馆",
+    "memories": [],
     "name": "莉娜",
     "present": true,
     "role": "退役佣兵，酒馆常客",
+    "talks": 0,
     "trust": 0
   },
   {
@@ -170,16 +178,18 @@
         "confidence": 900,
         "source": "亲眼所见",
         "text": "阿澈试图说服伯林（成功）",
-        "when": "第1天 19:12 · 夜晚"
+        "when": "第1天 19:14 · 夜晚"
       }
     ],
     "description": "抱着鲁特琴的年轻女孩，斗篷下摆还在滴水，眼睛亮晶晶的，总在打量周围的人。",
     "fear": 0,
     "id": "demo:character/mira",
     "location_name": "锈酒杯酒馆",
+    "memories": [],
     "name": "米拉",
     "present": true,
     "role": "流浪吟游诗人",
+    "talks": 0,
     "trust": 0
   },
   {
@@ -231,16 +241,18 @@
         "confidence": 900,
         "source": "亲眼所见",
         "text": "阿澈试图说服伯林（成功）",
-        "when": "第1天 19:12 · 夜晚"
+        "when": "第1天 19:14 · 夜晚"
       }
     ],
     "description": "穿着体面的外乡商人，脸喝得通红，手指上戴着两枚铜戒指。",
     "fear": 0,
     "id": "demo:character/otto",
     "location_name": "锈酒杯酒馆",
+    "memories": [],
     "name": "奥托",
     "present": true,
     "role": "路过的外乡商人",
+    "talks": 0,
     "trust": 0
   }
 ]

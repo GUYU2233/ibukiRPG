@@ -84,7 +84,49 @@ data class SceneV1(
     val facts: List<String> = emptyList(),
     val conditions: List<String> = emptyList(),
     val story: StoryBriefV1? = null,
+    /** 故事包声明的实时状态（HUD），每回合由引擎重新计算。 */
+    val hud: List<HudFieldV1> = emptyList(),
+    val packId: String = "",
+    val packName: String = "",
 )
+
+/** HUD 字段。progress 为 0-1000 的千分比，-1 表示不是进度条；tone：normal / success / warning / danger。 */
+@Immutable @Serializable
+data class HudFieldV1(
+    val id: String = "",
+    val label: String = "",
+    val icon: String = "",
+    val value: String = "",
+    val compact: Boolean = true,
+    val wide: Boolean = false,
+    val tone: String = "",
+    val progress: Int = -1,
+)
+
+/** 故事包卡片（故事包选择界面）。cover 为 base64 编码的封面图片。 */
+@Immutable @Serializable
+data class PackV1(
+    val id: String = "",
+    val name: String = "",
+    val version: String = "",
+    val type: String = "",
+    val author: String = "",
+    val tagline: String = "",
+    val description: String = "",
+    val tags: List<String> = emptyList(),
+    val icon: String = "",
+    val accent: String = "",
+    val cover: String = "",
+    val engine: String = "",
+    val builtin: Boolean = false,
+    val playable: Boolean = true,
+    val error: String? = null,
+    val saveCount: Int = 0,
+    val isDefault: Boolean = false,
+)
+
+@Immutable @Serializable
+data class ImportResultV1(val pack: PackV1 = PackV1(), val replaced: Boolean = false, val previousVersion: String? = null)
 
 @Immutable @Serializable
 data class TurnV1(
@@ -157,6 +199,9 @@ data class NPCV1(
     val attitude: String = "",
     val beliefs: List<BeliefV1> = emptyList(),
     val actions: List<NPCActionV1> = emptyList(),
+    /** 和玩家交谈过的次数与 NPC 对玩家的记忆（新的在前）。 */
+    val talks: Int = 0,
+    val memories: List<String> = emptyList(),
 )
 
 @Immutable @Serializable
@@ -175,6 +220,11 @@ data class SlotV1(
     val updatedAt: Long = 0,
     val createdAt: Long = 0,
     val current: Boolean = false,
+    /** 存档绑定的故事包；packProblem 非空表示故事包缺失或不兼容（无法读取）。 */
+    val packId: String = "",
+    val packName: String = "",
+    val packVersion: String = "",
+    val packProblem: String? = null,
 )
 
 @Immutable @Serializable

@@ -14,6 +14,8 @@ import com.guyu2233.ibukirpg.app.ui.game.GameScreen
 import com.guyu2233.ibukirpg.app.ui.game.GameViewModel
 import com.guyu2233.ibukirpg.app.ui.home.HomeScreen
 import com.guyu2233.ibukirpg.app.ui.home.HomeViewModel
+import com.guyu2233.ibukirpg.app.ui.packs.PacksScreen
+import com.guyu2233.ibukirpg.app.ui.packs.PacksViewModel
 import com.guyu2233.ibukirpg.app.ui.saves.SavesScreen
 import com.guyu2233.ibukirpg.app.ui.saves.SavesViewModel
 import com.guyu2233.ibukirpg.app.ui.settings.SettingsScreen
@@ -24,6 +26,7 @@ object Routes {
     const val SAVES = "saves"
     const val GAME = "game"
     const val SETTINGS = "settings"
+    const val PACKS = "packs"
 }
 
 @Composable
@@ -48,6 +51,7 @@ fun AppNavHost(app: IbukiApp) {
             HomeScreen(
                 vm = vm,
                 onGameReady = toGame,
+                onNewGame = { nav.navigate(Routes.PACKS) { launchSingleTop = true } },
                 onSaves = { nav.navigate(Routes.SAVES) },
                 onSettings = { nav.navigate(Routes.SETTINGS) },
             )
@@ -55,6 +59,10 @@ fun AppNavHost(app: IbukiApp) {
         composable(Routes.SAVES) {
             val vm = viewModel { SavesViewModel(app.engine) }
             SavesScreen(vm = vm, onBack = { nav.popBackStack() }, onGameReady = toGame)
+        }
+        composable(Routes.PACKS) {
+            val vm = viewModel { PacksViewModel(app.engine, app) }
+            PacksScreen(vm = vm, onBack = { nav.popBackStack() }, onGameReady = toGame)
         }
         composable(Routes.GAME) {
             val vm = viewModel { GameViewModel(app.engine) }
