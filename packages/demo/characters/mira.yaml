@@ -1,37 +1,55 @@
 id: demo:character/mira
-
+type: character
 identity:
-  name: Mira
+  name: 米拉
   age: 19
   role: 流浪吟游诗人
-
+aliases: [米拉, 吟游诗人, 诗人, 弹琴的, 女孩, 小姑娘]
+location: demo:location/rusty_tankard
+description: 抱着鲁特琴的年轻女孩，斗篷下摆还在滴水，眼睛亮晶晶的，总在打量周围的人。
 attributes:
   strength: 6
   agility: 13
   intelligence: 12
   resolve: 7
-
 skills:
   performance: 13
   deception: 9
   persuasion: 8
-
 personality:
   description: >
     好奇、健谈，喜欢打听别人的故事，但对自己的来历讳莫如深。
-
 goals:
   - find_missing_brother
-
-traits:
-  - curious
-  - evasive
-
+traits: [curious, evasive]
+relationship_to_player:
+  trust: 0
+  fear: 0
 relationships: {}
-beliefs: {}
-memories: []
+dialogue:
+  greet:
+    - 米拉眨眨眼：“你从哪儿来？给我讲讲路上的故事吧，我拿一首歌跟你换。”
+    - 米拉拨了一下琴弦：“新客人！你看起来像是有故事的人。”
+  friendly:
+    - 米拉凑过来小声说：“我在找一个人……如果你往北走，能帮我留意一个眉心有颗痣的少年吗？”
+    - 米拉笑着给你弹了一段轻快的曲子：“这首送你，不收钱。”
+  wary:
+    - 米拉抱紧了琴，往墙角缩了缩：“我、我没做什么……”
+    - 米拉避开你的目光，假装专心调弦。
+  story:
+    demo:story/lost_purse:
+      - 米拉的眼圈红了：“我没偷！我整晚都在弹琴，所有人都看见了……”
+      - 米拉咬着嘴唇：“我看见一只灰猫从奥托的椅子底下窜过去，可是没人信我。”
+  after_story:
+    demo:story/lost_purse/truth:
+      - 米拉抱着琴冲你笑：“谢谢你相信我。作为回报——我在找我哥哥，他三个月前在北方商路上失踪了。广场的告示板上有他的画像。”
+    demo:story/lost_purse/calmed:
+      - 米拉小声说：“谢谢你帮我说话……可钱袋没找到，奥托看我的眼神还是像看贼。”
+    demo:story/lost_purse/mira_expelled:
+      - 米拉缩在井边的屋檐下，浑身湿透：“你来干什么？看我笑话吗？……我真的没偷。”
+      - 米拉抱着琴，声音发哑：“那只灰猫……我明明看见它从奥托的椅子底下钻出去的。”
 secrets:
   - id: demo:secret/mira_noble
     text: 她是一个没落贵族家族的私生女。
-inventory: []
+    keywords: [私生女, 没落贵族, 贵族血统]
 tags: [npc]

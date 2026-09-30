@@ -50,6 +50,15 @@ type Manifest struct {
 	Authors      []string            `yaml:"authors"`
 	Dependencies []Dependency        `yaml:"dependencies"`
 	Content      map[string][]string `yaml:"content"`
+	Start        Start               `yaml:"start"`
+}
+
+// Start 描述世界包的新游戏起点。
+type Start struct {
+	Location string `yaml:"location"`
+	Day      int    `yaml:"day"`
+	Time     string `yaml:"time"`
+	Intro    string `yaml:"intro"`
 }
 
 var namespaceRe = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$`)

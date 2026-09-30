@@ -9,7 +9,7 @@ import (
 
 // Evaluator 编译并缓存 CEL 表达式，用于 Action requirements、Story 条件等。
 //
-// 可用变量：actor、target、scene、world（均为 map<string, dyn>）。
+// 可用变量（均为 map<string, dyn>）：actor、target、scene、world、npcs、item、action、story。
 // 表达式只做判定与简单数值计算，不演化为通用脚本。
 type Evaluator struct {
 	env   *cel.Env
@@ -27,6 +27,10 @@ func New() (*Evaluator, error) {
 		cel.Variable("target", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("scene", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("world", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("npcs", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("item", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("action", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("story", cel.MapType(cel.StringType, cel.DynType)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create cel env: %w", err)
@@ -67,6 +71,10 @@ func (e *Evaluator) Eval(expr string, vars Vars) (any, error) {
 		"target": map[string]any{},
 		"scene":  map[string]any{},
 		"world":  map[string]any{},
+		"npcs":   map[string]any{},
+		"item":   map[string]any{},
+		"action": map[string]any{},
+		"story":  map[string]any{},
 	}
 	for k, v := range vars {
 		in[k] = v
@@ -89,4 +97,21 @@ func (e *Evaluator) EvalBool(expr string, vars Vars) (bool, error) {
 		return false, fmt.Errorf("expression %q returned %T, want bool", expr, v)
 	}
 	return b, nil
+}
+
+// EvalInt 求值整数表达式（CEL int / uint / double 均转为 int64，double 向零截断）。
+func (e *Evaluator) EvalInt(expr string, vars Vars) (int64, error) {
+	v, err := e.Eval(expr, vars)
+	if err != nil {
+		return 0, err
+	}
+	switch n := v.(type) {
+	case int64:
+		return n, nil
+	case uint64:
+		return int64(n), nil //nolint:gosec // 游戏数值范围很小
+	case float64:
+		return int64(n), nil
+	}
+	return 0, fmt.Errorf("expression %q returned %T, want int", expr, v)
 }

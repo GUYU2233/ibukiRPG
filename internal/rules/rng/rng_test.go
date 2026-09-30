@@ -90,3 +90,36 @@ func TestRollRange(t *testing.T) {
 		}
 	}
 }
+
+func TestCountersRepeatedDrawsDiffer(t *testing.T) {
+	k := Key{"check", "player", "persuasion"}
+	c := Counters{}
+	seen := map[uint64]bool{}
+	for i := 0; i < 20; i++ {
+		s, n := c.Next(7, k)
+		if n != uint64(i) {
+			t.Fatalf("counter = %d, want %d", n, i)
+		}
+		seen[s.Uint64()] = true
+	}
+	if len(seen) != 20 {
+		t.Fatalf("repeated draws should differ, got %d distinct", len(seen))
+	}
+	// 计数器可复现：同一 (seed, key, n) 总是相同结果。
+	a, b := NewAt(7, k, 3), NewAt(7, k, 3)
+	if a.Roll(20) != b.Roll(20) {
+		t.Fatal("NewAt must be deterministic")
+	}
+	// 另一条流的计数器独立。
+	if _, n := c.Next(7, Key{"check", "player", "intimidation"}); n != 0 {
+		t.Fatalf("independent stream counter = %d", n)
+	}
+	// d20 分布大致覆盖 1..20。
+	faces := map[int]bool{}
+	for i := uint64(0); i < 400; i++ {
+		faces[NewAt(1, k, i).Roll(20)] = true
+	}
+	if len(faces) != 20 {
+		t.Fatalf("d20 faces covered = %d", len(faces))
+	}
+}

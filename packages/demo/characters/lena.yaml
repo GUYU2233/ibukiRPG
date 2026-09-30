@@ -1,37 +1,47 @@
 id: demo:character/lena
-
+type: character
 identity:
-  name: Lena
+  name: 莉娜
   age: 24
   role: 退役佣兵，酒馆常客
-
+aliases: [莉娜, 丽娜, 佣兵, 女佣兵, 女剑士]
+location: demo:location/rusty_tankard
+description: 坐在壁炉边的短发女人，腰间挂着一柄旧铁剑，面前的酒杯几乎没动过。
 attributes:
   strength: 7
   agility: 12
   intelligence: 14
   resolve: 11
-
 skills:
   sword: 8
   persuasion: 10
-
+  insight: 11
 personality:
   description: >
     谨慎、现实，但重视承诺。
-
 goals:
   - protect_family
-
-traits:
-  - cautious
-  - loyal
-
+traits: [cautious, loyal]
+relationship_to_player:
+  trust: 0
+  fear: 0
 relationships: {}
-beliefs: {}
-memories: []
+dialogue:
+  greet:
+    - 莉娜抬眼看了看你，又低头盯着酒杯：“有事？没事别挡着火。”
+    - 莉娜用指节敲了敲桌面：“新面孔。这种天气还往边境跑的，要么是傻子，要么是有麻烦的人。”
+  friendly:
+    - 莉娜难得地笑了一下：“坐吧。北边的路最近不太平，你要往那边走，最好结个伴。”
+    - 莉娜把酒杯推到一边：“你倒是个爽快人。以后有用得着我的地方，开口。”
+  wary:
+    - 莉娜的手按上了剑柄：“离我远点。”
+    - 莉娜别过脸去，显然不想再和你说一个字。
+  story:
+    demo:story/lost_purse:
+      - 莉娜冷眼看着奥托：“那商人进门的时候就醉了。钱袋？我看他压根记不清自己放哪儿了。”
+      - 莉娜低声说：“刚才有只灰猫在长椅底下钻来钻去，后来往储藏室那边跑了。”
 secrets:
   - id: demo:secret/lena_debt
     text: 她欠了北方商会一大笔钱。
-inventory:
-  - core:item/iron_sword
+    keywords: [欠了北方商会, 欠北方商会, 欠债, 债务]
 tags: [npc]

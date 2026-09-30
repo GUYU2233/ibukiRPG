@@ -1,17 +1,19 @@
 id: demo:action/order_drink
 category: trade
 name: 点酒
-description: 向酒馆老板买一杯麦酒。
-
+description: 向酒馆老板买一杯麦酒（2 铜币）。
+target: none
+keywords: [点酒, 来一杯, 要一杯, 来杯, 来一扎, 喝一杯, 喝酒, 点一杯, 上酒]
 requirements:
-  - actor.gold >= 2
-  - scene.has_bartender == true
-
+  - expr: scene.has_bartender == true
+    message: 这里没有卖酒的人。
+  - expr: npcs["demo:character/borin"].location == scene.id
+    message: 伯林不在这里。
+  - expr: actor.gold >= 2
+    message: 你的铜币不够，一杯麦酒要 2 铜币。
 checks: []
-
 cost:
   time: 2m
-
 outcomes:
   success:
     - effect:
@@ -20,7 +22,20 @@ outcomes:
         values:
           gold: -2
     - effect:
+        type: item_add
+        target: actor
+        values:
+          item: demo:item/ale
+          qty: 1
+    - effect:
         type: scene_fact
         target: scene
         values:
-          fact: 玩家面前多了一杯麦酒
+          fact: 你面前放着一大杯麦酒
+narration:
+  success:
+    - 你把两枚铜币拍在柜台上。伯林利落地打满一杯麦酒推到你面前，泡沫顺着杯沿淌下来。
+    - 伯林接过铜币，从酒桶里接了满满一杯麦酒：“慢用。”
+witness:
+  summary: "{actor}向伯林买了一杯麦酒"
+  notable: false

@@ -1,19 +1,32 @@
 id: demo:location/rusty_tankard
 type: location
 name: 锈酒杯酒馆
+aliases: [酒馆, 锈酒杯, 大堂, 酒馆大堂]
 tags: [indoor, tavern, safe_zone]
 description: >
-  边境小镇上唯一的酒馆。低矮的木梁熏得发黑，壁炉常年燃着，
+  边境小镇上唯一的酒馆。低矮的木梁被烟熏得发黑，壁炉常年燃着，
   柜台后挂着一面褪色的佣兵团旗帜。
+short: 壁炉噼啪作响，麦酒的香气混着松木烟味。
+properties:
+  has_bartender: true
+  search_dc: 12
 exits:
-  - id: demo:location/town_square
+  - to: demo:location/town_square
     label: 小镇广场
-# 进入场景时的初始 Scene Fact（短期，离开场景后可丢弃）
+    minutes: 1
+  - to: demo:location/back_room
+    label: 储藏室
+    minutes: 1
+    requires: '"backroom_allowed" in world.flags || npcs["demo:character/borin"].trust >= 15 || npcs["demo:character/borin"].location != "demo:location/rusty_tankard"'
+    locked_message: 伯林横跨一步挡在储藏室门前：“客人止步，那是放酒桶的地方。”（提示：先取得伯林的信任或许门就开了。）
+# 进入场景时的初始 Scene Fact（短期，离开场景后丢弃）
 scene_facts:
   - 壁炉里的火正旺
   - 角落的桌上有一道新的刀痕
-  - 柜台旁坐着两个陌生商人
-occupants:
-  - demo:character/lena
-  - demo:character/borin
-  - demo:character/mira
+  - 柜台旁坐着一个衣着体面的外乡商人
+shop:
+  seller: demo:character/borin
+  items: [demo:item/ale, demo:item/bread, demo:item/torch, demo:item/dried_fish]
+search:
+  success: 你仔细检查了酒馆的各个角落：刀痕很新，像是有人不久前在这里拔过刀；长椅下积着厚厚的灰。
+  failure: 你四下翻看了一圈，除了灰尘和干掉的酒渍，什么也没发现。

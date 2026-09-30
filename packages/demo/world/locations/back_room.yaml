@@ -1,0 +1,22 @@
+id: demo:location/back_room
+type: location
+name: 储藏室
+aliases: [储藏室, 后面, 后屋, 仓库, 酒窖]
+tags: [indoor, private]
+description: >
+  酒馆后面狭窄的储藏室，堆满了酒桶和麻袋，空气里有股发酵的酸味。
+  一盏油灯挂在梁上，光线昏暗。
+short: 酒桶堆得很高，角落里有什么东西窸窸窣窣地动了一下。
+properties:
+  has_bartender: false
+  search_dc: 11
+exits:
+  - to: demo:location/rusty_tankard
+    label: 锈酒杯酒馆
+    minutes: 1
+scene_facts:
+  - 麻袋堆旁有一只打翻的空鱼篓
+  - 油灯的光照不到酒桶后面
+search:
+  success: 你挪开两只空酒桶，发现后面是个猫窝，里面垫着碎布和鱼骨头。
+  failure: 储藏室太暗了，你磕到了酒桶，什么也没找到。

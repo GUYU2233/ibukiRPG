@@ -1,0 +1,44 @@
+id: demo:character/otto
+type: character
+identity:
+  name: 奥托
+  age: 41
+  role: 路过的外乡商人
+aliases: [奥托, 商人, 外乡商人, 胖商人]
+location: demo:location/rusty_tankard
+description: 穿着体面的外乡商人，脸喝得通红，手指上戴着两枚铜戒指。
+attributes:
+  strength: 9
+  agility: 7
+  intelligence: 11
+  resolve: 9
+skills:
+  bargaining: 12
+  insight: 8
+personality:
+  description: >
+    精明、爱面子，喝多了容易急躁。
+goals:
+  - make_profit
+traits: [greedy, proud]
+relationship_to_player:
+  trust: 0
+  fear: 0
+relationships: {}
+dialogue:
+  greet:
+    - 奥托打了个酒嗝：“你也是做生意的？这鬼地方，连杯像样的葡萄酒都没有。”
+    - 奥托上下打量你：“别靠这么近，朋友，我的货可不便宜。”
+  friendly:
+    - 奥托拍拍你的肩：“你够意思！下回到南边，报我奥托的名字。”
+  wary:
+    - 奥托往后缩了缩，把手按在腰间：“你、你想干什么？这里可是有人看着的！”
+  story:
+    demo:story/lost_purse:
+      - 奥托涨红了脸：“就是她！那个弹琴的丫头，一直在我旁边转悠！我的钱袋里有十二枚银币！”
+      - 奥托嚷嚷：“要是找不回来，我就去找镇上的治安官！”
+  after_story:
+    demo:story/lost_purse/truth:
+      - 奥托不好意思地搓着手：“哎，都怪那只馋猫……这杯我请！”
+secrets: []
+tags: [npc, minor]

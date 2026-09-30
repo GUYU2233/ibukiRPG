@@ -1,0 +1,20 @@
+# 节奏配置（PacingProfile）：Pacing 只影响事件选择，不直接写状态。
+profile: slow_burn
+quiet_turns_for_nudge: 3
+# 平静回合过多时，由 Director 从这里挑选一条环境事件（通过 story RNG 流）。
+ambient:
+  - location: demo:location/rusty_tankard
+    text: 壁炉里“啪”地爆出一串火星，几个酒客下意识地往后缩了缩。
+    fact: 壁炉边的地板上落了几点火星
+  - location: demo:location/rusty_tankard
+    text: 米拉拨了拨鲁特琴的弦，哼起一段北方的小调，酒馆里安静了片刻。
+    fact: 米拉在角落里轻声弹琴
+  - location: demo:location/rusty_tankard
+    text: 门外的风把木门吹得吱呀作响，冷雨斜斜地扑进来一点。
+    fact: 门口的地板被雨水打湿了
+  - location: demo:location/town_square
+    text: 远处传来守夜人的梆子声，一下，两下。
+    fact: 守夜人刚刚巡过广场
+  - location: demo:location/back_room
+    text: 一只灰猫从酒桶后面探出头来，冲你眨了眨眼，又缩了回去。
+    fact: 酒桶后面似乎有只灰猫

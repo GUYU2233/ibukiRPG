@@ -1,0 +1,32 @@
+id: demo:action/use_item
+category: item
+name: 使用物品
+label: 使用{item}
+description: 使用或食用背包里的物品。
+target: inventory_item
+keywords: [使用, 用, 喝掉, 喝下, 喝了, 吃掉, 吃了, 吃, 喝, 点燃, 拿出]
+requirements:
+  - expr: item.owned >= 1
+    message: 你身上没有这样东西。
+  - expr: item.usable == true
+    message: 这样东西没法直接使用。
+checks: []
+cost:
+  time: 2m
+outcomes:
+  success:
+    - effect:
+        type: item_remove
+        target: actor
+        values:
+          item: "{item.id}"
+          qty: 1
+    - when: 'item.condition != ""'
+      effect:
+        type: condition_add
+        target: actor
+        values:
+          condition: "{item.condition}"
+witness:
+  summary: "{actor}{item.verb}了{item}"
+  notable: false

@@ -1,0 +1,23 @@
+id: demo:character/player
+type: player
+identity:
+  name: 旅人
+  role: 初到边境的冒险者
+attributes:
+  strength: 10
+  agility: 11
+  intelligence: 12
+  charisma: 12
+  resolve: 10
+skills:
+  persuasion: 3
+  intimidation: 2
+  deception: 2
+  perception: 3
+  insight: 2
+  performance: 1
+  stealth: 2
+  athletics: 1
+gold: 15
+inventory:
+  demo:item/bread: 1

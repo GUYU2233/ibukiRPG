@@ -1,0 +1,22 @@
+id: demo:action/rest
+category: time
+name: 休息片刻
+description: 找个地方坐下歇一会儿，让时间流逝（约 30 分钟）。
+target: none
+keywords: [休息, 等待, 等一会, 等等, 歇会, 歇一歇, 坐下, 打盹, 发呆, 睡一会, 小憩]
+quiet: true
+requirements: []
+checks: []
+cost:
+  time: 30m
+outcomes:
+  success:
+    - effect:
+        type: condition_remove
+        target: actor
+        values:
+          condition: tired
+narration:
+  success:
+    - 你找了个角落坐下，听着雨声和人声，时间慢慢流过。
+    - 你靠着椅背闭目养神，半个时辰就这么过去了。

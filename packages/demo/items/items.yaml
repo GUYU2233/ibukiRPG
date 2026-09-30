@@ -1,0 +1,41 @@
+items:
+  - id: demo:item/ale
+    name: 麦酒
+    aliases: [麦酒, 啤酒, 酒]
+    price: 2
+    description: 一大杯冒着泡沫的麦酒，带点蜂蜜味。
+    use:
+      verb: 喝下
+      condition: tipsy
+      text: 你一口气喝掉了半杯麦酒，一股暖意从胃里升起来。
+  - id: demo:item/bread
+    name: 黑面包
+    aliases: [面包, 黑面包, 吃的]
+    price: 3
+    description: 刚出炉的黑面包，外皮硬，里面松软。
+    use:
+      verb: 吃掉
+      condition: fed
+      text: 你掰开黑面包，热气冒了出来。吃完后身上暖和多了。
+  - id: demo:item/torch
+    name: 火把
+    aliases: [火把]
+    price: 4
+    description: 浸过松脂的火把，可以照亮黑暗的角落。
+    use:
+      verb: 点燃
+      text: 你点燃火把，橙色的光把四周照得通亮。
+  - id: demo:item/dried_fish
+    name: 小鱼干
+    aliases: [鱼干, 小鱼干]
+    price: 1
+    description: 一小包咸鱼干，猫大概会喜欢。
+    use:
+      verb: 吃掉
+      text: 你嚼了两口小鱼干，咸得直皱眉。
+  - id: demo:item/otto_purse
+    name: 奥托的钱袋
+    aliases: [钱袋, 钱包]
+    price: 0
+    unsellable: true
+    description: 一个绣着商会徽记的皮钱袋，沉甸甸的，带着一股鱼腥味。

@@ -16,8 +16,8 @@ func TestLoadDemoManifest(t *testing.T) {
 	if m.Namespace != "demo" || m.Type != TypeWorld {
 		t.Fatalf("unexpected manifest: %+v", m)
 	}
-	if got := len(m.Content["characters"]); got != 3 {
-		t.Fatalf("want 3 characters, got %d", got)
+	if got := len(m.Content["characters"]); got < 4 {
+		t.Fatalf("want >=4 characters (player + 3 NPC), got %d", got)
 	}
 	// 清单引用的所有文件必须存在。
 	for kind, files := range m.Content {

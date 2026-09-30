@@ -1,0 +1,138 @@
+# 小事件：失窃的钱袋（Phase 0 唯一的 Story Node，三种结局）
+id: demo:story/lost_purse
+title: 失窃的钱袋
+priority: minor
+constraint: soft
+location: demo:location/rusty_tankard
+# 触发条件（CEL）。Pacing 也可在玩家连续平静若干回合后提前触发（需满足 pacing_trigger）。
+trigger: 'world.turn >= 4 && world.player_location == "demo:location/rusty_tankard"'
+pacing_trigger: 'world.turn >= 2 && world.player_location == "demo:location/rusty_tankard"'
+intro: |
+  “我的钱袋！”柜台边的外乡商人奥托猛地站起来，椅子哐当一声倒在地上。
+  他满脸通红，手指直直地指向角落里抱着琴的米拉：“是你！刚才就你在我旁边转悠！”
+  酒馆一下子安静了。米拉的脸刷地白了，伯林放下了手里的杯子。
+intro_effects:
+  - effect:
+      type: scene_fact
+      target: scene
+      values:
+        fact: 奥托正大声指责米拉偷了他的钱袋
+hints:
+  - label: 调查一下周围
+    text: 仔细调查一下奥托座位附近
+  - label: 劝奥托冷静
+    text: 劝说奥托冷静下来
+  - label: 问问米拉
+    text: 和米拉谈谈
+timeout_minutes: 45
+steps:
+  - id: cat_hair
+    once: true
+    when: 'action.id == "demo:action/investigate" && action.success && world.player_location == "demo:location/rusty_tankard"'
+    effects:
+      - effect:
+          type: scene_fact
+          target: scene
+          values:
+            fact: 奥托的椅子下有几根灰色猫毛，一路延伸到储藏室门口
+      - effect:
+          type: flag_set
+          target: world
+          values:
+            flag: purse_clue_cat
+    narration: 你蹲下身，在奥托的椅子下面发现了几根灰色的猫毛，还有一小片被拖动过的灰尘痕迹——一路延伸到储藏室的门缝底下。
+  - id: borin_allows
+    once: true
+    when: 'action.id == "demo:action/persuade" && action.target == "demo:character/borin" && action.success'
+    effects:
+      - effect:
+          type: flag_set
+          target: world
+          values:
+            flag: backroom_allowed
+    narration: 伯林叹了口气，冲储藏室努了努嘴：“行吧，你去看看。别碰我的酒桶。”
+outcomes:
+  - id: truth
+    title: 真相大白
+    when: 'action.id == "demo:action/investigate" && action.success && world.player_location == "demo:location/back_room"'
+    effects:
+      - effect:
+          type: move_player
+          target: actor
+          values:
+            location: demo:location/rusty_tankard
+      - effect:
+          type: gold_delta
+          target: actor
+          values:
+            gold: 5
+      - effect:
+          type: relationship_delta
+          target: demo:character/mira
+          values:
+            trust: 8
+      - effect:
+          type: relationship_delta
+          target: demo:character/otto
+          values:
+            trust: 5
+      - effect:
+          type: relationship_delta
+          target: demo:character/borin
+          values:
+            trust: 4
+      - effect:
+          type: scene_fact
+          target: demo:location/rusty_tankard
+          values:
+            fact: 奥托的钱袋找回来了，酒馆里又热闹起来
+            persist: true
+    narration: |
+      你在酒桶后的猫窝里摸到一个沉甸甸的皮钱袋——袋口还沾着鱼腥味，旁边的灰猫正心虚地舔着爪子。
+      你拿着钱袋回到大堂。奥托数了数银币，一个不少，尴尬地挠了挠头，塞给你五枚铜币当作谢礼，又别别扭扭地向米拉道了歉。
+      米拉冲你露出了今晚第一个笑容。
+  - id: calmed
+    title: 暂且平息
+    when: 'action.id == "demo:action/persuade" && action.target == "demo:character/otto" && action.success'
+    effects:
+      - effect:
+          type: relationship_delta
+          target: demo:character/mira
+          values:
+            trust: 3
+      - effect:
+          type: relationship_delta
+          target: demo:character/otto
+          values:
+            trust: 2
+      - effect:
+          type: scene_fact
+          target: scene
+          values:
+            fact: 奥托闷闷不乐地坐回了柜台边
+    narration: |
+      奥托喘着粗气，终于坐了回去：“好，好……我今晚不追究。明天一早我再好好找找。”
+      米拉松了一口气，冲你感激地点了点头。钱袋到底去了哪里，暂时没人知道。
+  - id: mira_expelled
+    title: 米拉被赶走
+    when: '(action.id == "demo:action/intimidate" && action.target == "demo:character/mira") || story.elapsed_minutes >= 45'
+    effects:
+      - effect:
+          type: npc_move
+          target: demo:character/mira
+          values:
+            location: demo:location/town_square
+      - effect:
+          type: relationship_delta
+          target: demo:character/mira
+          values:
+            trust: -6
+      - effect:
+          type: scene_fact
+          target: scene
+          values:
+            fact: 米拉的座位空了，只留下半杯没喝完的热茶
+            persist: true
+    narration: |
+      争吵越来越凶。伯林终于拍了桌子：“米拉，今晚你先出去避一避。”
+      米拉咬着嘴唇，一言不发地抱起琴，推门走进了雨里。奥托哼了一声，钱袋依旧不见踪影。

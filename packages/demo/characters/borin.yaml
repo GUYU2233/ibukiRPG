@@ -1,37 +1,46 @@
 id: demo:character/borin
-
+type: character
 identity:
-  name: Borin
+  name: 伯林
   age: 52
   role: 锈酒杯酒馆老板
-
+aliases: [伯林, 老板, 酒保, 掌柜, 老伯林]
+location: demo:location/rusty_tankard
+description: 围着油腻围裙的壮实男人，胡子花白，擦杯子的动作又快又稳。
 attributes:
   strength: 13
   agility: 8
   intelligence: 11
   resolve: 14
-
 skills:
   brawling: 9
   insight: 12
   bargaining: 11
-
 personality:
   description: >
     嗓门大、心肠软，对惹事的客人毫不客气。
-
 goals:
   - keep_tavern_running
-
-traits:
-  - gruff
-  - protective
-
+traits: [gruff, protective]
+relationship_to_player:
+  trust: 0
+  fear: 0
 relationships:
   demo:character/lena:
     trust: 20
-beliefs: {}
-memories: []
+dialogue:
+  greet:
+    - 伯林把一只擦得锃亮的杯子放下：“外乡人？要喝点什么？麦酒两个铜币，面包三个。”
+    - 伯林头也不抬：“雨天生意冷清，你坐吧。想吃想喝跟我说。”
+  friendly:
+    - 伯林咧嘴一笑：“你这人不错。有什么想打听的，尽管问我老伯林。”
+    - 伯林压低声音：“莉娜那丫头嘴硬心软，米拉那孩子来历不简单——当然，这些话你别往外说。”
+  wary:
+    - 伯林把抹布往肩上一甩，冷冷地盯着你：“在我店里，规矩点。”
+    - 伯林哼了一声，没有接话，只是把柜台下的木棍往外挪了挪。
+  story:
+    demo:story/lost_purse:
+      - 伯林揉着太阳穴：“我这店开了二十年，从没出过贼。那孩子天天在这弹琴，我不信是她。可奥托不依不饶……”
+      - 伯林瞥了一眼储藏室的门，嘀咕道：“最近店里老丢鱼干，我还以为是耗子。”
 secrets: []
-inventory: []
 tags: [npc, merchant]

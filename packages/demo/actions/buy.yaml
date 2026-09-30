@@ -1,0 +1,37 @@
+id: demo:action/buy
+category: trade
+name: 购买
+label: 购买{item}
+description: 从酒馆老板那里买东西。
+target: shop_item
+keywords: [买, 购买, 买一个, 买点, 来一份, 要一个, 来个]
+requirements:
+  - expr: scene.has_shop == true
+    message: 这里没有人卖东西。
+  - expr: item.for_sale == true
+    message: 这里不卖这个。
+  - expr: actor.gold >= item.price
+    message: 你的铜币不够。
+checks: []
+cost:
+  time: 2m
+outcomes:
+  success:
+    - effect:
+        type: gold_delta
+        target: actor
+        values:
+          gold: "-item.price"
+    - effect:
+        type: item_add
+        target: actor
+        values:
+          item: "{item.id}"
+          qty: 1
+narration:
+  success:
+    - 你数出铜币递过去，伯林从柜台下面拿出{item}交给你。
+    - 伯林收了钱，把{item}放在你手边：“还要别的吗？”
+witness:
+  summary: "{actor}买了{item}"
+  notable: false

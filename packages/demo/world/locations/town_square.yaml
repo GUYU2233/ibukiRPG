@@ -1,0 +1,22 @@
+id: demo:location/town_square
+type: location
+name: 小镇广场
+aliases: [广场, 小镇广场, 外面, 街上, 门外]
+tags: [outdoor, town]
+description: >
+  湿漉漉的石板广场，中央有一口老井，井边立着一块钉满告示的木板。
+  夜雨把一切都洗得发亮，只有酒馆的窗户透出暖黄的光。
+short: 冷雨落在石板上，告示板在风里轻轻晃动。
+properties:
+  has_bartender: false
+  search_dc: 11
+exits:
+  - to: demo:location/rusty_tankard
+    label: 锈酒杯酒馆
+    minutes: 1
+scene_facts:
+  - 井边的告示板上贴着一张寻人启事
+  - 雨下得不大，但一直没停
+search:
+  success: 你凑近告示板，寻人启事上画着一个眉眼和米拉有几分相似的少年，落款是“北方商路，三月前失踪”。
+  failure: 雨水模糊了告示上的字迹，你只认出几个零散的词。

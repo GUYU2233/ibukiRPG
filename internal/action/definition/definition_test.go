@@ -31,7 +31,7 @@ func TestDemoActionsCompile(t *testing.T) {
 			t.Errorf("%s: bad id %q", f, d.ID)
 		}
 		for _, r := range d.Requirements {
-			if _, err := ev.Compile(r); err != nil {
+			if _, err := ev.Compile(r.Expr); err != nil {
 				t.Errorf("%s: %v", d.ID, err)
 			}
 		}
@@ -40,7 +40,7 @@ func TestDemoActionsCompile(t *testing.T) {
 				t.Errorf("%s: %v", d.ID, err)
 			}
 		}
-		if len(d.Outcomes["success"]) == 0 {
+		if _, ok := d.Outcomes["success"]; !ok {
 			t.Errorf("%s: missing success outcome", d.ID)
 		}
 	}
@@ -57,13 +57,13 @@ func TestIntimidateRequirements(t *testing.T) {
 		"target": map[string]any{"type": "character", "resolve": 11},
 	}
 	for _, r := range d.Requirements {
-		ok, err := ev.EvalBool(r, vars)
+		ok, err := ev.EvalBool(r.Expr, vars)
 		if err != nil || !ok {
 			t.Fatalf("requirement %q: ok=%v err=%v", r, ok, err)
 		}
 	}
 	diff, err := ev.Eval(d.Checks[0].Difficulty, vars)
-	if err != nil || diff != int64(11) {
+	if err != nil || diff != int64(15) {
 		t.Fatalf("difficulty = %v, %v", diff, err)
 	}
 }

@@ -1,0 +1,38 @@
+id: demo:action/deceive
+category: social
+name: 欺瞒
+label: 欺骗{target}
+description: 编造说辞让目标相信你（欺瞒检定）。判断的是“能否尝试”，而不是“你说的是不是真的”。
+target: character
+keywords: [骗, 欺骗, 谎称, 假装, 冒充, 撒谎, 忽悠, 哄骗, 糊弄, 编个, 胡诌, 自称, 声称, 派来的, 说我是]
+requirements:
+  - expr: actor.can_speak == true
+    message: 你现在说不出话。
+checks:
+  - skill: deception
+    difficulty: 9 + target.resolve / 2
+cost:
+  time: 1m
+outcomes:
+  success:
+    - effect:
+        type: relationship_delta
+        target: target
+        values:
+          trust: 1
+  failure:
+    - effect:
+        type: relationship_delta
+        target: target
+        values:
+          trust: -4
+narration:
+  success:
+    - 你面不改色地编完了说辞。{target}将信将疑地看了你一会儿，还是信了。
+    - 你说得煞有介事，{target}连连点头，似乎完全没起疑心。
+  failure:
+    - 你的话还没说完，{target}就眯起了眼睛——显然没信。
+    - "{target}嗤笑一声：“这种话，你自己信吗？”"
+witness:
+  summary: "{actor}对{target}说了些真假难辨的话（{outcome}）"
+  notable: true

@@ -1,19 +1,20 @@
 id: demo:action/intimidate
 category: social
 name: 威吓
-description: 用言语或姿态迫使目标屈服。
-
+label: 威吓{target}
+description: 用言语或姿态迫使目标屈服（威吓检定）。
+target: character
+keywords: [威胁, 恐吓, 威吓, 吓唬, 逼问, 逼, 瞪, 警告, 指控, 指责, 吼]
 requirements:
-  - actor.can_speak == true
-  - target.type == "character"
-
+  - expr: actor.can_speak == true
+    message: 你现在说不出话。
+  - expr: target.type == "character"
+    message: 只能威吓一个人。
 checks:
   - skill: intimidation
-    difficulty: target.resolve
-
+    difficulty: 10 + target.resolve / 2
 cost:
   time: 30s
-
 outcomes:
   success:
     - effect:
@@ -21,9 +22,20 @@ outcomes:
         target: target
         values:
           fear: 5
+          trust: -1
   failure:
     - effect:
         type: relationship_delta
         target: target
         values:
           trust: -3
+narration:
+  success:
+    - 你往前逼近一步，声音压得很低。{target}的脸色一下子白了，下意识地后退。
+    - 你盯着{target}，一字一顿地把话说完。{target}咽了口唾沫，不敢和你对视。
+  failure:
+    - 你摆出凶狠的架势，{target}却只是冷笑一声，根本不吃这一套。
+    - "{target}皱起眉头：“你这是在威胁我？”周围几道目光一齐投了过来。"
+witness:
+  summary: "{actor}威吓了{target}（{outcome}）"
+  notable: true
