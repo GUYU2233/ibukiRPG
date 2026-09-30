@@ -210,7 +210,7 @@ func TestSaveBoundToPack(t *testing.T) {
 		t.Fatalf("imported pack: %+v", res.Pack)
 	}
 	packs := s.Packs(ctx)
-	if len(packs) != 3 {
+	if len(packs) != len(packages.BuiltinDirs)+1 {
 		t.Fatalf("packs: %d", len(packs))
 	}
 	slot, err := s.NewGameIn(ctx, "my_pack", "", "小雾", 1)

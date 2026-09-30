@@ -1,0 +1,57 @@
+# 技能表：检定修正 = 技能值 + (属性 - 10) / 2
+skills:
+  - id: persuasion
+    name: 说服
+    attribute: charisma
+  - id: intimidation
+    name: 威吓
+    attribute: strength
+  - id: deception
+    name: 欺瞒
+    attribute: charisma
+  - id: perception
+    name: 察觉
+    attribute: intelligence
+  - id: insight
+    name: 洞悉
+    attribute: intelligence
+  - id: performance
+    name: 表演
+    attribute: charisma
+  - id: stealth
+    name: 潜行
+    attribute: agility
+  - id: athletics
+    name: 运动
+    attribute: strength
+attributes:
+  strength: 力量
+  agility: 敏捷
+  intelligence: 智力
+  charisma: 魅力
+  resolve: 意志
+conditions:
+  injured: 负伤
+  tipsy: 微醺
+  drunk: 醉意
+  fed: 饱腹
+  tired: 疲惫
+  soaked: 湿透
+  embarrassed: 窘迫
+  inspired: 振奋
+# 状态对检定的修正（数据化，Core 只负责叠加）
+condition_modifiers:
+  tipsy:
+    perception: -1
+    intimidation: 1
+  drunk:
+    perception: -3
+    persuasion: -2
+    deception: -2
+    intimidation: 2
+  inspired:
+    persuasion: 1
+    performance: 2
+  embarrassed:
+    persuasion: -1
+    deception: -1

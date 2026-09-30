@@ -1,0 +1,20 @@
+hud:
+  - {id: objective, label: 目标, icon: flag, bind: objective, order: 0, wide: true}
+  - {id: mode, label: 进程, icon: route, bind: mode, order: 5}
+  - {id: location, label: 位置, icon: place, bind: location, order: 10}
+  - {id: level, label: 等级, icon: military_tech, bind: level, order: 20}
+  - {id: hp, label: 生命, icon: favorite, bind: hp, order: 30, tones: {danger: 'actor.hp * 4 < actor.max_hp', warning: 'actor.hp * 2 < actor.max_hp'}}
+  - {id: steam, label: 蒸汽压, icon: propane_tank, bind: mercury, order: 40, max: 100, tones: {warning: 'actor.mercury < 20'}}
+  - {id: xp, label: 经验, icon: trending_up, bind: xp, order: 50, compact: false}
+  - {id: adherence, label: 贴合度, icon: explore, bind: deviation, order: 60, max: 100, compact: false, tones: {danger: 'world.deviation >= 70', warning: 'world.deviation >= 35'}}
+  - {id: gold, label: 铜币, icon: payments, bind: gold, order: 70, compact: false}
+objectives:
+  - when: 'stories.sewer.status == "resolved"'
+    text: 钟声重新响起。去工坊领行会徽章，或者在镇上随意逛逛。
+  - when: 'world.combats.sewer_ambush.wins > 0'
+    text: 到下水道第三个岔口迎战失控的蒸汽傀儡（记得启动黄铜守卫）。
+  - when: 'stories.sewer.status == "active"'
+    text: 下到钟楼下水道，找出让钟楼停摆的东西。
+  - when: 'world.combats.trial_bout1.wins > 0'
+    text: 在竞技场挑战托克，赢下第二场试炼。
+  - text: 去铁环竞技场，赢下第一场试炼。

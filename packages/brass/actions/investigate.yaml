@@ -1,0 +1,18 @@
+id: brass:action/investigate
+category: observe
+name: 调查
+description: 仔细搜查周围，寻找线索（察觉检定）。
+target: none
+keywords: [调查, 搜查, 搜索, 检查, 寻找, 找找, 翻找, 查看, 仔细看, 搜一搜, 找线索, 线索, 翻一翻]
+requirements: []
+checks:
+  - skill: perception
+    difficulty: scene.search_dc
+cost:
+  time: 5m
+outcomes:
+  success: []
+  failure: []
+witness:
+  summary: "{actor}在{location}四处翻找零件"
+  notable: false

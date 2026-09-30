@@ -1,0 +1,151 @@
+items:
+  # ---- 武器 ----
+  - id: brass:item/wrench
+    name: 学徒扳手
+    kind: weapon
+    slot: weapon
+    rarity: common
+    icon: build
+    price: 5
+    mods: {atk: 4}
+    aliases: [扳手]
+    description: 沉甸甸的铸铁扳手，既能拧螺栓，也能敲脑袋。
+    lore: 每个学徒入门时都会领到一把，手柄上刻着前任主人的名字缩写。
+  - id: brass:item/rivet_gun
+    name: 气动铆钉枪
+    kind: weapon
+    slot: weapon
+    rarity: uncommon
+    icon: hardware
+    price: 40
+    level: 2
+    mods: {atk: 7, acc: 5}
+    aliases: [铆钉枪]
+    description: 用压缩空气把铆钉打进钢板——或者打进敌人的关节。
+    lore: 行会的标准工具，经过“小小改装”后射程翻了一倍。
+  - id: brass:item/piston_gauntlet
+    name: 活塞拳套
+    kind: weapon
+    slot: weapon
+    rarity: rare
+    icon: sports_mma
+    price: 90
+    level: 3
+    mods: {atk: 11, crit: 5, spd: -1}
+    aliases: [拳套]
+    description: 拳背装着一只小型活塞，出拳时会“砰”地多顶出半寸。
+    lore: 托克的旧拳套，送给你时他说：“别弄坏了，那是我第一次赢来的。”
+  # ---- 护甲 ----
+  - id: brass:item/work_apron
+    name: 皮革工装
+    kind: armor
+    slot: armor
+    rarity: common
+    icon: checkroom
+    price: 5
+    mods: {def: 2}
+    description: 厚皮围裙，挡得住火星，挡不太住拳头。
+  - id: brass:item/brass_plate
+    name: 黄铜胸甲
+    kind: armor
+    slot: armor
+    rarity: uncommon
+    icon: shield
+    price: 45
+    level: 2
+    mods: {def: 6, hp: 10, spd: -1}
+    description: 用废锅炉板敲出来的胸甲，敲一敲会发出好听的“嗡”声。
+  # ---- 饰品 ----
+  - id: brass:item/gear_charm
+    name: 齿轮护符
+    kind: accessory
+    slot: accessory
+    rarity: uncommon
+    icon: settings
+    price: 25
+    mods: {eva: 5, crit: 3}
+    description: 一枚被磨得发亮的小齿轮，背面刻着“平安”。
+    lore: 锈钟镇的孩子们相信，齿轮转得越久，护佑的人就越长命。
+  # ---- 机甲部件 ----
+  - id: brass:item/relief_valve
+    name: 三重泄压阀
+    kind: mech_part
+    rarity: rare
+    icon: valve
+    price: 60
+    mech: {slot: valve, stats: {def: 2}, specs: {heat_threshold: 15, armor: 2}, heat_max: 15}
+    description: 欧琳亲手打磨的泄压阀。装进甲胄的阀门槽后，过热上限 +15，防御 +2。
+    lore: 行会的规矩：每台甲胄都要有三道泄压阀——这是欧琳用一只手换来的教训。
+  - id: brass:item/boiler_core
+    name: 行会标准锅炉
+    kind: mech_part
+    rarity: uncommon
+    icon: heat_pump
+    price: 80
+    mech: {slot: core, stats: {hp: 10}, specs: {output: 8, capacity: 20}}
+    description: 行会制式锅炉，结实耐用。机体生命 +10。
+    lore: 锅炉壁上刻着七个学徒的名字——每一任驾驶者都在上面留过手印。
+  - id: brass:item/steam_fist
+    name: 蒸汽拳套
+    kind: mech_weapon
+    rarity: rare
+    icon: sports_mma
+    price: 90
+    mech: {slot: arm, skills: [brass:skill/steam_punch], stats: {atk: 2}, specs: {output: 4}}
+    description: 右臂挂点的重型拳套，提供「蒸汽重拳」。攻击 +2。
+    lore: 拳套里藏着一根活塞，打出去的时候会“嗤”地喷出一团白雾。
+  - id: brass:item/rivet_cannon
+    name: 铆钉炮
+    kind: mech_weapon
+    rarity: uncommon
+    icon: gps_fixed
+    price: 70
+    mech: {slot: shoulder, skills: [brass:skill/rivet_volley], stats: {acc: 5}, mercury_per_turn: 1}
+    description: 肩部挂点的铆钉炮，提供「铆钉齐射」（攻击全体）。命中 +5，每回合多耗 1 蒸汽压。
+    lore: 本来是修钟楼用的铆钉枪，被托克改成了连发。
+  # ---- 消耗品 ----
+  - id: brass:item/bandage
+    name: 干净绷带
+    kind: consumable
+    rarity: common
+    icon: healing
+    price: 4
+    aliases: [绷带]
+    description: 煮过的棉布绷带。战斗中使用恢复 25 点生命，也可以在战斗外包扎伤口。
+    combat: {heal: 25, cure: [brass:status/bleed], field: true}
+  - id: brass:item/strong_tea
+    name: 浓煮红茶
+    kind: consumable
+    rarity: common
+    icon: local_cafe
+    price: 3
+    aliases: [红茶, 茶]
+    description: 又苦又烫的红茶，喝一口精神一振。战斗中恢复 15 点体力。
+    combat: {sp: 15}
+  - id: brass:item/fuel_can
+    name: 高压燃料罐
+    kind: consumable
+    rarity: uncommon
+    icon: propane_tank
+    price: 12
+    aliases: [燃料罐, 燃料]
+    description: 给黄铜守卫补充 40 点蒸汽压；在战斗中使用还会给机体降温 20。
+    combat: {mercury: 40, cool: 20, field: true}
+  - id: brass:item/smoke_bomb
+    name: 煤烟弹
+    kind: consumable
+    rarity: common
+    icon: cloud
+    price: 8
+    aliases: [煤烟弹, 烟雾弹]
+    description: 摔碎后冒出呛人的黑烟，对所有敌人造成 8 点伤害并使其致盲。
+    combat: {damage: 8, target: all_enemies, status: {id: brass:status/blind, chance: 80, turns: 2}}
+  # ---- 关键物品 ----
+  - id: brass:item/guild_badge
+    name: 行会徽章
+    kind: key
+    rarity: epic
+    icon: military_tech
+    price: 0
+    unsellable: true
+    description: 锈钟镇工匠行会的黄铜徽章。有了它，你就是正式的行会机械师了。

@@ -168,6 +168,8 @@ type State struct {
 	Vars           map[string]int      `json:"vars,omitempty"` // 故事变量（例如嫌疑值）
 	RNG            rng.Counters        `json:"rng"`
 	LastSeq        int64               `json:"last_seq"`
+	// RPG 是战斗 / 成长 / 图鉴 / 关系网 / 角色卡 / 主线贴合度状态（v0.1.1-rc2，旧存档为空）。
+	RPG *RPG `json:"rpg,omitempty"`
 }
 
 // New 根据内容包构造初始状态。
@@ -220,6 +222,7 @@ func New(p *loader.Package, seed uint64, playerName string) *State {
 	}
 	start := p.Locations[p.Manifest.Start.Location]
 	s.SceneFacts[start.ID] = append([]string{}, start.SceneFacts...)
+	s.initRPG(p)
 	return s
 }
 
@@ -308,6 +311,12 @@ func Apply(s *State, e event.Event) error {
 	if e.Seq > s.LastSeq {
 		s.LastSeq = e.Seq
 	}
+	if handled, err := applyRPG(s, e); handled {
+		if d.Stream != "" && s.RNG[d.Stream] <= d.Counter {
+			s.RNG[d.Stream] = d.Counter + 1
+		}
+		return err
+	}
 	// 任何消耗随机数的事件都携带 (stream, counter)，Replay 时据此恢复 RNG 计数器。
 	if d.Stream != "" && s.RNG[d.Stream] <= d.Counter {
 		s.RNG[d.Stream] = d.Counter + 1
@@ -339,6 +348,13 @@ func Apply(s *State, e event.Event) error {
 		}
 		if n == 0 {
 			delete(s.Player.Inventory, d.Item)
+			if s.RPG != nil {
+				for slot, it := range s.RPG.Equipment {
+					if it == d.Item {
+						delete(s.RPG.Equipment, slot)
+					}
+				}
+			}
 		} else {
 			s.Player.Inventory[d.Item] = n
 		}
@@ -349,6 +365,9 @@ func Apply(s *State, e event.Event) error {
 		}
 		n.Trust = clamp(n.Trust+d.Values["trust"], RelMin, RelMax)
 		n.Fear = clamp(n.Fear+d.Values["fear"], 0, RelMax)
+		if s.RPG != nil {
+			s.logRel(e, d.Target, loader.PlayerID, d.Values, true)
+		}
 	case event.SceneFactChanged:
 		facts := s.SceneFacts[d.Location]
 		if d.Remove {

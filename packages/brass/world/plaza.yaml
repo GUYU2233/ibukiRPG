@@ -1,0 +1,27 @@
+id: brass:location/plaza
+type: location
+name: 钟楼广场
+aliases: [广场, 钟楼, 集市]
+tags: [outdoor]
+description: >
+  石板广场中央立着锈钟镇的钟楼，巨大的表盘停在七点零三分。小贩推着蒸汽推车叫卖，孩子们在喷泉边追逐。
+short: 钟楼的指针停在七点零三分，广场上人来人往。
+properties:
+  search_dc: 12
+exits:
+  - to: brass:location/workshop
+    label: 行会工坊
+    minutes: 5
+  - to: brass:location/arena
+    label: 竞技场
+    minutes: 5
+  - to: brass:location/sewer
+    label: 下水道入口
+    minutes: 10
+    requires: 'stories.sewer.status != "inactive" || stories.trial.status == "resolved"'
+    locked_message: 下水道入口被行会的铁栅栏锁着——得先通过试炼。
+scene_facts:
+  - 钟楼的表盘停在七点零三分
+search:
+  success: 你注意到钟楼底座的检修门上有新鲜的刮痕，一直延伸到下水道的方向。
+  failure: 人太多了，你什么也没找到，还差点被推车撞到。

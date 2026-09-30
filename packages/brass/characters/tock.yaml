@@ -1,0 +1,61 @@
+id: brass:character/tock
+type: character
+card: minor
+promote:
+  score: 5
+  when: 'world.combats.trial_bout2.wins > 0'
+  reason: 在擂台上交过手
+faction: brass:codex/guild
+icon: sports_mma
+identity:
+  name: 托克
+  age: 19
+  role: 去年的试炼第一名
+aliases: [托克, 对手, 拳手]
+location: brass:location/arena
+description: 肩膀宽阔的年轻人，拳套上缠着铜丝，笑起来露出一颗缺了角的门牙。
+lore: 去年以一场不败的战绩通过试炼，却因为顶撞行会长被罚在竞技场当一年陪练。
+attributes: {strength: 14, agility: 12, intelligence: 9, charisma: 12, resolve: 11}
+skills: {athletics: 5}
+relationship_to_player: {trust: 0, hostility: 10}
+combat:
+  level: 3
+  stats: {hp: 70, sp: 30, atk: 13, def: 6, spd: 10, acc: 85, eva: 10, crit: 10}
+  skills: [brass:skill/flurry]
+  ai:
+    - when: 'self.sp >= 12'
+      skill: brass:skill/flurry
+      target: lowest_hp
+dialogue:
+  topics: {duel: 对决, rivet: 小铆钉, smalltalk: 闲聊}
+  lines:
+    - id: taunt
+      topic: duel
+      priority: 40
+      once: true
+      when: 'npc.talks == 0 && world.combats.trial_bout2.wins == 0'
+      text: 托克活动着手腕：“新来的？先把发条鼠收拾了，我在擂台上等你。”
+      memory: 在擂台边挑衅你
+    - id: respect
+      topic: duel
+      priority: 45
+      once: true
+      when: 'world.combats.trial_bout2.wins > 0'
+      text: 托克揉着下巴大笑：“行啊你！这一拳我记住了。以后下水道要是有架打，叫上我。”
+      memory: 输给你之后反而服气了
+      relation: {hostility: -10, trust: 6, awe: 8}
+      remember: 在擂台上输给了{player}
+    - id: rivet
+      topic: rivet
+      priority: 20
+      once: true
+      when: 'npc.talks >= 1'
+      text: 托克挠挠头：“小铆钉那孩子？她总往下水道跑……别跟欧琳说是我告诉你的。”
+      memory: 透露小铆钉常去下水道
+      reveals: [brass:character/tock>brass:character/rivet]
+    - id: small
+      topic: smalltalk
+      priority: 1
+      text: 托克对着沙袋打了一套组合拳：“拳头要快，脚要稳。”
+      memory: 聊了聊拳法
+tags: [npc]

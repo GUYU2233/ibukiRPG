@@ -1,0 +1,19 @@
+id: brass:location/sewer
+type: location
+name: 钟楼下水道
+aliases: [下水道, 地下, 管道, 暗渠]
+tags: [underground, danger]
+description: >
+  潮湿的砖砌拱道里，粗大的蒸汽管道沿墙延伸，时不时喷出一股白雾。积水里漂着油花，深处传来沉重的脚步声。
+short: 蒸汽管道嘶嘶作响，深处有沉重的脚步声。
+properties:
+  search_dc: 13
+exits:
+  - to: brass:location/plaza
+    label: 钟楼广场
+    minutes: 10
+scene_facts:
+  - 墙上有新鲜的爪痕
+search:
+  success: 你在一截断管后面发现拾荒者丢下的营火，灰还是温的——他们刚离开不久。
+  failure: 积水太深，你摸索了半天，只摸到滑腻的青苔。

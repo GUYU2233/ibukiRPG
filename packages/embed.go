@@ -6,11 +6,11 @@ import (
 	"io/fs"
 )
 
-//go:embed all:demo all:lighthouse
+//go:embed all:demo all:lighthouse all:brass
 var embedded embed.FS
 
 // BuiltinDirs 是内置故事包目录，顺序即故事包列表中的顺序（第一个是默认故事包）。
-var BuiltinDirs = []string{"demo", "lighthouse"}
+var BuiltinDirs = []string{"demo", "lighthouse", "brass"}
 
 func sub(dir string) fs.FS {
 	s, err := fs.Sub(embedded, dir)

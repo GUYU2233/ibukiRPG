@@ -26,6 +26,7 @@ func Load(fsys fs.FS, ev *expression.Evaluator) (*Package, error) {
 		return nil, err
 	}
 	p := &Package{
+		FS:         fsys,
 		Manifest:   m,
 		Locations:  map[string]*Location{},
 		Characters: map[string]*Character{},
@@ -148,6 +149,9 @@ func Load(fsys fs.FS, ev *expression.Evaluator) (*Package, error) {
 	for k, v := range m.Start.Variables {
 		p.Variables[k] = v
 	}
+	if err := p.loadRPG(fsys, m); err != nil {
+		return nil, err
+	}
 	p.tidyText()
 	p.normalizeDialogue()
 	if err := p.validate(ev); err != nil {
@@ -250,7 +254,8 @@ func validTone(t string) bool {
 // validBind 报告 HUD 内置绑定是否合法。
 func validBind(b string) bool {
 	switch b {
-	case "location", "time", "clock", "day", "period", "gold", "turn", "story", "objective", "conditions":
+	case "location", "time", "clock", "day", "period", "gold", "turn", "story", "objective", "conditions",
+		"level", "xp", "hp", "sp", "mercury", "deviation", "mode", "anchor", "combat":
 		return true
 	}
 	return strings.HasPrefix(b, "var:") || strings.HasPrefix(b, "flag:")
@@ -303,6 +308,14 @@ func (p *Package) validate(ev *expression.Evaluator) error {
 			}
 			seen[l.ID] = true
 			compile(id+"/"+l.ID, l.When)
+			for _, rv := range l.Reveals {
+				from, to, ok := strings.Cut(rv, ">")
+				_, fok := p.Characters[from]
+				_, tok := p.Characters[to]
+				if !ok || !fok || (!tok && to != PlayerID) {
+					errs = append(errs, fmt.Errorf("%s/%s：reveals %q 应形如 角色ID>角色ID", id, l.ID, rv))
+				}
+			}
 		}
 	}
 	for _, h := range p.HUD {
@@ -358,5 +371,6 @@ func (p *Package) validate(ev *expression.Evaluator) error {
 			compile(id+"/"+st.ID, st.When)
 		}
 	}
+	errs = append(errs, p.validateRPG(compile)...)
 	return errors.Join(errs...)
 }

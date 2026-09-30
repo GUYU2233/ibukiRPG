@@ -14,6 +14,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/rules/checks"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/expression"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/rng"
+	"github.com/GUYU2233/ibukiRPG/internal/story/director"
 	"github.com/GUYU2233/ibukiRPG/internal/world/worldtime"
 )
 
@@ -54,6 +55,13 @@ type work struct {
 	// storyTouched 表示本回合有剧情推进（不算平静回合）。
 	storyTouched bool
 	tension      int
+	// combatTouched 表示本回合是战斗回合；combatOutcome 是本回合结束的战斗结果。
+	combatTouched bool
+	combatOutcome string
+	// passive 表示本回合是不推动世界的操作（整理装备、主线选择），不计入偏离评分与节奏。
+	passive bool
+	// deviation 是本回合由故事包效果（deviation）直接追加的偏离。
+	deviation []director.Hit
 }
 
 // Execute 在 s 的副本上执行命令，返回结果与新状态。s 本身不会被修改。
@@ -68,6 +76,11 @@ func (e *Engine) Execute(s *state.State, cmd command.Command) (*Result, *state.S
 		}
 	}
 	var err error
+	if w.s.RPG != nil && w.s.RPG.Combat != nil && cmd.Kind != command.KindCombat && cmd.Kind != command.KindMainline &&
+		(cmd.Kind != command.KindManage || cmd.Action != "thresholds") {
+		res.Reason = "正在战斗中：请选择攻击、技能、物品、防御或逃跑。"
+		return res, s, nil
+	}
 	switch cmd.Kind {
 	case command.KindAction:
 		err = w.execAction()
@@ -75,6 +88,14 @@ func (e *Engine) Execute(s *state.State, cmd command.Command) (*Result, *state.S
 		err = w.execFreeform()
 	case command.KindMove:
 		err = w.execMove()
+	case command.KindCombat:
+		err = w.execCombat()
+	case command.KindManage:
+		err = w.execManage()
+	case command.KindMainline:
+		err = w.execMainline()
+	case command.KindDirector:
+		err = w.execDirector()
 	default:
 		err = fmt.Errorf("unknown command kind %q", cmd.Kind)
 	}
@@ -82,6 +103,9 @@ func (e *Engine) Execute(s *state.State, cmd command.Command) (*Result, *state.S
 		err = w.runStories(preActive)
 	}
 	if err == nil {
+		err = w.runRPG()
+	}
+	if err == nil && !w.passive && !w.combatTouched {
 		err = w.runPacing()
 	}
 	if err == nil {
@@ -419,6 +443,7 @@ func (w *work) tmpl(s, target, item, outcome string) string {
 		"{item.condition}", cond,
 		"{item.verb}", verb,
 		"{item}", w.name(item),
+		"{location.id}", w.s.Player.Location,
 		"{location}", w.name(w.s.Player.Location),
 		"{outcome}", outcome,
 	)

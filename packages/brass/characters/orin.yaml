@@ -1,0 +1,76 @@
+id: brass:character/orin
+type: character
+card: major
+faction: brass:codex/guild
+icon: engineering
+identity:
+  name: 欧琳
+  age: 46
+  role: 工匠行会长
+aliases: [欧琳, 行会长, 会长, 师傅]
+location: brass:location/workshop
+description: 短发、护目镜推在额头上的女人，左手是一只黄铜义肢，说话像拧螺丝一样干脆。
+lore: 年轻时驾驶过行会的第一台蒸汽甲胄，在一次锅炉爆炸里失去了左手。从那以后，她给每台甲胄都装上了三道泄压阀。
+attributes: {strength: 12, agility: 10, intelligence: 15, charisma: 11, resolve: 15}
+skills: {insight: 4}
+personality:
+  description: 严厉、护短，嘴上从不夸人。
+relationship_to_player: {trust: 5, affection: 0, awe: 10}
+dialogue:
+  topics: {trial: 试炼, warden: 黄铜守卫, tock: 托克, clock: 钟楼, smalltalk: 家常}
+  lines:
+    - id: first
+      topic: trial
+      priority: 40
+      once: true
+      when: 'npc.talks == 0'
+      text: 欧琳头也不抬：“行会一年只收一个学徒。竞技场有两场试炼——先是发条鼠，再是托克。输了也不丢人，爬起来再打。”
+      memory: 交代了两场竞技场试炼
+      remember: 向{player}交代了试炼规矩
+    - id: after_bout1
+      topic: tock
+      priority: 35
+      once: true
+      when: 'world.combats.trial_bout1.wins > 0 && world.combats.trial_bout2.wins == 0'
+      text: 欧琳擦着扳手：“发条鼠而已。托克不一样，他出拳快，你要是被连打压住，就先防一手，攒够体力再还手。”
+      memory: 提醒你托克擅长连打，要学会防御
+    - id: lost_once
+      topic: trial
+      priority: 38
+      once: true
+      when: 'world.combats.trial_bout2.losses > 0 || world.combats.trial_bout1.losses > 0'
+      text: 欧琳把一卷绷带扔给你：“躺够了？躺够了就去打回来。行会的人不是没输过，是输了还会站起来。”
+      memory: 在你输掉试炼后把你拉了起来
+      remember: 看着{player}被抬回工坊
+    - id: warden
+      topic: warden
+      priority: 45
+      once: true
+      when: 'stories.trial.status == "resolved"'
+      text: 欧琳掀开角落的帆布，露出那台黄铜甲胄：“它叫‘黄铜守卫’。蒸汽压到红线之前记得冷却——它会拼命，你不能让它烧死自己。”
+      memory: 把黄铜守卫托付给了你
+      remember: 把黄铜守卫交给了{player}
+    - id: sewer
+      topic: clock
+      priority: 30
+      once: true
+      when: 'stories.sewer.status == "active"'
+      text: 欧琳压低声音：“钟楼是被什么东西从底下卡住的。下去看看——带上燃料罐，下面没人能给你加压。”
+      memory: 派你下水道查钟楼停摆的原因
+    - id: done
+      topic: clock
+      priority: 30
+      once: true
+      when: 'stories.sewer.status == "resolved"'
+      text: 钟声在头顶响起，欧琳难得地笑了：“听见没有？这是锈钟镇在说谢谢。明天来领你的行会徽章。”
+      memory: 为钟声重新响起而笑了
+    - id: small
+      topic: smalltalk
+      priority: 1
+      text: 欧琳敲了敲压力表：“蒸汽不会说谎。数值也不会。”
+      memory: 说起蒸汽与数值
+  repeat:
+    - 欧琳瞥了你一眼：“{topic}的事我说过了。去做，别光听。”
+  callback:
+    - 欧琳哼了一声：“我都听说了——{what}。别以为我不知道。”
+tags: [npc]

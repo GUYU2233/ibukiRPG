@@ -1,0 +1,32 @@
+id: brass:story/trial
+title: 黄铜试炼
+priority: major
+constraint: soft
+location: brass:location/arena
+trigger: 'world.turn >= 1'
+intro: |
+  竞技场的告示牌上贴出了今天的名单：学徒候选人——你。两场试炼，赢了才能进行会。
+hints:
+  - label: 去竞技场
+    text: 去竞技场
+steps:
+  - id: bout1
+    title: 赢下了第一场试炼
+    once: true
+    when: 'world.combats.trial_bout1.wins > 0'
+    effects:
+      - effect: {type: relation, values: {from: brass:character/orin, to: player, awe: 0, trust: 3, reason: 听说你赢了第一场}}
+    narration: 看台上响起稀稀拉拉的掌声。托克在擂台另一头抱着胳膊，冲你扬了扬下巴。
+outcomes:
+  - id: passed
+    title: 通过试炼
+    when: 'world.combats.trial_bout2.wins > 0'
+    effects:
+      - effect: {type: flag_set, values: {flag: warden_granted}}
+      - effect: {type: mech_status, values: {mech: brass:mech/warden, status: ready, reason: 欧琳为你完成了整备}}
+      - effect: {type: mech_reveal, values: {mech: brass:mech/warden, fields: lore, source: 欧琳讲起甲胄的来历}}
+      - effect: {type: relation, values: {from: brass:character/orin, to: player, trust: 8, affection: 5, reason: 通过了学徒试炼}}
+      - effect: {type: relation, values: {from: brass:character/orin, to: brass:character/tock, awe: 0, trust: 3, reason: 托克输得很体面}}
+      - effect: {type: item_add, values: {item: brass:item/fuel_can, qty: 2}}
+    narration: |
+      托克躺在沙地上大笑。欧琳从看台上走下来，把两罐燃料塞进你怀里：“回工坊。有台甲胄等着认主。”

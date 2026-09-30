@@ -1,0 +1,19 @@
+id: brass:location/workshop
+type: location
+name: 行会工坊
+aliases: [工坊, 行会, 作坊, 车间]
+tags: [indoor, safe]
+description: >
+  高高的穹顶下挂满链条和吊钩，炉火终年不熄。工作台上摊着图纸，角落里立着一台蒙着帆布的黄铜甲胄。
+short: 炉火通红，图纸与齿轮堆满了工作台。
+properties:
+  search_dc: 11
+exits:
+  - to: brass:location/plaza
+    label: 钟楼广场
+    minutes: 5
+scene_facts:
+  - 角落里的甲胄蒙着帆布
+search:
+  success: 你在废料箱底翻到一张旧图纸，上面画着黄铜甲胄的散热鳍片——原来它最怕过热。
+  failure: 废料箱里全是锈透的螺母，你的手被划了一道口子。

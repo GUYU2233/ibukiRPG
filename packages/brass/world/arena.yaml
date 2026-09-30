@@ -1,0 +1,19 @@
+id: brass:location/arena
+type: location
+name: 铁环竞技场
+aliases: [竞技场, 斗技场, 擂台, 铁环]
+tags: [indoor, arena]
+description: >
+  一圈铸铁看台围着沙地擂台，看台上的观众挥舞着押注的票根。擂台边的告示牌上写着今天的试炼对手。
+short: 沙地擂台被铸铁看台围着，观众在押注。
+properties:
+  search_dc: 13
+exits:
+  - to: brass:location/plaza
+    label: 钟楼广场
+    minutes: 5
+scene_facts:
+  - 看台上坐满了押注的观众
+search:
+  success: 你在告示牌背面看到有人用粉笔写着：“托克出拳前会先垫左脚。”
+  failure: 沙子里只有碎票根和瓜子壳。

@@ -5,7 +5,37 @@ const (
 	KindAction   = "action"   // ExecuteActionCommand(action_id, args)
 	KindFreeform = "freeform" // FreeformAction（第 6 节）
 	KindMove     = "move"     // MoveCommand
+	// KindCombat 是战斗指令：Action = start / attack / skill / item / defend / flee / mech / eject。
+	KindCombat = "combat"
+	// KindManage 是成长与装备管理：Action = equip / unequip / allocate / learn / thresholds。
+	KindManage = "manage"
+	// KindMainline 是主线偏离提示的选择：Action = return / free（Target = free / sandbox）。
+	KindMainline = "mainline"
+	// KindDirector 是 Director 提交的主线节点提案（自由推演），由 Core 校验后正典化。
+	KindDirector = "director"
 )
+
+// NodeProposal 是 AI 提议的新主线节点（CanonProposal）。它只是提案：Core 校验 ID 引用、长度与奖励上限后才会正典化。
+type NodeProposal struct {
+	Title      string   `json:"title"`
+	Objective  string   `json:"objective"`
+	Goal       string   `json:"goal"`
+	Ref        string   `json:"ref"`
+	Location   string   `json:"location,omitempty"`
+	Enemies    []string `json:"enemies,omitempty"`
+	RewardXP   int      `json:"reward_xp,omitempty"`
+	RewardGold int      `json:"reward_gold,omitempty"`
+	Summary    string   `json:"summary,omitempty"`
+	// NewCharacter 非空时同时提议一名新登场的重要角色（只生成角色卡，不可交谈）。
+	NewCharacter *CharacterProposal `json:"new_character,omitempty"`
+}
+
+// CharacterProposal 是 AI 提议的新角色。
+type CharacterProposal struct {
+	Name        string `json:"name"`
+	Role        string `json:"role"`
+	Description string `json:"description"`
+}
 
 // SuggestedCheck 是 AI / 规则解析器建议的检定。仅是建议，Core 会校验并夹紧。
 type SuggestedCheck struct {
@@ -37,13 +67,15 @@ type Freeform struct {
 
 // Command 是进入 Game Core 的唯一执行协议。ID 即 command_id，用于幂等（第 52 节）。
 type Command struct {
-	ID          string    `json:"id"`
-	Kind        string    `json:"kind"`
-	Action      string    `json:"action,omitempty"`
-	Target      string    `json:"target,omitempty"`
-	Item        string    `json:"item,omitempty"`
-	Destination string    `json:"destination,omitempty"`
-	Freeform    *Freeform `json:"freeform,omitempty"`
-	Input       string    `json:"input,omitempty"`  // 玩家原始输入（审计用）
-	Source      string    `json:"source,omitempty"` // ui / resolver:offline / resolver:ai
+	ID          string        `json:"id"`
+	Kind        string        `json:"kind"`
+	Action      string        `json:"action,omitempty"`
+	Target      string        `json:"target,omitempty"`
+	Item        string        `json:"item,omitempty"`
+	Destination string        `json:"destination,omitempty"`
+	Freeform    *Freeform     `json:"freeform,omitempty"`
+	Skill       string        `json:"skill,omitempty"`
+	Proposal    *NodeProposal `json:"proposal,omitempty"`
+	Input       string        `json:"input,omitempty"`  // 玩家原始输入（审计用）
+	Source      string        `json:"source,omitempty"` // ui / resolver:offline / resolver:ai
 }

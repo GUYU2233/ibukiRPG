@@ -1,0 +1,372 @@
+# 战斗内容：规则、状态、技能、敌人、机甲与遭遇战。全部原创。
+rules:
+  attribute_base: 10
+  attribute_effects:
+    strength: {atk: 1, hp: 2}
+    agility: {spd: 1, eva: 1}
+    intelligence: {acc: 1, crit: 1}
+    resolve: {hp: 4, sp: 2}
+  xp_base: 100
+  max_level: 10
+  resource_name: 蒸汽压
+  mercury_max: 100
+  defeat_conditions:
+    injured: injured
+    rescued: injured
+
+statuses:
+  - id: brass:status/bleed
+    name: 流血
+    icon: water_drop
+    turns: 3
+    dot: 4
+    debuff: true
+    description: 伤口不断渗血，每回合损失 4 点生命。
+  - id: brass:status/blind
+    name: 致盲
+    icon: visibility_off
+    turns: 2
+    mods: {acc: -30}
+    debuff: true
+    description: 视线被烟尘遮住，命中 -30。
+  - id: brass:status/stagger
+    name: 踉跄
+    icon: sync_problem
+    turns: 1
+    stun: true
+    debuff: true
+    description: 被重击打得站立不稳，跳过下一次行动。
+  - id: brass:status/guarded
+    name: 架势
+    icon: shield
+    turns: 2
+    mods: {def: 6}
+    description: 摆好了架势，防御 +6。
+  - id: brass:status/rust
+    name: 锈蚀
+    icon: blur_on
+    turns: 3
+    mods: {def: -4}
+    debuff: true
+    description: 关节被锈水侵蚀，防御 -4。
+
+skills:
+  - id: brass:skill/wrench_smash
+    name: 扳手重击
+    icon: build
+    rarity: common
+    verb: 抡起扳手重重砸下
+    power: 150
+    cost: {sp: 8}
+    status: {id: brass:status/stagger, chance: 25}
+    human_only: true
+    description: 150% 攻击力的重击，25% 几率使目标踉跄。消耗 8 体力。
+    lore: 学徒的第一课：拧不开的螺栓，就砸开它。
+  - id: brass:skill/patch_up
+    name: 紧急包扎
+    icon: healing
+    rarity: common
+    target: ally
+    power: 0
+    heal: 18
+    cleanse: true
+    cost: {sp: 8}
+    description: 为自己或同伴恢复 18 点生命并清除负面状态。消耗 8 体力。
+  - id: brass:skill/flurry
+    name: 快速连打
+    icon: sports_mma
+    rarity: uncommon
+    verb: 打出一串快拳
+    power: 60
+    hits: 3
+    cost: {sp: 12}
+    learn: {level: 2, cost: 1}
+    description: 连续三次 60% 攻击力的快拳，每一拳独立判定命中。消耗 12 体力。
+    lore: 托克的招牌。第一拳是试探，第二拳是诱饵，第三拳才是真的。
+  - id: brass:skill/guard_stance
+    name: 铁砧架势
+    icon: shield
+    rarity: common
+    target: self
+    power: 0
+    status: {id: brass:status/guarded, turns: 2}
+    restore: {sp: 6}
+    cost: {sp: 0}
+    learn: {level: 2, cost: 1}
+    description: 摆出架势，两回合内防御 +6，并恢复 6 点体力。
+  - id: brass:skill/rivet_shot
+    name: 铆钉射击
+    icon: hardware
+    rarity: common
+    verb: 扣下铆钉枪的扳机
+    power: 90
+    acc_bonus: 15
+    pierce: 30
+    cost: {sp: 6}
+    learn: {level: 3, cost: 1}
+    description: 精准的一发，命中 +15，无视目标 30% 防御。消耗 6 体力。
+  - id: brass:skill/steam_punch
+    name: 蒸汽重拳
+    icon: local_fire_department
+    rarity: rare
+    verb: 泄出一股高压蒸汽，重拳砸下
+    power: 170
+    cost: {heat: 35}
+    mech_only: true
+    status: {id: brass:status/stagger, chance: 35}
+    description: 机甲专用。170% 攻击力的重拳，35% 几率使目标踉跄。产生 35 热量。
+  - id: brass:skill/rivet_volley
+    name: 铆钉齐射
+    icon: scatter_plot
+    rarity: uncommon
+    verb: 肩炮一阵连发，铆钉像冰雹一样砸下
+    target: all_enemies
+    power: 70
+    cost: {heat: 20}
+    mech_only: true
+    description: 机甲专用（铆钉炮）。对全体敌人造成 70% 攻击力的伤害。产生 20 热量。
+  - id: brass:skill/vent_cycle
+    name: 泄压循环
+    icon: air
+    rarity: uncommon
+    target: self
+    power: 0
+    restore: {heat: 45}
+    heal: 10
+    mech_only: true
+    description: 机甲专用。打开三重泄压阀，降温 45 并修复 10 点机体。
+  - id: brass:skill/sweep
+    name: 横扫
+    icon: waves
+    rarity: uncommon
+    verb: 抡臂横扫
+    target: all_enemies
+    power: 80
+    cost: {heat: 25}
+    mech_only: true
+    description: 机甲专用。对所有敌人造成 80% 攻击力的伤害。产生 25 热量。
+  - id: brass:skill/rust_spit
+    name: 锈水喷吐
+    icon: blur_on
+    rarity: common
+    verb: 喷出一股锈水
+    power: 70
+    status: {id: brass:status/rust, chance: 70}
+    description: 敌人技能。70% 攻击力，并使目标锈蚀（防御 -4）。
+  - id: brass:skill/thrown_wrench
+    name: 飞掷扳手
+    icon: construction
+    rarity: common
+    verb: 甩出一把磨尖的扳手
+    power: 90
+    status: {id: brass:status/bleed, chance: 50}
+    cost: {sp: 6}
+    description: 敌人技能。90% 攻击力，50% 几率造成流血。
+  - id: brass:skill/boiler_slam
+    name: 锅炉冲撞
+    icon: whatshot
+    rarity: rare
+    verb: 锅炉轰鸣着撞了过来
+    power: 140
+    target: all_enemies
+    description: 敌人技能。对所有对手造成 140% 攻击力的冲撞。
+
+enemies:
+  - id: brass:enemy/clock_rat
+    name: 发条鼠
+    icon: pest_control_rodent
+    tier: minion
+    rarity: common
+    level: 1
+    stats: {hp: 24, sp: 10, atk: 8, def: 2, spd: 11, acc: 80, eva: 12, crit: 5}
+    xp: 25
+    gold: 3
+    drops: [{item: brass:item/strong_tea, chance: 30}]
+    description: 上满发条就到处乱咬的机械老鼠，据说最早是用来抓真老鼠的。
+    lore: 竞技场的饲养员每天早上给它们上一次弦，晚上再一只只捡回来。
+  - id: brass:enemy/sentry
+    name: 锈蚀哨兵
+    icon: smart_toy
+    tier: minion
+    rarity: common
+    level: 2
+    stats: {hp: 46, sp: 10, atk: 11, def: 7, spd: 7, acc: 80, eva: 4, crit: 5}
+    skills: [brass:skill/rust_spit]
+    ai:
+      - when: 'battle.round % 2 == 1'
+        skill: brass:skill/rust_spit
+        target: lowest_hp
+    xp: 40
+    gold: 6
+    drops: [{item: brass:item/fuel_can, chance: 25}]
+    description: 被遗弃在下水道的旧式巡逻机器人，关节里淌着锈水。
+  - id: brass:enemy/scavenger
+    name: 下水道拾荒者
+    icon: person_alert
+    tier: minion
+    rarity: common
+    level: 2
+    stats: {hp: 38, sp: 20, atk: 11, def: 4, spd: 10, acc: 82, eva: 10, crit: 8}
+    skills: [brass:skill/thrown_wrench]
+    ai:
+      - when: 'self.hp_pct < 35'
+        skill: defend
+      - when: 'self.sp >= 6'
+        skill: brass:skill/thrown_wrench
+        target: random
+        chance: 60
+    xp: 35
+    gold: 10
+    drops: [{item: brass:item/bandage, chance: 50}, {item: brass:item/smoke_bomb, chance: 20}]
+    description: 在管道里讨生活的人，靠捡拾零件换面包——也靠抢。
+  - id: brass:enemy/tock_trial
+    name: 托克（试炼）
+    icon: sports_mma
+    tier: elite
+    rarity: uncommon
+    level: 3
+    stats: {hp: 92, sp: 36, atk: 17, def: 6, spd: 10, acc: 85, eva: 10, crit: 10}
+    skills: [brass:skill/flurry]
+    ai:
+      - when: 'self.sp >= 12 && battle.round >= 2'
+        skill: brass:skill/flurry
+        target: player
+      - when: 'self.hp_pct < 30'
+        skill: defend
+        chance: 40
+    xp: 90
+    gold: 20
+    drops: [{item: brass:item/piston_gauntlet, chance: 100}]
+    description: 去年的试炼第一名。拳头快，脾气更快。
+  - id: brass:enemy/steam_golem
+    name: 失控蒸汽傀儡
+    icon: precision_manufacturing
+    tier: boss
+    rarity: rare
+    level: 4
+    mech: true
+    mech_card: brass:mech/golem
+    stats: {hp: 200, sp: 0, atk: 25, def: 28, spd: 7, acc: 82, eva: 2, crit: 8}
+    skills: [brass:skill/boiler_slam]
+    ai:
+      - when: 'battle.round % 3 == 0'
+        skill: brass:skill/boiler_slam
+      - target: highest_hp
+    xp: 200
+    gold: 40
+    drops: [{item: brass:item/relief_valve, chance: 100}]
+    description: 本该推动钟楼齿轮的巨型傀儡，锅炉失控后跑进了下水道，把传动轴卡死了。
+    lore: 钢铁外壳厚得离谱——凡人的武器几乎敲不动它。行会的老人说，只有甲胄能和甲胄对话。
+
+mechs:
+  - id: brass:mech/warden
+    name: 黄铜守卫
+    model: 行会二号蒸汽甲胄
+    maker: 锈钟镇工匠行会
+    class: 蒸汽甲胄
+    pilot: player
+    status: inactive
+    icon: precision_manufacturing
+    rarity: epic
+    stats: {hp: 140, atk: 26, def: 20, spd: 8, acc: 85, eva: 3, crit: 8}
+    specs: {armor: 55, output: 48, mobility: 30, capacity: 100, heat_threshold: 100, sync: 62}
+    skills: [brass:skill/sweep, brass:skill/vent_cycle]
+    mod_slots:
+      - {id: core, name: 锅炉, kind: core}
+      - {id: valve, name: 阀门槽, kind: valve}
+    hardpoints:
+      - {id: arm, name: 右臂挂点, kind: arm}
+      - {id: shoulder, name: 肩部挂点, kind: shoulder}
+    installed: {core: brass:item/boiler_core}
+    mounted: {arm: brass:item/steam_fist}
+    hidden: [spec:sync, lore]
+    engage_cost: 15
+    mercury_per_turn: 6
+    heat_max: 100
+    attack_heat: 12
+    cool_per_turn: 8
+    overheat_damage: 10
+    requires: '"warden_granted" in world.flags'
+    description: 行会的第二台蒸汽甲胄，胸口的压力表就是它的心跳。启动消耗 15 蒸汽压，每回合 6。
+    lore: 欧琳给它装了三道泄压阀。热量越过红线会强制冷却一回合，驾驶者也会被烫伤。
+  - id: brass:mech/golem
+    name: 钟楼傀儡
+    model: 钟楼传动傀儡（原型）
+    maker: 不明
+    class: 自律傀儡
+    enemy: true
+    icon: smart_toy
+    rarity: rare
+    stats: {hp: 200, atk: 25, def: 28, spd: 7}
+    specs: {armor: 80, output: 70, mobility: 12, capacity: 150, heat_threshold: 60}
+    mod_slots:
+      - {id: boiler, name: 锅炉舱, kind: core}
+    installed: {}
+    hidden: [stats, maker, lore, pilot, spec:armor, spec:output, spec:mobility, spec:capacity, spec:heat_threshold, slot:boiler]
+    description: 本该推动钟楼齿轮的巨型傀儡。
+    lore: 傀儡的锅炉舱里有一块被人为拧松的阀门——它不是自己失控的。
+
+encounters:
+  - id: brass:encounter/trial_bout1
+    title: 试炼第一场：发条鼠
+    label: 挑战试炼第一场
+    location: brass:location/arena
+    intro: 铁闸拉起，两只发条鼠“咔哒咔哒”地冲了出来。
+    enemies: [brass:enemy/clock_rat, brass:enemy/clock_rat]
+    available: 'stories.trial.status == "active" && world.combats.trial_bout1.wins == 0'
+    defeat:
+      branch: rescued
+      text: 你被发条鼠咬得满身是口子，欧琳把你拖回了工坊。
+      move_to: brass:location/workshop
+  - id: brass:encounter/trial_bout2
+    title: 试炼第二场：托克
+    label: 挑战托克
+    location: brass:location/arena
+    intro: 托克翻身跳进擂台，拳套上的铜丝在灯下闪着光：“来吧，候选人。”
+    enemies: [brass:enemy/tock_trial]
+    no_flee: true
+    available: 'world.combats.trial_bout1.wins > 0 && world.combats.trial_bout2.wins == 0'
+    defeat:
+      branch: rescued
+      text: 托克把你打出了擂台。他伸手把你拉起来：“再练练，我等你。”
+      move_to: brass:location/workshop
+      effects:
+        - effect: {type: relation, values: {from: brass:character/tock, to: player, hostility: -3, reason: 擂台上把你拉了起来}}
+  - id: brass:encounter/sewer_ambush
+    title: 下水道伏击
+    location: brass:location/sewer
+    intro: 管道后面跳出几个人影，一个锈蚀哨兵在他们身后亮起红眼。
+    enemies: [brass:enemy/scavenger, brass:enemy/scavenger, brass:enemy/sentry]
+    allies: [brass:character/rivet]
+    defeat:
+      branch: injured
+      text: 你被打晕在积水里。醒来时，小铆钉正用力拍你的脸。
+      move_to: brass:location/plaza
+  - id: brass:encounter/golem
+    title: 失控蒸汽傀儡
+    label: 迎战蒸汽傀儡
+    location: brass:location/sewer
+    intro: 第三个岔口，一座锅炉般的巨影缓缓转过身来，眼缝里喷出白色蒸汽。
+    enemies: [brass:enemy/steam_golem]
+    allow_mech: true
+    no_flee: false
+    available: 'world.combats.sewer_ambush.wins > 0 && world.combats.golem.wins == 0'
+    defeat:
+      branch: rescued
+      text: 傀儡把你连同甲胄一起撞飞。托克和小铆钉把你从积水里拖了出来。
+      move_to: brass:location/plaza
+    victory:
+      - effect: {type: flag_set, values: {flag: golem_down}}
+      - effect: {type: mech_status, values: {mech: brass:mech/golem, status: sealed, reason: 被行会贴上封条}}
+      - effect: {type: mech_reveal, values: {mech: brass:mech/golem, fields: "stats,spec:armor,spec:output,slot:boiler,lore", source: 拆开锅炉舱检查}}
+  - id: brass:encounter/practice
+    title: 陪练：发条鼠
+    label: 找发条鼠陪练
+    location: brass:location/arena
+    intro: 饲养员放出一只发条鼠：“随便打，打坏了算行会的。”
+    enemies: [brass:enemy/clock_rat]
+    repeatable: true
+    available: 'world.combats.trial_bout1.wins > 0'
+    defeat:
+      branch: injured
+      move_to: brass:location/workshop

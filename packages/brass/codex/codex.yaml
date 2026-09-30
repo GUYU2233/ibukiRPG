@@ -1,0 +1,29 @@
+entries:
+  - id: brass:codex/guild
+    kind: faction
+    name: 锈钟镇工匠行会
+    icon: engineering
+    rarity: rare
+    description: 掌管全镇锅炉、齿轮与甲胄的行会。每年只收一名学徒。
+    lore: 行会大厅的门楣上刻着一句话：“先学会修，再学会打。”
+  - id: brass:codex/steam_armor
+    kind: tech
+    name: 蒸汽甲胄
+    icon: precision_manufacturing
+    rarity: epic
+    description: 以高压蒸汽驱动的单人甲胄。蒸汽压决定能坚持多久，热量决定能打多狠。
+    lore: 热量越过红线时，泄压阀会强制冷却一回合——这是保命的设计，也是战斗中最危险的破绽。
+    stats: {能源: 蒸汽压, 过热: 跳过一回合并烫伤驾驶者}
+  - id: brass:codex/rustbell
+    kind: lore
+    name: 锈钟
+    icon: notifications
+    rarity: uncommon
+    description: 钟楼里那口钟据说是用第一台甲胄熔掉的铜铸的。
+    unlock: 'world.player_location == "brass:location/plaza"'
+  - id: brass:codex/scavengers
+    kind: faction
+    name: 下水道拾荒者
+    icon: person_alert
+    description: 住在管道里的人。行会说他们是小偷，他们说行会是强盗。
+    unlock: 'world.combats.sewer_ambush.wins > 0 || world.combats.sewer_ambush.losses > 0'

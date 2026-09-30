@@ -1,0 +1,37 @@
+id: brass:story/sewer
+title: 钟楼下的怪声
+priority: major
+constraint: soft
+location: brass:location/sewer
+trigger: 'stories.trial.status == "resolved"'
+intro: |
+  钟楼依旧沉默。有人说在下水道里听见了锅炉的轰鸣——那声音，像极了一台失控的甲胄。
+hints:
+  - label: 下水道
+    text: 去下水道入口
+steps:
+  - id: ambush
+    title: 在下水道遭遇伏击
+    once: true
+    when: 'world.player_location == "brass:location/sewer" && world.combats.sewer_ambush.wins == 0 && world.combats.sewer_ambush.losses == 0'
+    effects:
+      - effect: {type: npc_move, target: brass:character/rivet, values: {location: brass:location/sewer}}
+      - effect: {type: combat_start, values: {encounter: brass:encounter/sewer_ambush}}
+    narration: 小铆钉不知什么时候跟了下来：“我就说我熟路吧！——小心，有人！”
+  - id: cleared
+    title: 击退了拾荒者
+    once: true
+    when: 'world.combats.sewer_ambush.wins > 0'
+    effects:
+      - effect: {type: relation, values: {from: brass:character/rivet, to: player, trust: 5, debt: 10, reason: 在伏击中保护了她}}
+    narration: 拾荒者四散逃进黑暗。小铆钉指着更深处：“大家伙就在第三个岔口。”
+outcomes:
+  - id: silenced
+    title: 钟声重新响起
+    when: '"golem_down" in world.flags'
+    effects:
+      - effect: {type: item_add, values: {item: brass:item/guild_badge, qty: 1}}
+      - effect: {type: relation, values: {from: brass:character/orin, to: player, trust: 10, awe: 10, reason: 让钟楼重新响起}}
+      - effect: {type: npc_move, target: brass:character/rivet, values: {location: brass:location/plaza}}
+    narration: |
+      傀儡的锅炉“噗”地熄了火。几秒钟后，头顶传来一声悠长的钟鸣——锈钟镇的钟，又开始走了。

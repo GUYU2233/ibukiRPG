@@ -182,7 +182,7 @@ func TestImportRejects(t *testing.T) {
 			}
 		})
 	}
-	if len(r.List()) != 2 {
+	if len(r.List()) != len(packages.BuiltinDirs) {
 		t.Fatalf("rejected imports must not be installed: %d", len(r.List()))
 	}
 }

@@ -1,0 +1,25 @@
+id: brass:action/rest
+category: time
+name: 休息片刻
+description: 找个地方坐下歇一会儿，让时间流逝（约 30 分钟）。
+target: none
+keywords: [休息, 等待, 等一会, 等等, 歇会, 歇一歇, 坐下, 打盹, 发呆, 小憩]
+quiet: true
+requirements: []
+checks: []
+cost:
+  time: 30m
+outcomes:
+  success:
+    - effect:
+        type: heal
+        values:
+          pct: 35
+    - effect:
+        type: condition_remove
+        values:
+          condition: injured
+narration:
+  success:
+    - 你靠在工作台边打了个盹，蒸汽管道有节奏地嘶嘶作响。醒来时，身上的酸痛轻了不少。
+    - 你找了个角落坐下，把工具一件件擦干净，呼吸慢慢平稳下来。

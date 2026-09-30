@@ -18,11 +18,12 @@ type CheckV1 struct {
 
 // QuickActionV1 是快速通道请求（第 9 节）：明确的 UI 操作不经过 Resolver。
 type QuickActionV1 struct {
-	Kind        string `json:"kind"` // action / move / text
+	Kind        string `json:"kind"` // action / move / text / combat / manage / mainline
 	Action      string `json:"action,omitempty"`
 	Target      string `json:"target,omitempty"`
 	Item        string `json:"item,omitempty"`
 	Destination string `json:"destination,omitempty"`
+	Skill       string `json:"skill,omitempty"` // kind=combat / manage 时的技能
 	Text        string `json:"text,omitempty"`  // kind=text 时作为玩家输入提交
 	Label       string `json:"label,omitempty"` // 显示在对话记录中的玩家行为
 }
@@ -45,6 +46,24 @@ type EntryV1 struct {
 	Options   []OptionV1 `json:"options,omitempty"`
 	Corrected bool       `json:"corrected,omitempty"`
 	Source    string     `json:"source,omitempty"`
+	// Combat 是战斗记录（kind=combat）：一次攻击 / 技能的掷骰与伤害分解。
+	Combat *CombatLogV1 `json:"combat,omitempty"`
+}
+
+// CombatLogV1 是一条战斗记录。
+type CombatLogV1 struct {
+	Actor    string   `json:"actor"`
+	Target   string   `json:"target,omitempty"`
+	Action   string   `json:"action"`
+	SkillID  string   `json:"skill_id,omitempty"`
+	ItemID   string   `json:"item_id,omitempty"`
+	Hit      bool     `json:"hit"`
+	Roll     int      `json:"roll,omitempty"`
+	Chance   int      `json:"chance,omitempty"`
+	Damage   int      `json:"damage,omitempty"`
+	Critical bool     `json:"critical,omitempty"`
+	Side     string   `json:"side,omitempty"` // party / enemy
+	Chips    []string `json:"chips,omitempty"`
 }
 
 // SuggestionV1 是上下文相关的快捷建议。
@@ -62,6 +81,8 @@ type NPCBriefV1 struct {
 	Name     string `json:"name"`
 	Role     string `json:"role"`
 	Attitude string `json:"attitude"`
+	// Portrait 为 true 表示故事包提供了立绘（通过 get_portrait 取图），否则 UI 显示占位头像。
+	Portrait bool `json:"portrait,omitempty"`
 }
 
 // ExitV1 是出口。
@@ -102,6 +123,282 @@ type SceneV1 struct {
 	// PackID / PackName 是当前存档绑定的故事包。
 	PackID   string `json:"pack_id,omitempty"`
 	PackName string `json:"pack_name,omitempty"`
+	// Combat 非空表示正在战斗（界面切换为战斗面板）。
+	Combat *CombatV1 `json:"combat,omitempty"`
+	// Mainline 是主线贴合度状态（故事包声明了主线锚点时）。
+	Mainline *MainlineV1 `json:"mainline,omitempty"`
+	// HasRPG 表示故事包带数值 RPG 内容（显示图鉴 / 关系网 / 成长入口）。
+	HasRPG bool `json:"has_rpg,omitempty"`
+}
+
+// StatusChipV1 是单位身上的状态。
+type StatusChipV1 struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Icon   string `json:"icon,omitempty"`
+	Turns  int    `json:"turns"`
+	Debuff bool   `json:"debuff,omitempty"`
+	Note   string `json:"note,omitempty"`
+}
+
+// CombatUnitV1 是战斗单位。
+type CombatUnitV1 struct {
+	ID        string         `json:"id"`
+	Ref       string         `json:"ref"`
+	Name      string         `json:"name"`
+	Side      string         `json:"side"`
+	Level     int            `json:"level"`
+	HP        int            `json:"hp"`
+	MaxHP     int            `json:"max_hp"`
+	SP        int            `json:"sp"`
+	MaxSP     int            `json:"max_sp"`
+	Mech      bool           `json:"mech,omitempty"`
+	MechName  string         `json:"mech_name,omitempty"`
+	PilotHP   int            `json:"pilot_hp,omitempty"`
+	Heat      int            `json:"heat,omitempty"`
+	HeatMax   int            `json:"heat_max,omitempty"`
+	Statuses  []StatusChipV1 `json:"statuses"`
+	Down      bool           `json:"down,omitempty"`
+	Current   bool           `json:"current,omitempty"`
+	Defending bool           `json:"defending,omitempty"`
+	Icon      string         `json:"icon,omitempty"`
+	Tier      string         `json:"tier,omitempty"`
+	// Portrait 为 true 表示故事包提供了立绘（通过 get_portrait 取图），否则 UI 显示占位头像。
+	Portrait bool `json:"portrait,omitempty"`
+}
+
+// CombatActionV1 是战斗面板上的一个行动按钮。
+type CombatActionV1 struct {
+	Kind     string `json:"kind"` // attack / skill / item / defend / flee / mech / eject
+	ID       string `json:"id,omitempty"`
+	Label    string `json:"label"`
+	Icon     string `json:"icon,omitempty"`
+	Hint     string `json:"hint,omitempty"`
+	Target   string `json:"target"` // enemy / ally / self / all_enemies / all_allies / none
+	Disabled bool   `json:"disabled,omitempty"`
+	Reason   string `json:"reason,omitempty"`
+	Qty      int    `json:"qty,omitempty"`
+}
+
+// CombatV1 是战斗面板。
+type CombatV1 struct {
+	Encounter    string           `json:"encounter"`
+	Title        string           `json:"title"`
+	Round        int              `json:"round"`
+	YourTurn     bool             `json:"your_turn"`
+	Party        []CombatUnitV1   `json:"party"`
+	Enemies      []CombatUnitV1   `json:"enemies"`
+	Actions      []CombatActionV1 `json:"actions"`
+	Skills       []CombatActionV1 `json:"skills"`
+	Items        []CombatActionV1 `json:"items"`
+	Order        []string         `json:"order"`
+	ResourceName string           `json:"resource_name"`
+	Mercury      int              `json:"mercury"`
+	MercuryMax   int              `json:"mercury_max"`
+}
+
+// MainlineV1 是主线贴合度。
+type MainlineV1 struct {
+	Mode      string `json:"mode"` // main / free / sandbox
+	ModeLabel string `json:"mode_label"`
+	Deviation int    `json:"deviation"`
+	Adherence int    `json:"adherence"`
+	Mild      int    `json:"mild"`
+	Heavy     int    `json:"heavy"`
+	Level     int    `json:"level"` // 0 贴合 / 1 轻微偏离 / 2 严重偏离
+	Pending   bool   `json:"pending,omitempty"`
+	Anchor    string `json:"anchor,omitempty"`
+	Objective string `json:"objective,omitempty"`
+	// Node 是自由推演 / 沙盒模式下的当前节点。
+	Node       *NodeV1 `json:"node,omitempty"`
+	FreeOnline bool    `json:"free_online,omitempty"` // 选择自由推演时是否由 AI 生成（否则为沙盒）
+	Anchors    int     `json:"anchors"`
+	AnchorIdx  int     `json:"anchor_idx"`
+}
+
+// NodeV1 是动态主线节点。
+type NodeV1 struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Objective string `json:"objective"`
+	Goal      string `json:"goal"`
+	Source    string `json:"source"`
+	Reward    string `json:"reward,omitempty"`
+	Location  string `json:"location,omitempty"`
+}
+
+// NoticeV1 是本回合的通知（新角色卡、升级、图鉴解锁……），界面以 Snackbar 呈现。
+type NoticeV1 struct {
+	Kind string `json:"kind"` // card / card_archived / card_restored / death / level / codex / mainline / node
+	Text string `json:"text"`
+	Ref  string `json:"ref,omitempty"`
+}
+
+// KVV1 是一行“标签：值”。
+type KVV1 struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+// CardV1 是图鉴 / 介绍卡：物品、装备、技能、敌人、机甲、势力、地点、角色共用。
+type CardV1 struct {
+	ID          string   `json:"id"`
+	Kind        string   `json:"kind"`
+	KindName    string   `json:"kind_name"`
+	Name        string   `json:"name"`
+	Icon        string   `json:"icon,omitempty"`
+	Rarity      string   `json:"rarity,omitempty"`
+	RarityName  string   `json:"rarity_name,omitempty"`
+	RarityColor string   `json:"rarity_color,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Lore        string   `json:"lore,omitempty"`
+	Stats       []KVV1   `json:"stats,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	Known       bool     `json:"known"`
+}
+
+// CodexCategoryV1 是图鉴分类。
+type CodexCategoryV1 struct {
+	Kind     string   `json:"kind"`
+	Name     string   `json:"name"`
+	Unlocked int      `json:"unlocked"`
+	Entries  []CardV1 `json:"entries"`
+}
+
+// CodexV1 是图鉴。
+type CodexV1 struct {
+	Categories []CodexCategoryV1 `json:"categories"`
+	Unlocked   int               `json:"unlocked"`
+	Total      int               `json:"total"`
+}
+
+// DimValueV1 是关系的一个维度。
+type DimValueV1 struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Value    int    `json:"value"`
+	Negative bool   `json:"negative,omitempty"`
+}
+
+// EdgeV1 是关系网中的一条（有向）关系：只包含玩家知道的。
+type EdgeV1 struct {
+	From     string       `json:"from"`
+	To       string       `json:"to"`
+	FromName string       `json:"from_name"`
+	ToName   string       `json:"to_name"`
+	Values   []DimValueV1 `json:"values"`
+	Label    string       `json:"label"`
+	Tone     string       `json:"tone"` // positive / negative / neutral / mixed
+	Source   string       `json:"source"`
+	Turn     int          `json:"turn,omitempty"`
+	Note     string       `json:"note,omitempty"`
+}
+
+// PersonV1 是关系网中的一个人。
+type PersonV1 struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Role   string `json:"role,omitempty"`
+	Icon   string `json:"icon,omitempty"`
+	Card   string `json:"card,omitempty"` // active / archived / dead / 空
+	Player bool   `json:"player,omitempty"`
+	// Portrait 为 true 表示故事包提供了立绘（通过 get_portrait 取图），否则 UI 显示占位头像。
+	Portrait bool `json:"portrait,omitempty"`
+}
+
+// RelChangeV1 是关系变化历史。
+type RelChangeV1 struct {
+	Turn int    `json:"turn"`
+	Time string `json:"time"`
+	From string `json:"from"`
+	To   string `json:"to"`
+	Text string `json:"text"`
+}
+
+// RelationsV1 是关系网（玩家视角）。
+type RelationsV1 struct {
+	Dimensions []DimValueV1  `json:"dimensions"`
+	People     []PersonV1    `json:"people"`
+	Edges      []EdgeV1      `json:"edges"`
+	History    []RelChangeV1 `json:"history"`
+}
+
+// CharacterCardV1 是角色卡。
+type CharacterCardV1 struct {
+	ID          string       `json:"id"`
+	Name        string       `json:"name"`
+	Role        string       `json:"role,omitempty"`
+	Icon        string       `json:"icon,omitempty"`
+	Description string       `json:"description,omitempty"`
+	Lore        string       `json:"lore,omitempty"`
+	Status      string       `json:"status"`
+	Reason      string       `json:"reason,omitempty"`
+	Faction     string       `json:"faction,omitempty"`
+	Level       int          `json:"level,omitempty"`
+	Stats       []StatV1     `json:"stats,omitempty"`
+	Relation    []DimValueV1 `json:"relation,omitempty"`
+	Memories    []string     `json:"memories,omitempty"`
+	Location    string       `json:"location,omitempty"`
+	Dynamic     bool         `json:"dynamic,omitempty"`
+	Turn        int          `json:"turn"`
+	// Portrait 为 true 表示故事包提供了立绘（通过 get_portrait 取图），否则 UI 显示占位头像。
+	Portrait bool `json:"portrait,omitempty"`
+	// Mechs 是玩家已知由该角色驾驶的机甲卡 ID。
+	Mechs []string `json:"mechs,omitempty"`
+}
+
+// CardsV1 是角色卡列表。
+type CardsV1 struct {
+	Active   []CharacterCardV1 `json:"active"`
+	Archived []CharacterCardV1 `json:"archived"`
+	Dead     []CharacterCardV1 `json:"dead"`
+}
+
+// EquipSlotV1 是装备槽位。
+type EquipSlotV1 struct {
+	Slot    string         `json:"slot"`
+	Name    string         `json:"name"`
+	Item    *CardV1        `json:"item,omitempty"`
+	Unequip *QuickActionV1 `json:"unequip,omitempty"`
+}
+
+// SkillCardV1 是技能面板中的一项。
+type SkillCardV1 struct {
+	Card    CardV1         `json:"card"`
+	Learned bool           `json:"learned"`
+	Learn   *QuickActionV1 `json:"learn,omitempty"`
+	Blocked string         `json:"blocked,omitempty"`
+	Cost    int            `json:"cost,omitempty"`
+}
+
+// GrowthV1 是成长面板（等级、经验、属性点、数值、装备、技能）。
+type GrowthV1 struct {
+	Level        int           `json:"level"`
+	XP           int           `json:"xp"`
+	XPNext       int           `json:"xp_next"`
+	AttrPoints   int           `json:"attr_points"`
+	SkillPoints  int           `json:"skill_points"`
+	HP           int           `json:"hp"`
+	MaxHP        int           `json:"max_hp"`
+	Mercury      int           `json:"mercury"`
+	MercuryMax   int           `json:"mercury_max"`
+	ResourceName string        `json:"resource_name"`
+	HasMech      bool          `json:"has_mech,omitempty"`
+	MechName     string        `json:"mech_name,omitempty"`
+	Stats        []StatV1      `json:"stats"`
+	Equipment    []EquipSlotV1 `json:"equipment"`
+	Skills       []SkillCardV1 `json:"skills"`
+	// Attributes 是可分配属性点的基础属性（Note 为每点加成说明）。
+	Attributes []AttributeV1 `json:"attributes"`
+}
+
+// AttributeV1 是一项可加点的基础属性。
+type AttributeV1 struct {
+	ID       string         `json:"id"`
+	Name     string         `json:"name"`
+	Value    int            `json:"value"`
+	Effect   string         `json:"effect,omitempty"`
+	Allocate *QuickActionV1 `json:"allocate,omitempty"`
 }
 
 // HudFieldV1 是 HUD 的一项。
@@ -126,6 +423,7 @@ type TurnV1 struct {
 	Scene       SceneV1        `json:"scene"`
 	Suggestions []SuggestionV1 `json:"suggestions"`
 	Resolver    string         `json:"resolver,omitempty"`
+	Notices     []NoticeV1     `json:"notices,omitempty"`
 }
 
 // StatV1 是属性 / 技能。
@@ -145,6 +443,10 @@ type CharacterV1 struct {
 	Attributes []StatV1 `json:"attributes"`
 	Skills     []StatV1 `json:"skills"`
 	Conditions []StatV1 `json:"conditions"`
+	// Growth 是数值 RPG 成长信息（故事包带战斗内容时）。
+	Growth *GrowthV1 `json:"growth,omitempty"`
+	// Portrait 为 true 表示故事包提供了立绘（通过 get_portrait 取图），否则 UI 显示占位头像。
+	Portrait bool `json:"portrait,omitempty"`
 }
 
 // ItemV1 是物品。
@@ -158,6 +460,12 @@ type ItemV1 struct {
 	Use         *QuickActionV1 `json:"use,omitempty"`
 	UseLabel    string         `json:"use_label,omitempty"`
 	Buy         *QuickActionV1 `json:"buy,omitempty"`
+	// 装备 / 介绍卡信息（v0.1.1-rc2）。
+	Card     *CardV1        `json:"card,omitempty"`
+	Equipped bool           `json:"equipped,omitempty"`
+	Equip    *QuickActionV1 `json:"equip,omitempty"`
+	// Mech 非空表示这是机甲改装件 / 挂载武器，点开时跳到该机甲卡进行安装。
+	Mech string `json:"mech,omitempty"`
 }
 
 // InventoryV1 是背包面板。
@@ -199,6 +507,8 @@ type NPCV1 struct {
 	// Talks 是和玩家交谈过的次数；Memories 是 NPC 对玩家的记忆摘要（最近的交谈 + 重要经历，新的在前）。
 	Talks    int      `json:"talks"`
 	Memories []string `json:"memories"`
+	// Portrait 为 true 表示故事包提供了立绘（通过 get_portrait 取图），否则 UI 显示占位头像。
+	Portrait bool `json:"portrait,omitempty"`
 }
 
 // JournalEntryV1 是日志条目（来自事件流）。
@@ -269,4 +579,95 @@ type StreamEventV1 struct {
 	Text      string `json:"text,omitempty"`
 	Corrected bool   `json:"corrected,omitempty"`
 	Source    string `json:"source,omitempty"`
+}
+
+// PortraitV1 是角色立绘（base64）。
+type PortraitV1 struct {
+	ID     string `json:"id"`
+	Mime   string `json:"mime"`
+	Base64 string `json:"base64"`
+}
+
+// ---------- 机械甲胄卡（v0.1.2-rc2） ----------
+
+// MechFieldV1 是机甲卡上的一个文本字段；Known=false 时 Value 为“未知”。
+type MechFieldV1 struct {
+	ID    string `json:"id"`
+	Label string `json:"label"`
+	Value string `json:"value"`
+	Known bool   `json:"known"`
+}
+
+// MechStatV1 是规格 / 战斗数值条；Known=false 时 Value 无意义（UI 显示“未知”）。
+type MechStatV1 struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+	Max   int    `json:"max"`
+	Unit  string `json:"unit,omitempty"`
+	Bonus int    `json:"bonus,omitempty"` // 改装件带来的加成
+	Known bool   `json:"known"`
+}
+
+// MechStatusV1 是机甲状态。
+type MechStatusV1 struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Tone   string `json:"tone"`
+	Engage bool   `json:"engage"`
+	Known  bool   `json:"known"`
+}
+
+// MechSlotV1 是改装槽或武器挂点。
+type MechSlotV1 struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Kind      string          `json:"kind,omitempty"`
+	Hardpoint bool            `json:"hardpoint,omitempty"`
+	Known     bool            `json:"known"`
+	Part      *CardV1         `json:"part,omitempty"`
+	Remove    *QuickActionV1  `json:"remove,omitempty"`
+	Install   []QuickActionV1 `json:"install,omitempty"` // 背包里可以装进这个槽位的部件
+}
+
+// MechLogV1 是机甲履历。
+type MechLogV1 struct {
+	Turn int    `json:"turn"`
+	Time string `json:"time,omitempty"`
+	Text string `json:"text"`
+}
+
+// MechCardV1 是机械甲胄卡（独立于普通装备卡）。
+type MechCardV1 struct {
+	ID          string        `json:"id"`
+	Name        string        `json:"name"`
+	Icon        string        `json:"icon,omitempty"`
+	Rarity      string        `json:"rarity,omitempty"`
+	RarityName  string        `json:"rarity_name,omitempty"`
+	RarityColor string        `json:"rarity_color,omitempty"`
+	Known       bool          `json:"known"` // 卡片是否已解锁
+	Owned       bool          `json:"owned,omitempty"`
+	Enemy       bool          `json:"enemy,omitempty"`
+	Portrait    bool          `json:"portrait,omitempty"` // 有立绘且玩家已知
+	Status      MechStatusV1  `json:"status"`
+	Fields      []MechFieldV1 `json:"fields"` // 型号 / 制造方 / 分类 / 驾驶者
+	PilotID     string        `json:"pilot_id,omitempty"`
+	Specs       []MechStatV1  `json:"specs"`
+	Stats       []MechStatV1  `json:"stats"`
+	StatsKnown  bool          `json:"stats_known"`
+	Energy      []MechFieldV1 `json:"energy"` // 启动消耗 / 每回合消耗 / 过热上限
+	Slots       []MechSlotV1  `json:"slots"`
+	Hardpoints  []MechSlotV1  `json:"hardpoints"`
+	Skills      []CardV1      `json:"skills"`
+	Description string        `json:"description,omitempty"`
+	Lore        string        `json:"lore,omitempty"`
+	LoreKnown   bool          `json:"lore_known"`
+	History     []MechLogV1   `json:"history"`
+	Unknown     int           `json:"unknown"` // 仍未知的字段数
+}
+
+// MechsV1 是机甲卡列表。
+type MechsV1 struct {
+	Mechs        []MechCardV1 `json:"mechs"`
+	ResourceName string       `json:"resource_name"`
 }

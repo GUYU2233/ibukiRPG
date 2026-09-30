@@ -1,0 +1,58 @@
+# 原创示例故事包：锈钟镇·黄铜试炼——展示 v0.1.1-rc2 的数值 RPG 能力：
+# 回合制战斗、机甲形态（蒸汽压 / 过热）、成长与装备、图鉴、关系网、角色卡升格、主线贴合度与沙盒委托。
+# 全部内容为原创，可自由用于测试与截图。
+id: brass_trial
+namespace: brass
+name: "锈钟镇·黄铜试炼"
+version: 0.1.0
+type: story
+engine: ">=0.1.1"
+tagline: 学徒机械师的第一场试炼——扳手、齿轮，和一台会呼吸的黄铜甲胄。
+description: 锈钟镇的工匠行会每年只收一名学徒。你要在竞技场赢下两场试炼，再下到镇子底下，找出让钟楼停摆的怪物。一个约 20 分钟的战斗小故事，也是战斗 / 成长 / 图鉴 / 关系网格式的示例。
+author: guyu2233
+icon: precision_manufacturing
+accent: "#9A6B2F"
+tags: [战斗, 蒸汽朋克, 示例]
+dependencies: []
+start:
+  location: brass:location/workshop
+  day: 1
+  time: "08:00"
+  intro: |
+    锈钟镇的钟楼已经三天没有敲响了。
+    你背着一只旧工具箱走进行会工坊，炉火把墙上的齿轮映得通红。行会长欧琳从一台拆开的甲胄后面探出头来：“学徒试炼今天开始。先去竞技场，赢了再说话。”
+    ——试试“和欧琳聊聊”“去竞技场”，或者点开角色面板看看你的数值与装备。
+content:
+  rules:
+    - rules/skills.yaml
+    - rules/pacing.yaml
+  locations:
+    - world/workshop.yaml
+    - world/arena.yaml
+    - world/plaza.yaml
+    - world/sewer.yaml
+  characters:
+    - characters/player.yaml
+    - characters/orin.yaml
+    - characters/tock.yaml
+    - characters/rivet.yaml
+  items:
+    - items/items.yaml
+  actions:
+    - actions/look.yaml
+    - actions/talk.yaml
+    - actions/investigate.yaml
+    - actions/rest.yaml
+  stories:
+    - story/trial.yaml
+    - story/sewer.yaml
+  combat:
+    - combat/combat.yaml
+  codex:
+    - codex/codex.yaml
+  relations:
+    - rules/relations.yaml
+  mainline:
+    - story/mainline.yaml
+  hud:
+    - rules/hud.yaml

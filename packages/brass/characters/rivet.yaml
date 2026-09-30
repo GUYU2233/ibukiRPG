@@ -1,0 +1,61 @@
+id: brass:character/rivet
+type: character
+card: minor
+promote:
+  score: 4
+  reason: 常常围着你打转
+icon: child_care
+identity:
+  name: 小铆钉
+  age: 11
+  role: 工坊跑腿的孩子
+aliases: [小铆钉, 铆钉, 孩子, 小孩]
+location: brass:location/plaza
+description: 脸上总沾着机油的小姑娘，口袋里塞满了捡来的螺丝，耳朵后面夹着一支铅笔。
+attributes: {strength: 6, agility: 14, intelligence: 13, charisma: 12, resolve: 9}
+skills: {stealth: 5}
+relationship_to_player: {trust: 3, affection: 5}
+combat:
+  level: 2
+  stats: {hp: 38, sp: 24, atk: 8, def: 3, spd: 13, acc: 90, eva: 16, crit: 6}
+  skills: [brass:skill/rivet_shot, brass:skill/patch_up]
+  ai:
+    - when: 'allies.min_hp_pct < 45 && self.sp >= 8'
+      skill: brass:skill/patch_up
+      target: weakest_ally
+    - when: 'self.sp >= 6'
+      skill: brass:skill/rivet_shot
+      target: lowest_hp
+dialogue:
+  topics: {sewer: 下水道, tock: 托克, smalltalk: 闲聊}
+  lines:
+    - id: hello
+      topic: smalltalk
+      priority: 30
+      once: true
+      when: 'npc.talks == 0'
+      text: 小铆钉从喷泉边跳下来：“你就是今年的候选人？我押了你赢！别让我的三个铜板打水漂啊。”
+      memory: 押了你赢试炼
+      relation: {affection: 3}
+    - id: sewer_map
+      topic: sewer
+      priority: 40
+      once: true
+      when: 'stories.sewer.status == "active"'
+      text: 小铆钉神秘兮兮地凑过来：“下水道我熟！那个大家伙每次都在第三个岔口停下来喝管道里的蒸汽。要我带路吗？”
+      memory: 说自己知道下水道里大家伙的习性
+      remember: 把下水道的秘密告诉了{player}
+    - id: tock
+      topic: tock
+      priority: 20
+      once: true
+      when: 'npc.talks >= 1'
+      text: 小铆钉撇撇嘴：“托克？他凶巴巴的，可上次我从管子上摔下来，是他接住我的。”
+      memory: 说起托克救过她
+      reveals: [brass:character/rivet>brass:character/tock]
+    - id: small
+      topic: smalltalk
+      priority: 1
+      text: 小铆钉掏出一把螺丝数了数：“十七、十八……又少了一个！”
+      memory: 数着口袋里的螺丝
+tags: [npc]

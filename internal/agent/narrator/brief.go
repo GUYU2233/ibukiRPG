@@ -171,6 +171,14 @@ func Build(p *loader.Package, before, after *state.State, cmd command.Command, r
 			f.StoryEvents = append(f.StoryEvents, "事件开始："+d.Title)
 		case event.StoryResolved:
 			f.StoryEvents = append(f.StoryEvents, "事件结局："+d.Title)
+		case event.CombatActed:
+			if t := ActText(p, func(id string) string { return UnitName(before, after, id) }, d); t != "" {
+				f.StoryEvents = append(f.StoryEvents, "战斗："+t)
+			}
+		case event.CombatEnded:
+			f.StoryEvents = append(f.StoryEvents, "战斗结束："+map[string]string{"victory": "胜利", "defeat": "战败", "fled": "撤退"}[d.Outcome])
+		case event.UnitDefeated:
+			f.StoryEvents = append(f.StoryEvents, UnitName(before, after, d.Target)+"倒下（未死亡）")
 		}
 	}
 	for _, pr := range b.Present {
@@ -304,6 +312,7 @@ func compose(p *loader.Package, before, after *state.State, cmd command.Command,
 			parts = append(parts, d.Text)
 		}
 	}
+	parts = append(parts, rpgParts(p, before, after, cmd, res)...)
 	if moved && cmd.Kind != command.KindMove {
 		parts = append(parts, arrival(p, after, loc))
 	}

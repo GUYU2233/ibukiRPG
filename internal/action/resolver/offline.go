@@ -126,6 +126,19 @@ func (Offline) Resolve(_ context.Context, in Input) (Resolution, error) {
 		res.Confidence = 800
 		return res, nil
 	}
+	if w := firstContained(text, violence); w != "" && p.HasCombat() {
+		// 带战斗系统的故事包：场景中的动粗是有后果的自由行动（不是遭遇战），会计入主线偏离。
+		fr := &command.Freeform{Description: describe(text), EstimatedMinutes: 1, Reasonability: AllowWithConsequence, Tags: []string{"violence"}}
+		fr.Effects = append(fr.Effects,
+			command.ProposedEffect{Type: "noise", Value: 8},
+			command.ProposedEffect{Type: "scene_fact", Text: "有人刚刚" + fr.Description, When: "always"})
+		if target != "" && slices.Contains(present, target) {
+			fr.Targets = []string{target}
+			fr.Effects = append(fr.Effects, command.ProposedEffect{Type: "relationship_nudge", Target: target, Value: -2})
+		}
+		res.Kind, res.Intent, res.Freeform, res.Reasonability, res.Confidence = KindFreeform, "violence", fr, fr.Reasonability, 600
+		return res, nil
+	}
 	if w := firstContained(text, violence); w != "" {
 		res.Kind, res.Reasonability, res.Intent = KindReject, Reject, "violence"
 		res.Reason = "试玩版还没有战斗系统。在这里动手只会让局面失控——也许可以试试威吓、说服，或者换个办法？"

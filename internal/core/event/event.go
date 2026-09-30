@@ -38,6 +38,58 @@ const (
 	MemoryRecorded = "MemoryRecorded"
 	// VarChanged 修改故事变量（整数，Delta 形式，保证可重放）。
 	VarChanged = "VarChanged"
+
+	// ---- 战斗（v0.1.1-rc2）：回合制、先攻、HP/体力、机甲形态（红水银 / 过热）。----
+	CombatStarted      = "CombatStarted"      // Story=遭遇 ID，Units=参战单位快照
+	CombatRoundStarted = "CombatRoundStarted" // Delta=回合数，Tags=先攻顺序，Values=先攻掷骰
+	CombatTurnStarted  = "CombatTurnStarted"  // Actor=行动单位，Delta=顺序游标
+	CombatActed        = "CombatActed"        // Actor/Target/Action/Skill/Item + 命中掷骰（Roll/DC）与伤害分解（Values）
+	UnitHPChanged      = "UnitHPChanged"      // Target，Delta（已按上下限裁剪）
+	UnitResource       = "UnitResourceChanged"
+	UnitStatusApplied  = "UnitStatusApplied" // Target，Condition=状态 ID，Delta=持续回合
+	UnitStatusTicked   = "UnitStatusTicked"  // Target，Condition；持续回合 -1，归零移除
+	UnitStatusRemoved  = "UnitStatusRemoved"
+	UnitDefending      = "UnitDefending"
+	UnitDefeated       = "UnitDefeated"
+	MechEngaged        = "MechEngaged"    // Target，Units[0]=机甲形态快照
+	MechDisengaged     = "MechDisengaged" // Target，Reason
+	UnitOverheated     = "UnitOverheated"
+	CombatEnded        = "CombatEnded" // Story，Outcome=victory/defeat/fled，Reason=战败分支
+
+	// ---- 成长 ----
+	XPGained           = "XPGained"
+	LevelUp            = "LevelUp" // Delta=新等级，Values=attr_points/skill_points
+	AttributeAllocated = "AttributeAllocated"
+	SkillLearned       = "SkillLearned"
+	ItemEquipped       = "ItemEquipped"   // Item，Key=槽位
+	ItemUnequipped     = "ItemUnequipped" // Key=槽位
+	PlayerVitals       = "PlayerVitalsChanged"
+	CodexUnlocked      = "CodexUnlocked"
+
+	// ---- 关系网 ----
+	RelationEdgeChanged = "RelationEdgeChanged" // Actor→Target，Values=各维度增量，Notable=玩家知情
+	RelationRevealed    = "RelationRevealed"    // 玩家得知 Actor→Target 的当前关系（Values=绝对值）
+
+	// ---- 角色卡 ----
+	CharacterCardCreated  = "CharacterCardCreated"
+	CharacterCardArchived = "CharacterCardArchived"
+	CharacterCardRestored = "CharacterCardRestored"
+	CharacterDied         = "CharacterDied"
+
+	// ---- 主线贴合度 / 自由推演 ----
+	DeviationChanged      = "DeviationChanged" // Delta，Total，Tags=原因
+	MainlineNudged        = "MainlineNudged"
+	MainlinePrompted      = "MainlinePrompted"
+	MainlineModeChanged   = "MainlineModeChanged" // From/To
+	MainlineAnchorReached = "MainlineAnchorReached"
+	MainlineThresholds    = "MainlineThresholdsSet"
+	MainlineNodeCanonized = "MainlineNodeCanonized" // Node
+	MainlineNodeCompleted = "MainlineNodeCompleted"
+	// ---- 机械甲胄卡（v0.1.2-rc2）----
+	MechStatusChanged = "MechStatusChanged" // Target=机甲 Key=状态 Reason
+	MechPartChanged   = "MechPartChanged"   // Target=机甲 Key=槽位 Item=部件 Remove=卸下
+	MechRevealed      = "MechRevealed"      // Target=机甲 Tags=揭示的字段（"*" 为全部）Source
+	MechPilotChanged  = "MechPilotChanged"  // Target=机甲 Actor=驾驶者（空为无人）
 )
 
 // FreeformWhitelist 是 FreeformAction 允许产生的轻量事件（第 6.1 节）。
@@ -114,4 +166,42 @@ type Data struct {
 	Notable    bool           `json:"notable,omitempty"`
 	Nudge      bool           `json:"nudge,omitempty"`
 	Repeat     bool           `json:"repeat,omitempty"`
+	// Units 是战斗单位快照（CombatStarted / MechEngaged）。
+	Units []Unit `json:"units,omitempty"`
+	// Node 是被正典化的主线节点（MainlineNodeCanonized）或动态角色（CharacterCardCreated）。
+	Node *Node `json:"node,omitempty"`
+}
+
+// Unit 是战斗单位快照：角色与敌人共用同一套数值模型。
+type Unit struct {
+	ID     string         `json:"id"`
+	Ref    string         `json:"ref"`  // player / NPC ID / 敌人定义 ID / 机甲定义 ID
+	Side   string         `json:"side"` // party / enemy
+	Name   string         `json:"name"`
+	Level  int            `json:"level,omitempty"`
+	HP     int            `json:"hp"`
+	MaxHP  int            `json:"max_hp"`
+	SP     int            `json:"sp"`
+	MaxSP  int            `json:"max_sp"`
+	Stats  map[string]int `json:"stats,omitempty"`
+	Skills []string       `json:"skills,omitempty"`
+	Tags   []string       `json:"tags,omitempty"`
+	// 机甲形态参数（MechEngaged）。
+	HeatMax int `json:"heat_max,omitempty"`
+}
+
+// Node 是一个动态主线节点（自由推演 AI 生成 / 沙盒模板生成）或动态角色卡。
+type Node struct {
+	ID        string         `json:"id"`
+	Title     string         `json:"title"`
+	Objective string         `json:"objective,omitempty"`
+	Goal      string         `json:"goal,omitempty"` // reach / talk / defeat / obtain / level
+	Ref       string         `json:"ref,omitempty"`
+	Location  string         `json:"location,omitempty"`
+	Enemies   []string       `json:"enemies,omitempty"`
+	Reward    map[string]int `json:"reward,omitempty"` // xp / gold
+	Item      string         `json:"item,omitempty"`   // 奖励物品
+	Summary   string         `json:"summary,omitempty"`
+	Source    string         `json:"source,omitempty"` // ai / template
+	Role      string         `json:"role,omitempty"`   // 动态角色身份
 }

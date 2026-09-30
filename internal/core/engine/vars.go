@@ -88,11 +88,65 @@ func Vars(p *loader.Package, s *state.State, target, item string) expression.Var
 		"hour": int64(worldtime.Hour(s.Minute)), "flags": flags, "player_location": s.Player.Location, "vars": vars,
 	}
 	npcs := map[string]any{}
+	cards := map[string]any{}
+	if s.RPG != nil {
+		for id, c := range s.RPG.Cards {
+			cards[loader.Key(id)] = c.Status
+		}
+	}
 	for _, id := range p.NPCIDs {
 		n := s.NPCs[id]
-		npcs[id] = map[string]any{"location": n.Location, "trust": int64(n.Trust), "fear": int64(n.Fear), "name": p.Characters[id].Name()}
+		edge := map[string]any{}
+		for k, v := range s.Edge(id, loader.PlayerID) {
+			edge[k] = int64(v)
+		}
+		status := ""
+		if s.RPG != nil && s.RPG.Cards[id] != nil {
+			status = s.RPG.Cards[id].Status
+		}
+		npcs[id] = map[string]any{"location": n.Location, "trust": int64(n.Trust), "fear": int64(n.Fear), "name": p.Characters[id].Name(),
+			"relation": edge, "card": status, "alive": n.Location != "", "interaction": int64(InteractionScore(s, id))}
 	}
+	rpgVars(p, s, actor, world)
+	world["cards"] = cards
 	return expression.Vars{"actor": actor, "target": tgt, "item": itm, "scene": scene, "world": world, "npcs": npcs, "stories": Stories(p, s)}
+}
+
+// rpgVars 加入成长 / 战斗 / 主线变量：actor.level/xp/hp/max_hp/mercury/in_combat/equipment/combat_skills，
+// world.combats（遭遇短名 → {result, wins}）、world.mode、world.deviation、world.anchor。
+func rpgVars(p *loader.Package, s *state.State, actor, world map[string]any) {
+	hp, mx := PlayerHP(p, s)
+	actor["level"] = int64(s.PlayerLevel(p))
+	actor["hp"], actor["max_hp"] = int64(hp), int64(mx)
+	eq := map[string]any{}
+	skills := []any{}
+	combats := map[string]any{}
+	xp, merc, inCombat := 0, 0, false
+	mode, dev, anchor := state.ModeMain, 0, ""
+	if r := s.RPG; r != nil {
+		xp, merc, inCombat = r.XP, r.Mercury, r.Combat != nil
+		for k, v := range r.Equipment {
+			eq[k] = v
+		}
+		for _, sk := range r.Skills {
+			skills = append(skills, sk)
+		}
+		for id, rec := range r.Encounters {
+			combats[loader.Key(id)] = map[string]any{"result": rec.Result, "wins": int64(rec.Wins), "losses": int64(rec.Losses)}
+		}
+		mode, dev = r.Main.CurrentMode(), r.Main.Deviation
+	}
+	if a := CurrentAnchor(p, s); a != nil {
+		anchor = a.ID
+	}
+	for _, id := range p.Combat.EncIDs {
+		k := loader.Key(id)
+		if _, ok := combats[k]; !ok {
+			combats[k] = map[string]any{"result": "", "wins": int64(0), "losses": int64(0)}
+		}
+	}
+	actor["xp"], actor["mercury"], actor["in_combat"], actor["equipment"], actor["combat_skills"] = int64(xp), int64(merc), inCombat, eq, skills
+	world["combats"], world["mode"], world["deviation"], world["anchor"] = combats, mode, int64(dev), anchor
 }
 
 // Stories 按故事短名（demo:story/lost_purse → lost_purse）构造全部故事状态，供 CEL 使用。

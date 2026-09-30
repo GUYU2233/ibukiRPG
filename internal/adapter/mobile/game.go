@@ -157,6 +157,7 @@ func gameDispatch(ctx context.Context, req dto.RequestV1) (any, bool, error) {
 		"get_scene": true, "get_suggestions": true, "get_character": true, "get_inventory": true, "get_npcs": true,
 		"get_journal": true, "get_transcript": true, "get_bundle": true, "get_hud": true,
 		"list_packs": true, "import_pack": true, "delete_pack": true,
+		"get_codex": true, "get_card": true, "get_relations": true, "get_cards": true, "get_growth": true, "get_combat": true, "get_portrait": true, "get_mechs": true, "get_mech": true,
 	}
 	if !handled[req.Type] {
 		return nil, false, nil
@@ -291,6 +292,43 @@ func gameRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV1
 		return s.NPCs()
 	case "get_journal":
 		return s.Journal(ctx)
+	case "get_codex":
+		return s.Codex()
+	case "get_card":
+		p, err := decode[struct {
+			ID string `json:"id"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		return s.Card(p.ID)
+	case "get_relations":
+		return s.Relations()
+	case "get_cards":
+		return s.Cards()
+	case "get_growth":
+		return s.Growth()
+	case "get_combat":
+		return s.Combat()
+	case "get_mechs":
+		return s.Mechs()
+	case "get_mech":
+		p, err := decode[struct {
+			ID string `json:"id"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		return s.Mech(p.ID)
+	case "get_portrait":
+		p, err := decode[struct {
+			ID string `json:"id"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		v, _, err := s.Portrait(ctx, p.ID)
+		return v, err
 	case "get_transcript":
 		p, err := decode[struct {
 			Limit    int   `json:"limit"`

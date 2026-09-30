@@ -1,0 +1,33 @@
+id: brass:action/talk
+category: social
+name: 交谈
+label: 与{target}交谈
+description: 和在场的人聊聊，了解他们的想法。
+target: character
+keywords: [聊, 谈, 交谈, 说话, 搭话, 打招呼, 打个招呼, 招呼, 问好, 问问, 问, 攀谈, 寒暄, 聊聊, 你好, 嗨, 请教, 打听, 搭讪]
+quiet: true
+# dialogue: 交谈动作——引擎从对方的台词池挑一句（按对话记忆），写入 DialogueOccurred 事件
+dialogue: true
+requirements:
+  - expr: actor.can_speak == true
+    message: 你现在说不出话。
+checks: []
+cost:
+  time: 3m
+outcomes:
+  success:
+    # 第一次认真交谈会让对方略微放下戒心
+    - when: '!(("talked_" + target.key) in world.flags)'
+      effect:
+        type: relationship_delta
+        target: target
+        values:
+          trust: 2
+    - effect:
+        type: flag_set
+        target: world
+        values:
+          flag: "talked_{target.key}"
+witness:
+  summary: "{actor}和{target}聊了几句"
+  notable: false

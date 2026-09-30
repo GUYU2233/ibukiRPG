@@ -1,0 +1,22 @@
+# 关系维度沿用默认（信任 / 好感 / 敬畏 / 恩情 / 敌意 / 畏惧）；这里声明 NPC 之间的初始关系。
+edges:
+  - from: brass:character/orin
+    to: brass:character/tock
+    values: {trust: 10, hostility: 15}
+    public: true
+    note: 师徒，但托克顶撞过她
+  - from: brass:character/tock
+    to: brass:character/orin
+    values: {awe: 40, hostility: 10}
+    public: true
+  - from: brass:character/tock
+    to: brass:character/rivet
+    values: {affection: 30, trust: 20}
+    note: 暗地里照顾她
+  - from: brass:character/rivet
+    to: brass:character/tock
+    values: {trust: 15, affection: 20}
+  - from: brass:character/rivet
+    to: brass:character/orin
+    values: {awe: 30, affection: 25}
+    public: true

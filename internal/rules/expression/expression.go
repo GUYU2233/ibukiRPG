@@ -34,6 +34,11 @@ func New() (*Evaluator, error) {
 		cel.Variable("story", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("stories", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("npc", cel.MapType(cel.StringType, cel.DynType)),
+		// 战斗 AI 规则：行动单位自身、敌方、己方与战况。
+		cel.Variable("self", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("foes", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("allies", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("battle", cel.MapType(cel.StringType, cel.DynType)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create cel env: %w", err)
@@ -80,6 +85,10 @@ func (e *Evaluator) Eval(expr string, vars Vars) (any, error) {
 		"story":   map[string]any{},
 		"stories": map[string]any{},
 		"npc":     map[string]any{},
+		"self":    map[string]any{},
+		"foes":    map[string]any{},
+		"allies":  map[string]any{},
+		"battle":  map[string]any{},
 	}
 	for k, v := range vars {
 		in[k] = v

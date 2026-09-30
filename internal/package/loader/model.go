@@ -1,7 +1,10 @@
 package loader
 
 import (
+	"io/fs"
+
 	"github.com/GUYU2233/ibukiRPG/internal/action/definition"
+	"github.com/GUYU2233/ibukiRPG/internal/combat"
 	"github.com/GUYU2233/ibukiRPG/internal/package/manifest"
 )
 
@@ -99,6 +102,10 @@ type DialogueLine struct {
 	Memory string `yaml:"memory"`
 	// Remember 非空时，同时写入一条 NPC 的情节记忆（例如“把储藏室的怪事告诉了玩家”）。
 	Remember string `yaml:"remember"`
+	// Reveals 是这句台词透露的关系（"from>to"，角色 ID），玩家由此“听说”这段关系（关系网只显示玩家知道的）。
+	Reveals []string `yaml:"reveals"`
+	// Relation 是这句台词带来的说话者→玩家关系变化（例如 {affection: 2}），只在第一次说时生效。
+	Relation map[string]int `yaml:"relation"`
 }
 
 // Dialogue 是台词库（叙事内容，不是游戏事实）。
@@ -157,6 +164,35 @@ type Character struct {
 	Tags                 []string                     `yaml:"tags"`
 	Gold                 int                          `yaml:"gold"`
 	Inventory            map[string]int               `yaml:"inventory"`
+	// ---- v0.1.2-rc2：战斗、角色卡、图鉴与立绘 ----
+	Combat *combat.CharacterCombat `yaml:"combat"`
+	// Card 是角色卡等级：major（开局即有角色卡）/ minor（满足 promote 条件后升格）/ none。
+	// 为空时视为 major（兼容旧故事包）。
+	Card        string   `yaml:"card"`
+	Promote     *Promote `yaml:"promote"`
+	ArchiveWhen string   `yaml:"archive_when"`
+	Faction     string   `yaml:"faction"`
+	Icon        string   `yaml:"icon"`
+	Lore        string   `yaml:"lore"`
+	// Portrait 是立绘图片在包内的相对路径（assets/ 下，png/jpg/webp，≤ 2 MB）；可省略。
+	Portrait string `yaml:"portrait"`
+}
+
+// Promote 是次要角色升格为主要角色（创建角色卡）的量化条件：满足任意一条即可。
+type Promote struct {
+	// Score：互动分（交谈 ×2 + 情节记忆 + 并肩作战 ×3 + 与之相关的关系变化）达到该值。
+	Score int `yaml:"score"`
+	// When：CEL 条件（例如剧情触发）。
+	When   string `yaml:"when"`
+	Reason string `yaml:"reason"`
+}
+
+// CardTier 返回角色卡等级（默认 major）。
+func (c *Character) CardTier() string {
+	if c.Card == "" {
+		return "major"
+	}
+	return c.Card
 }
 
 // Name 返回显示名。
@@ -178,6 +214,18 @@ type Item struct {
 	Unsellable  bool     `yaml:"unsellable"`
 	Description string   `yaml:"description"`
 	Use         *ItemUse `yaml:"use"`
+	// ---- v0.1.1-rc2：装备、消耗品与介绍卡 ----
+	Kind   string             `yaml:"kind"` // consumable / weapon / armor / accessory / mech_part / mech_weapon / key / material
+	Rarity string             `yaml:"rarity"`
+	Icon   string             `yaml:"icon"`
+	Slot   string             `yaml:"slot"`
+	Mods   combat.Stats       `yaml:"mods"`
+	Lore   string             `yaml:"lore"`
+	Combat *combat.ItemCombat `yaml:"combat"`
+	// Level 是装备需求等级。
+	Level int `yaml:"level"`
+	// Mech 是机甲改装件 / 挂载武器的属性（kind: mech_part / mech_weapon）。
+	Mech *combat.MechItem `yaml:"mech"`
 }
 
 // StoryStep 是故事中的非终结步骤或结局。
@@ -249,6 +297,8 @@ type Story struct {
 // Package 是加载完成的内容包。所有有序切片保持 manifest 中的声明顺序，
 // 引擎遍历时只用有序切片，不依赖 map 顺序（第 30 节）。
 type Package struct {
+	// FS 是包的文件系统（用于读取立绘等资源），不参与序列化。
+	FS          fs.FS `json:"-" yaml:"-"`
 	Manifest    *manifest.Manifest
 	Rules       Rules
 	Pacing      Pacing
@@ -268,6 +318,11 @@ type Package struct {
 	Objectives []Objective
 	// Variables 是故事变量及其初始值（manifest start.variables）。
 	Variables map[string]int
+	// ---- v0.1.1-rc2 ----
+	Combat    *combat.Content
+	Codex     []CodexEntry
+	Relations Relations
+	Mainline  Mainline
 }
 
 // Key 返回命名空间化 ID 的最后一段，例如 demo:action/talk → talk。

@@ -447,6 +447,9 @@ func (s *Session) Scene(ctx context.Context) (dto.SceneV1, error) {
 	}
 	v := g.q.Scene(st)
 	v.SlotID = slot
+	if v.Mainline != nil {
+		v.Mainline.FreeOnline = s.online()
+	}
 	if sl, err := s.store.GetSlot(ctx, slot); err == nil {
 		v.SaveName = sl.Name
 	}
@@ -532,11 +535,12 @@ func (s *Session) SlotID() string {
 }
 
 type entryMeta struct {
-	Check     *dto.CheckV1   `json:"check,omitempty"`
-	Chips     []string       `json:"chips,omitempty"`
-	Options   []dto.OptionV1 `json:"options,omitempty"`
-	Corrected bool           `json:"corrected,omitempty"`
-	Source    string         `json:"source,omitempty"`
+	Check     *dto.CheckV1     `json:"check,omitempty"`
+	Chips     []string         `json:"chips,omitempty"`
+	Options   []dto.OptionV1   `json:"options,omitempty"`
+	Corrected bool             `json:"corrected,omitempty"`
+	Source    string           `json:"source,omitempty"`
+	Combat    *dto.CombatLogV1 `json:"combat,omitempty"`
 }
 
 func toEntry(e eventstore.Entry) dto.EntryV1 {
@@ -544,7 +548,7 @@ func toEntry(e eventstore.Entry) dto.EntryV1 {
 	if len(e.Meta) > 0 {
 		var m entryMeta
 		if json.Unmarshal(e.Meta, &m) == nil {
-			v.Check, v.Chips, v.Options, v.Corrected, v.Source = m.Check, m.Chips, m.Options, m.Corrected, m.Source
+			v.Check, v.Chips, v.Options, v.Corrected, v.Source, v.Combat = m.Check, m.Chips, m.Options, m.Corrected, m.Source, m.Combat
 		}
 	}
 	return v
@@ -577,8 +581,8 @@ func groupByCommand(in []dto.EntryV1) []dto.EntryV1 {
 
 func fromEntry(v dto.EntryV1) eventstore.Entry {
 	e := eventstore.Entry{CommandID: v.CommandID, Turn: v.Turn, Kind: v.Kind, Text: v.Text}
-	m := entryMeta{Check: v.Check, Chips: v.Chips, Options: v.Options, Corrected: v.Corrected, Source: v.Source}
-	if m.Check != nil || len(m.Chips) > 0 || len(m.Options) > 0 || m.Corrected || m.Source != "" {
+	m := entryMeta{Check: v.Check, Chips: v.Chips, Options: v.Options, Corrected: v.Corrected, Source: v.Source, Combat: v.Combat}
+	if m.Check != nil || len(m.Chips) > 0 || len(m.Options) > 0 || m.Corrected || m.Source != "" || m.Combat != nil {
 		e.Meta, _ = json.Marshal(m)
 	}
 	return e

@@ -1,0 +1,32 @@
+id: brass:character/player
+type: player
+identity:
+  name: 阿砾
+  role: 行会学徒候选人
+attributes:
+  strength: 11
+  agility: 11
+  intelligence: 12
+  charisma: 10
+  resolve: 10
+skills:
+  persuasion: 2
+  perception: 3
+  insight: 2
+  performance: 0
+  stealth: 2
+  athletics: 3
+gold: 10
+inventory:
+  brass:item/bandage: 2
+  brass:item/fuel_can: 1
+combat:
+  level: 1
+  stats: {hp: 60, sp: 30, atk: 11, def: 5, spd: 9, acc: 85, eva: 8, crit: 8}
+  growth: {hp: 8, sp: 3, atk: 2, def: 1, spd: 1}
+  skills: [brass:skill/wrench_smash, brass:skill/patch_up]
+  equipment:
+    weapon: brass:item/wrench
+    armor: brass:item/work_apron
+  mech: brass:mech/warden
+  mercury: 60

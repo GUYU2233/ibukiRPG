@@ -1,0 +1,12 @@
+profile: steady
+quiet_turns_for_nudge: 4
+ambient:
+  - location: brass:location/workshop
+    text: 炉膛里“噗”地爆出一团火星，墙上的压力表指针轻轻抖了抖。
+    fact: 炉火刚刚旺了一下
+  - location: brass:location/plaza
+    text: 钟楼顶上传来一声沉闷的金属摩擦声，随后又归于寂静。
+    fact: 钟楼里传出过摩擦声
+  - location: brass:location/sewer
+    text: 远处的管道里传来有节奏的“咚、咚”声，像是有什么很重的东西在走动。
+    fact: 下水道深处有沉重的脚步声

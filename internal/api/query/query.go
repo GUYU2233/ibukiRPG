@@ -1,6 +1,7 @@
 package query
 
 import (
+	"encoding/base64"
 	"fmt"
 	"slices"
 	"strings"
@@ -52,9 +53,12 @@ func (q *Q) Scene(s *state.State) dto.SceneV1 {
 		PackID: p.Manifest.ID, PackName: p.Manifest.Name,
 	}
 	v.Hud = q.Hud(s)
+	v.Combat = q.Combat(s)
+	v.Mainline = q.Mainline(s)
+	v.HasRPG = p.HasCombat() || p.Mainline.Enabled()
 	for _, id := range s.NPCsAt(p, loc.ID) {
 		c := p.Characters[id]
-		v.Present = append(v.Present, dto.NPCBriefV1{ID: id, Name: c.Name(), Role: c.Identity.Role, Attitude: narrator.Attitude(s.NPCs[id])})
+		v.Present = append(v.Present, dto.NPCBriefV1{ID: id, Name: c.Name(), Role: c.Identity.Role, Attitude: narrator.Attitude(s.NPCs[id]), Portrait: c.Portrait != ""})
 	}
 	for _, e := range loc.Exits {
 		v.Exits = append(v.Exits, dto.ExitV1{ID: e.To, Label: e.Label, Locked: q.exitLocked(s, e)})
@@ -80,6 +84,10 @@ func (q *Q) Suggestions(s *state.State) []dto.SuggestionV1 {
 	present := s.NPCsAt(p, loc.ID)
 	var out []dto.SuggestionV1
 	add := func(sg dto.SuggestionV1) { out = append(out, sg) }
+	if s.RPG != nil && s.RPG.Combat != nil {
+		return []dto.SuggestionV1{} // 战斗中使用战斗面板
+	}
+	out = append(out, q.EncounterSuggestions(s)...)
 	story := q.ActiveStory(s)
 	if story != nil && story.Location == loc.ID {
 		for _, h := range story.Hints {
@@ -163,7 +171,7 @@ func (q *Q) modifier(s *state.State, skill string) int {
 // Character 构造角色面板。
 func (q *Q) Character(s *state.State) dto.CharacterV1 {
 	p := q.Pkg
-	v := dto.CharacterV1{Name: s.Player.Name, Role: p.Player.Identity.Role, Gold: s.Player.Gold, Attributes: []dto.StatV1{}, Skills: []dto.StatV1{}, Conditions: []dto.StatV1{}}
+	v := dto.CharacterV1{Name: s.Player.Name, Role: p.Player.Identity.Role, Gold: s.Player.Gold, Attributes: []dto.StatV1{}, Skills: []dto.StatV1{}, Conditions: []dto.StatV1{}, Portrait: p.Player.Portrait != ""}
 	for _, a := range []string{"strength", "agility", "intelligence", "charisma", "resolve"} {
 		val := s.Player.Attributes[a]
 		v.Attributes = append(v.Attributes, dto.StatV1{ID: a, Name: p.Rules.Attributes[a], Value: val, Modifier: checks.Modifier(0, val, 0)})
@@ -186,6 +194,7 @@ func (q *Q) Character(s *state.State) dto.CharacterV1 {
 		}
 		v.Conditions = append(v.Conditions, dto.StatV1{ID: c, Name: p.ConditionName(c), Note: strings.Join(mods, "，")})
 	}
+	v.Growth = q.Growth(s)
 	return v
 }
 
@@ -203,6 +212,25 @@ func (q *Q) Inventory(s *state.State) dto.InventoryV1 {
 		if use := p.ActionID("use_item"); it.Use != nil && use != "" {
 			iv.UseLabel = it.Use.Verb
 			iv.Use = &dto.QuickActionV1{Kind: "action", Action: use, Item: id, Label: it.Use.Verb + it.Name}
+		}
+		if p.HasCombat() {
+			c, _ := q.Card(s, id)
+			iv.Card = &c
+			if it.Slot != "" {
+				iv.Equipped = s.R().Equipment[it.Slot] == id
+				if iv.Equipped {
+					iv.Equip = &dto.QuickActionV1{Kind: "manage", Action: "unequip", Target: it.Slot, Label: "卸下" + it.Name}
+				} else {
+					iv.Equip = &dto.QuickActionV1{Kind: "manage", Action: "equip", Item: id, Label: "装备" + it.Name}
+				}
+			}
+			if it.Mech != nil {
+				iv.Mech = engine.PlayerMech(p)
+			}
+			if it.Combat != nil && it.Combat.Field && iv.Use == nil {
+				iv.UseLabel = "使用"
+				iv.Use = &dto.QuickActionV1{Kind: "manage", Action: "use", Item: id, Label: "使用" + it.Name}
+			}
 		}
 		v.Items = append(v.Items, iv)
 	}
@@ -257,7 +285,7 @@ func (q *Q) NPCs(s *state.State) []dto.NPCV1 {
 		if !present && len(n.Memories) == 0 {
 			continue
 		}
-		v := dto.NPCV1{ID: id, Name: c.Name(), Role: c.Identity.Role, Description: c.Description, LocationName: p.EntityName(n.Location),
+		v := dto.NPCV1{ID: id, Portrait: c.Portrait != "", Name: c.Name(), Role: c.Identity.Role, Description: c.Description, LocationName: p.EntityName(n.Location),
 			Present: present, Trust: n.Trust, Fear: n.Fear, Attitude: narrator.Attitude(n), Beliefs: []dto.BeliefV1{}, Actions: []dto.NPCActionV1{},
 			Talks: n.Talks, Memories: npcMemories(n)}
 		for i := len(n.Beliefs) - 1; i >= 0; i-- {
@@ -340,6 +368,31 @@ func (q *Q) Journal(events []event.Event, playerName string) []dto.JournalEntryV
 			if d.Flag == "backroom_allowed" {
 				add(e, "world", "伯林允许你进入储藏室")
 			}
+		case event.CombatStarted, event.CombatEnded, event.MainlineModeChanged, event.MainlineNodeCanonized, event.MainlineNodeCompleted, event.MainlineAnchorReached, event.CharacterDied:
+			if text, ok := q.rpgStoryEntry(e); ok {
+				kind := "combat"
+				if e.Type != event.CombatStarted && e.Type != event.CombatEnded {
+					kind = "story"
+				}
+				add(e, kind, text)
+			}
+		case event.CharacterCardCreated, event.CharacterCardArchived, event.CharacterCardRestored:
+			verb := map[string]string{event.CharacterCardCreated: "新角色卡", event.CharacterCardArchived: "角色卡归档", event.CharacterCardRestored: "角色卡恢复"}[e.Type]
+			if d.Reason != "主要角色" {
+				add(e, "card", verb+"："+p.EntityName(d.Target))
+			}
+		case event.LevelUp, event.SkillLearned, event.XPGained:
+			if chip, ok := q.rpgChips(nil, e); ok {
+				add(e, "growth", chip)
+			}
+		case event.RelationEdgeChanged:
+			if d.Notable {
+				var parts []string
+				for _, dv := range q.dims(d.Values) {
+					parts = append(parts, fmt.Sprintf("%s %+d", dv.Name, dv.Value))
+				}
+				add(e, "relation", fmt.Sprintf("%s→%s %s", journalName(p, playerName, d.Actor), journalName(p, playerName, d.Target), strings.Join(parts, "，")))
+			}
 		}
 	}
 	return out
@@ -373,8 +426,15 @@ func (q *Q) TurnEntries(before, after *state.State, res *engine.Result, input st
 	var chips []string
 	var stories []dto.EntryV1
 	timeSpent := after.Minute - before.Minute
+	entries = append(entries, q.CombatEntries(before, after, res.Events, res.Turn)...)
 	for _, e := range res.Events {
 		d := e.Data
+		if chip, ok := q.rpgChips(after, e); ok {
+			chips = append(chips, chip)
+		}
+		if text, ok := q.rpgStoryEntry(e); ok {
+			stories = append(stories, dto.EntryV1{Kind: "story", Turn: res.Turn, Text: text})
+		}
 		switch e.Type {
 		case event.SkillCheckResolved:
 			r := checks.Resolve(d.Skill, p.SkillName(d.Skill), d.Roll, d.Modifier, d.DC)
@@ -423,7 +483,7 @@ func KindRank(kind string) int {
 		return 0
 	case "player":
 		return 1
-	case "check":
+	case "check", "combat":
 		return 2
 	case "narration":
 		return 3
@@ -433,4 +493,25 @@ func KindRank(kind string) int {
 		return 5
 	}
 	return 6
+}
+
+func journalName(p *loader.Package, player, id string) string {
+	if id == loader.PlayerID {
+		return player
+	}
+	return p.EntityName(id)
+}
+
+// HasPortrait 报告角色是否有立绘。
+func (q *Q) HasPortrait(id string) bool {
+	return q.Pkg.PortraitPath(id) != ""
+}
+
+// Portrait 返回角色立绘（base64）。
+func (q *Q) Portrait(id string) (dto.PortraitV1, bool) {
+	b, mime := q.Pkg.Portrait(id)
+	if b == nil {
+		return dto.PortraitV1{ID: id}, false
+	}
+	return dto.PortraitV1{ID: id, Mime: mime, Base64: base64.StdEncoding.EncodeToString(b)}, true
 }

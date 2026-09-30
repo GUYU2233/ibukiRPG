@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"strings"
 	"unicode/utf8"
 
@@ -106,6 +107,31 @@ func (w *work) converse(npc string) error {
 		Repeat: repeat, Location: w.s.Player.Location,
 	}); err != nil {
 		return err
+	}
+	if !repeat {
+		for _, rv := range line.Reveals {
+			from, to, ok := strings.Cut(rv, ">")
+			if !ok {
+				continue
+			}
+			if err := w.emit(event.RelationRevealed, event.Data{Actor: from, Target: to, Values: w.s.Edge(from, to), Source: "dialogue", Witness: npc}); err != nil {
+				return err
+			}
+		}
+		if len(line.Relation) > 0 {
+			vals := map[string]any{"from": npc, "to": loader.PlayerID, "reason": "交谈：" + LineMemo(c, line, w.s.Player.Name)}
+			for k, v := range line.Relation {
+				vals[k] = v
+			}
+			if _, err := w.applyRPGEffect("relation", npc, func(k string) string { return fmt.Sprint(vals[k]) }, func(k string, def int) (int, error) {
+				if v, ok := vals[k].(int); ok {
+					return v, nil
+				}
+				return def, nil
+			}, vals); err != nil {
+				return err
+			}
+		}
 	}
 	if line.Remember != "" && !w.s.NPCs[npc].HasEpisode("dialogue:"+line.ID) {
 		return w.remember(npc, "dialogue:"+line.ID, FillLine(line.Remember, c, w.s.Player.Name), "dialogue", 2)
