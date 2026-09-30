@@ -8,3 +8,12 @@
     *** Companion;
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# MediaPipe Tasks GenAI generated protobuf/AutoValue annotations are compile-time metadata.
+-dontwarn com.google.auto.value.AutoValue
+-dontwarn com.google.auto.value.AutoValue$Builder
+-dontwarn com.google.protobuf.Internal$ProtoMethodMayReturnNull
+-dontwarn com.google.protobuf.Internal$ProtoNonnullApi
+-dontwarn com.google.protobuf.ProtoField
+-dontwarn com.google.protobuf.ProtoPresenceBits
+-dontwarn com.google.protobuf.ProtoPresenceCheckedField

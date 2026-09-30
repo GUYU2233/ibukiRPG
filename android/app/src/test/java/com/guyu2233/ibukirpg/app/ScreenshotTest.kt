@@ -95,7 +95,7 @@ class ScreenshotTest {
 
     private val home: HomeState get() {
         val s = slots
-        return HomeState(loading = false, latest = s.firstOrNull(), saveCount = s.size, ai = AIStatusV1(kind = "offline"), version = "0.1.0-rc1")
+        return HomeState(loading = false, latest = s.firstOrNull(), saveCount = s.size, ai = AIStatusV1(kind = "offline"), version = "0.1.1rc1")
     }
 
     @Test fun home() = shoot("01-home.png") {
@@ -131,7 +131,7 @@ class ScreenshotTest {
             settings = AppSettings(aiKind = "deepseek"),
             form = AIForm(kind = "deepseek", baseUrl = "https://api.deepseek.com", model = "deepseek-chat", hasSavedKey = true, test = TestState.Idle),
             saved = false,
-            engineVersion = "0.1.0-rc1",
+            engineVersion = "0.1.1rc1",
             actions = SettingsActions(),
         )
     }
@@ -141,7 +141,7 @@ class ScreenshotTest {
             settings = AppSettings(),
             form = AIForm(kind = "offline"),
             saved = false,
-            engineVersion = "0.1.0-rc1",
+            engineVersion = "0.1.1rc1",
             actions = SettingsActions(),
         )
     }

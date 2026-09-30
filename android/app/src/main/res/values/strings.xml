@@ -13,6 +13,7 @@
     <string name="home_last_played">上次进度</string>
     <string name="home_mode_offline">离线模式</string>
     <string name="home_mode_ai">AI 模式：%1$s</string>
+    <string name="home_mode_local_model">本地模型：%1$s</string>
     <string name="home_version">版本 %1$s</string>
     <string name="home_loading">正在准备引擎…</string>
 
@@ -88,9 +89,20 @@
     <!-- 设置 -->
     <string name="settings_title">设置</string>
     <string name="settings_ai">AI 叙事</string>
-    <string name="settings_ai_desc">离线模式使用规则解析和模板叙事，完全不联网。填写 API Key 后可使用大模型理解更自由的输入、生成更生动的叙事；规则与骰子始终由本地引擎决定。</string>
+    <string name="settings_ai_desc">可选择纯离线规则、设备本地 MediaPipe 模型，或联网的大模型服务。行动规则与骰子始终由本地引擎决定。</string>
     <string name="settings_offline">离线模式（默认）</string>
-    <string name="settings_offline_desc">无需联网，所有功能可用</string>
+    <string name="settings_offline_desc">无需联网，使用内置规则解析和模板叙事</string>
+    <string name="settings_mediapipe">离线本地模型（MediaPipe）</string>
+    <string name="settings_mediapipe_desc">在设备上运行自己导入的模型；模型推理不联网</string>
+    <string name="settings_mediapipe_note">选择已转换为 MediaPipe Tasks 格式的 .task 模型。模型留在应用私有目录，仅在本机推理；不支持直接加载 GGUF 或原始 Hugging Face 权重。</string>
+    <string name="settings_mediapipe_import">从本地导入 .task 模型</string>
+    <string name="settings_mediapipe_remove">移除</string>
+    <string name="settings_mediapipe_local_only">已复制到应用私有目录</string>
+    <string name="settings_mediapipe_temperature">温度：%1$.1f</string>
+    <string name="settings_mediapipe_context">上下文 / KV 缓存预算：%1$d tokens</string>
+    <string name="settings_mediapipe_top_k">Top-K：%1$d</string>
+    <string name="settings_mediapipe_top_p">Top-P：%1$.2f</string>
+    <string name="settings_mediapipe_context_note">上下文预算是输入与输出 token 合计，会影响内存占用；模型本身仍有最大上下文上限。设备可用内存和模型兼容性各异。</string>
     <string name="settings_deepseek">DeepSeek</string>
     <string name="settings_qwen">通义千问</string>
     <string name="settings_custom">自定义 OpenAI 兼容服务</string>

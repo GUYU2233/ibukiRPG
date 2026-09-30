@@ -86,7 +86,7 @@ make mobile-smoke
 - 真机 / 模拟器运行测试尚未进行（本机无模拟器），当前仅验证 AAR 可成功生成。
 - 架构文档中的 `world/time` 模块在代码中命名为 `internal/world/worldtime`，避免与标准库 `time` 同名。
 
-## Android App（v0.1.0-rc1 补充）
+## Android App（v0.1.1rc1 补充）
 
 - Gradle 通过 wrapper 自动下载（8.14.3）；AGP 8.13.2、Kotlin 2.3.21，需要 platform 36 + build-tools 36.1.0（已安装）。
 - 构建与签名见 [android.md](android.md)。发布签名密钥库位于 `~/.ibukirpg/keystore`（不在仓库内）。

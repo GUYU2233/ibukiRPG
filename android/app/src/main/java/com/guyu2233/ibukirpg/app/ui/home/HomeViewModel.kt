@@ -6,6 +6,7 @@ import com.guyu2233.ibukirpg.app.data.AIStatusV1
 import com.guyu2233.ibukirpg.app.data.Engine
 import com.guyu2233.ibukirpg.app.data.SettingsStore
 import com.guyu2233.ibukirpg.app.data.SlotV1
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,14 +23,15 @@ data class HomeState(
     val version: String = "",
 )
 
-class HomeViewModel(private val engine: Engine, private val settings: SettingsStore) : ViewModel() {
+class HomeViewModel(private val engine: Engine, private val settings: SettingsStore, private val aiStartupReady: Deferred<Unit>) : ViewModel() {
     private val _state = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = _state.asStateFlow()
 
     fun refresh() {
         viewModelScope.launch {
+            aiStartupReady.await()
             runCatching {
-                // 保证引擎拿到最新 AI 配置（设置页返回后也会刷新）。
+                // 等待启动时恢复的 AI 配置，并刷新引擎状态与存档。
                 val ai = engine.aiStatus()
                 val saves = engine.listSaves()
                 Triple(ai, saves, engine.version)

@@ -122,7 +122,7 @@ fun HomeContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(12.dp))
-                ModeChip(online = s.ai.online, model = s.ai.model, onClick = onSettings)
+                ModeChip(online = s.ai.online, model = s.ai.model, localModel = s.ai.kind == "mediapipe", onClick = onSettings)
                 Spacer(Modifier.height(28.dp))
 
                 if (s.loading) {
@@ -202,10 +202,18 @@ fun HomeContent(
 }
 
 @Composable
-private fun ModeChip(online: Boolean, model: String, onClick: () -> Unit) {
+private fun ModeChip(online: Boolean, model: String, localModel: Boolean, onClick: () -> Unit) {
     AssistChip(
         onClick = onClick,
-        label = { Text(if (online) stringResource(R.string.home_mode_ai, model) else stringResource(R.string.home_mode_offline)) },
+        label = {
+            Text(
+                when {
+                    localModel -> stringResource(R.string.home_mode_local_model, model)
+                    online -> stringResource(R.string.home_mode_ai, model)
+                    else -> stringResource(R.string.home_mode_offline)
+                },
+            )
+        },
         leadingIcon = {
             Icon(
                 if (online) Icons.Outlined.AutoAwesome else Icons.Outlined.CloudOff, contentDescription = null,

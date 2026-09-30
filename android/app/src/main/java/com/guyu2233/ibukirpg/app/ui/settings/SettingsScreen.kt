@@ -1,6 +1,8 @@
 package com.guyu2233.ibukirpg.app.ui.settings
 
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -71,6 +73,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlin.math.roundToInt
 import com.guyu2233.ibukirpg.app.BuildConfig
 import com.guyu2233.ibukirpg.app.R
 import com.guyu2233.ibukirpg.app.data.ThemeMode
@@ -78,6 +81,9 @@ import com.guyu2233.ibukirpg.app.data.ThemeMode
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
+    val modelPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(vm::importLocalModel)
+    }
     val settings by vm.settings.collectAsStateWithLifecycle()
     val form by vm.form.collectAsStateWithLifecycle()
     val saved by vm.saved.collectAsStateWithLifecycle()
@@ -95,6 +101,12 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
             test = vm::test,
             save = vm::save,
             clearKey = vm::clearKey,
+            importLocalModel = { modelPicker.launch(arrayOf("*/*")) },
+            removeLocalModel = vm::removeLocalModel,
+            setTemperature = vm::setTemperature,
+            setContextTokens = vm::setContextTokens,
+            setTopK = vm::setTopK,
+            setTopP = vm::setTopP,
             consumeSaved = vm::consumeSaved,
             setTextScale = { vm.setTextScale(it) },
             setTheme = { vm.setTheme(it) },
@@ -113,6 +125,12 @@ data class SettingsActions(
     val test: () -> Unit = {},
     val save: () -> Unit = {},
     val clearKey: () -> Unit = {},
+    val importLocalModel: () -> Unit = {},
+    val removeLocalModel: () -> Unit = {},
+    val setTemperature: (Float) -> Unit = {},
+    val setContextTokens: (Int) -> Unit = {},
+    val setTopK: (Int) -> Unit = {},
+    val setTopP: (Float) -> Unit = {},
     val consumeSaved: () -> Unit = {},
     val setTextScale: (Float) -> Unit = {},
     val setTheme: (ThemeMode) -> Unit = {},
@@ -164,23 +182,27 @@ fun SettingsContent(
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                 Column(Modifier.selectableGroup()) {
                     ProviderOption("offline", stringResource(R.string.settings_offline), stringResource(R.string.settings_offline_desc), form.kind, vm.selectKind)
+                    ProviderOption("mediapipe", stringResource(R.string.settings_mediapipe), stringResource(R.string.settings_mediapipe_desc), form.kind, vm.selectKind)
                     ProviderOption("deepseek", stringResource(R.string.settings_deepseek), "api.deepseek.com", form.kind, vm.selectKind)
                     ProviderOption("qwen", stringResource(R.string.settings_qwen), "DashScope 兼容模式", form.kind, vm.selectKind)
                     ProviderOption("custom", stringResource(R.string.settings_custom), null, form.kind, vm.selectKind)
                 }
             }
-            AnimatedVisibility(form.kind != "offline") {
+            AnimatedVisibility(form.kind == "mediapipe") {
+                LocalModelFields(form, vm)
+            }
+            AnimatedVisibility(form.kind != "offline" && form.kind != "mediapipe") {
                 AIFields(form, vm)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 if (form.kind != "offline") {
                     OutlinedButton(
                         onClick = vm.test,
-                        enabled = form.test != TestState.Running && (form.key.isNotBlank() || form.hasSavedKey),
+                        enabled = form.test != TestState.Running && if (form.kind == "mediapipe") form.localModelPath.isNotBlank() else (form.key.isNotBlank() || form.hasSavedKey),
                         modifier = Modifier.weight(1f),
                     ) { Text(stringResource(R.string.settings_test)) }
                 }
-                Button(onClick = vm.save, enabled = !form.saving && form.dirty, modifier = Modifier.weight(1f)) {
+                Button(onClick = vm.save, enabled = !form.saving && form.dirty && (form.kind != "mediapipe" || form.localModelPath.isNotBlank()), modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.settings_save))
                 }
             }
@@ -240,6 +262,41 @@ private fun ProviderOption(kind: String, title: String, subtitle: String?, selec
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier = Modifier.selectable(selected = selected == kind, role = Role.RadioButton, onClick = { onSelect(kind) }),
     )
+}
+
+@Composable
+private fun LocalModelFields(form: AIForm, vm: SettingsActions) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.settings_mediapipe_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = vm.importLocalModel, enabled = !form.importingModel, modifier = Modifier.fillMaxWidth()) {
+            if (form.importingModel) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+            else Text(stringResource(R.string.settings_mediapipe_import))
+        }
+        if (form.localModelName.isNotBlank()) {
+            ListItem(
+                headlineContent = { Text(form.localModelName) },
+                supportingContent = { Text(stringResource(R.string.settings_mediapipe_local_only)) },
+                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                trailingContent = { TextButton(onClick = vm.removeLocalModel) { Text(stringResource(R.string.settings_mediapipe_remove)) } },
+            )
+        }
+        form.modelError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+
+        Text(stringResource(R.string.settings_mediapipe_temperature, form.temperature), style = MaterialTheme.typography.labelLarge)
+        Slider(value = form.temperature, onValueChange = vm.setTemperature, valueRange = 0f..1.5f, steps = 14)
+        Text(stringResource(R.string.settings_mediapipe_context, form.contextTokens), style = MaterialTheme.typography.labelLarge)
+        Slider(
+            value = form.contextTokens.toFloat(),
+            onValueChange = { vm.setContextTokens((it / 512f).roundToInt().coerceIn(1, 16) * 512) },
+            valueRange = 512f..8192f,
+            steps = 14,
+        )
+        Text(stringResource(R.string.settings_mediapipe_top_k, form.topK), style = MaterialTheme.typography.labelLarge)
+        Slider(value = form.topK.toFloat(), onValueChange = { vm.setTopK(it.roundToInt()) }, valueRange = 1f..100f)
+        Text(stringResource(R.string.settings_mediapipe_top_p, form.topP), style = MaterialTheme.typography.labelLarge)
+        Slider(value = form.topP, onValueChange = vm.setTopP, valueRange = 0.1f..1f, steps = 17)
+        Text(stringResource(R.string.settings_mediapipe_context_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 @Composable

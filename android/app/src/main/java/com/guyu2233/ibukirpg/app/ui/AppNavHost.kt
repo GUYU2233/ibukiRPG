@@ -44,7 +44,7 @@ fun AppNavHost(app: IbukiApp) {
         popExitTransition = { slideOutHorizontally { it / 4 } + fadeOut() },
     ) {
         composable(Routes.HOME) {
-            val vm = viewModel { HomeViewModel(app.engine, app.settings) }
+            val vm = viewModel { HomeViewModel(app.engine, app.settings, app.aiStartupReady) }
             HomeScreen(
                 vm = vm,
                 onGameReady = toGame,
@@ -61,7 +61,7 @@ fun AppNavHost(app: IbukiApp) {
             GameScreen(vm = vm, onBack = { nav.popBackStack(Routes.HOME, inclusive = false) })
         }
         composable(Routes.SETTINGS) {
-            val vm = viewModel { SettingsViewModel(app.engine, app.settings) }
+            val vm = viewModel { SettingsViewModel(app.engine, app.settings, app.localAI, app.aiStartupReady) }
             SettingsScreen(vm = vm, onBack = { nav.popBackStack() })
         }
     }

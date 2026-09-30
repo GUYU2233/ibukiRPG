@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guyu2233.ibukirpg.app.data.AIConfig
 import com.guyu2233.ibukirpg.app.data.AppSettings
+import com.guyu2233.ibukirpg.app.data.MediaPipeLocalAI
+import android.net.Uri
 import com.guyu2233.ibukirpg.app.data.Engine
 import com.guyu2233.ibukirpg.app.data.PresetV1
 import com.guyu2233.ibukirpg.app.data.SettingsStore
 import com.guyu2233.ibukirpg.app.data.ThemeMode
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,9 +36,22 @@ data class AIForm(
     val test: TestState = TestState.Idle,
     val saving: Boolean = false,
     val dirty: Boolean = false,
+    val localModelPath: String = "",
+    val localModelName: String = "",
+    val temperature: Float = 0.7f,
+    val contextTokens: Int = 2048,
+    val topK: Int = 40,
+    val topP: Float = 0.95f,
+    val importingModel: Boolean = false,
+    val modelError: String? = null,
 )
 
-class SettingsViewModel(private val engine: Engine, private val store: SettingsStore) : ViewModel() {
+class SettingsViewModel(
+    private val engine: Engine,
+    private val store: SettingsStore,
+    private val localAI: MediaPipeLocalAI,
+    private val aiStartupReady: Deferred<Unit>,
+) : ViewModel() {
     val settings: StateFlow<AppSettings> = store.settings.stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
 
     private val _form = MutableStateFlow(AIForm())
@@ -53,7 +69,12 @@ class SettingsViewModel(private val engine: Engine, private val store: SettingsS
         viewModelScope.launch {
             val s = store.settings.first()
             _presets.value = runCatching { engine.presets() }.getOrDefault(emptyList())
-            _form.value = AIForm(kind = s.aiKind, baseUrl = s.baseUrl, model = s.model, hasSavedKey = s.hasKey)
+            _form.value = AIForm(
+                kind = s.aiKind, baseUrl = s.baseUrl, model = s.model, hasSavedKey = s.hasKey,
+                localModelPath = s.localModelPath, localModelName = s.localModelName,
+                temperature = s.localTemperature, contextTokens = s.localContextTokens,
+                topK = s.localTopK, topP = s.localTopP,
+            )
         }
     }
 
@@ -63,7 +84,11 @@ class SettingsViewModel(private val engine: Engine, private val store: SettingsS
             it.copy(
                 kind = kind,
                 baseUrl = p?.baseUrl?.takeIf { u -> u.isNotEmpty() } ?: if (kind == "custom") it.baseUrl else "",
-                model = p?.model?.takeIf { m -> m.isNotEmpty() } ?: if (kind == "custom") it.model else "",
+                model = p?.model?.takeIf { m -> m.isNotEmpty() } ?: when (kind) {
+                    "custom" -> it.model
+                    "mediapipe" -> it.localModelName
+                    else -> ""
+                },
                 test = TestState.Idle,
                 dirty = true,
             )
@@ -76,6 +101,17 @@ class SettingsViewModel(private val engine: Engine, private val store: SettingsS
 
     private suspend fun effectiveConfig(): AIConfig {
         val f = _form.value
+        if (f.kind == "mediapipe") {
+            require(f.localModelPath.isNotBlank()) { "请先导入 MediaPipe .task 模型文件。" }
+            return localAI.configure(
+                modelPath = f.localModelPath,
+                modelLabel = f.localModelName,
+                temperature = f.temperature,
+                contextTokens = f.contextTokens,
+                topK = f.topK,
+                topP = f.topP,
+            )
+        }
         val key = f.key.trim().ifEmpty { if (f.hasSavedKey) store.aiConfig().apiKey else "" }
         return AIConfig(kind = f.kind, baseUrl = f.baseUrl.trim(), model = f.model.trim(), apiKey = key)
     }
@@ -83,7 +119,10 @@ class SettingsViewModel(private val engine: Engine, private val store: SettingsS
     fun test() {
         _form.update { it.copy(test = TestState.Running) }
         viewModelScope.launch {
-            val r = runCatching { engine.testAI(effectiveConfig()) }
+            val r = runCatching {
+                aiStartupReady.await()
+                engine.testAI(effectiveConfig())
+            }
             _form.update {
                 it.copy(
                     test = r.fold(
@@ -98,14 +137,57 @@ class SettingsViewModel(private val engine: Engine, private val store: SettingsS
     fun save() {
         _form.update { it.copy(saving = true) }
         viewModelScope.launch {
+            aiStartupReady.await()
             val f = _form.value
-            val cfg = effectiveConfig()
-            store.saveAI(f.kind, f.baseUrl, f.model, f.key.trim().ifEmpty { null })
-            runCatching { engine.configureAI(cfg) }
-            _form.update { it.copy(saving = false, key = "", hasSavedKey = it.hasSavedKey || f.key.isNotBlank(), dirty = false) }
-            _saved.value = true
+            val result = runCatching {
+                store.saveAI(f.kind, f.baseUrl, f.model, f.key.trim().ifEmpty { null })
+                store.saveLocalModelOptions(f.temperature, f.contextTokens, f.topK, f.topP)
+                val cfg = effectiveConfig()
+                if (f.kind != "mediapipe") localAI.deactivate()
+                engine.configureAI(cfg)
+            }
+            result.onSuccess {
+                _form.update { it.copy(saving = false, key = "", hasSavedKey = it.hasSavedKey || f.key.isNotBlank(), dirty = false, test = TestState.Idle, modelError = null) }
+                _saved.value = true
+            }.onFailure { e ->
+                _form.update { it.copy(saving = false, test = TestState.Fail(e.message ?: "配置本地模型失败")) }
+            }
         }
     }
+
+    fun importLocalModel(uri: Uri) {
+        _form.update { it.copy(importingModel = true, modelError = null) }
+        viewModelScope.launch {
+            runCatching {
+                localAI.deactivate()
+                store.importLocalModel(uri)
+            }
+                .onSuccess { name ->
+                    val saved = store.settings.first()
+                    _form.update { it.copy(importingModel = false, localModelPath = saved.localModelPath, localModelName = name, model = name, dirty = true, test = TestState.Idle) }
+                }
+                .onFailure { error ->
+                    _form.update { it.copy(importingModel = false, modelError = error.message ?: "导入模型失败") }
+                }
+        }
+    }
+
+    fun removeLocalModel() {
+        viewModelScope.launch {
+            aiStartupReady.await()
+            runCatching {
+                localAI.deactivate()
+                store.removeLocalModel()
+            }.onSuccess {
+                _form.update { it.copy(localModelPath = "", localModelName = "", model = "", dirty = true, test = TestState.Idle, modelError = null) }
+            }.onFailure { e -> _form.update { it.copy(modelError = e.message ?: "删除模型失败") } }
+        }
+    }
+
+    fun setTemperature(value: Float) = _form.update { it.copy(temperature = value.coerceIn(0f, 1.5f), dirty = true) }
+    fun setContextTokens(value: Int) = _form.update { it.copy(contextTokens = value.coerceIn(512, 8192), dirty = true) }
+    fun setTopK(value: Int) = _form.update { it.copy(topK = value.coerceIn(1, 100), dirty = true) }
+    fun setTopP(value: Float) = _form.update { it.copy(topP = value.coerceIn(0.1f, 1f), dirty = true) }
 
     fun clearKey() {
         viewModelScope.launch {

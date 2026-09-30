@@ -2,11 +2,11 @@
 
 > AI 驱动、事件化、可扩展的中文文字冒险 RPG。**用你自己的话行动，骰子与规则决定结果。**
 
-当前版本：**v0.1.0-rc1（试玩版）** —— 一个小而完整的可玩切片：边境小镇的“锈酒杯”酒馆、4 位 NPC、3 个地点、1 个小事件《失窃的钱袋》。
+当前版本：**v0.1.1rc1（试玩版）** —— 一个小而完整的可玩切片：边境小镇的“锈酒杯”酒馆、4 位 NPC、3 个地点、1 个小事件《失窃的钱袋》。
 
 - 引擎：Go，事件溯源（Command → Event → State），SQLite 存档，确定性骰子（可重放）。
 - 客户端：原生 Android（Kotlin + Jetpack Compose + Material 3），以及用于桌面调试的命令行客户端。
-- AI：**默认离线模式**（规则解析 + 模板叙事，无需联网、无需 API Key）；可选接入 DeepSeek、通义千问或任意 OpenAI 兼容服务，让大模型理解更自由的输入并生成更生动的叙事。**LLM 永远不是真相源**：检定、金币、物品、关系都由本地引擎决定。
+- AI：**默认规则离线模式**（无需联网、无需 API Key）；可选加载 MediaPipe `.task` 本地模型，或接入 DeepSeek、通义千问等 OpenAI 兼容服务。**LLM 永远不是真相源**：检定、金币、物品、关系都由本地引擎决定。
 
 ## 怎么玩
 
@@ -24,14 +24,16 @@
 
 ## 离线模式与 AI 模式
 
-| | 离线模式（默认） | AI 模式 |
-|---|---|---|
-| 需要网络 / Key | 否 | 是（DeepSeek / 通义千问 / 自定义 OpenAI 兼容） |
-| 输入理解 | 关键词 + 规则解析，常见说法都能懂 | 大模型结构化解析（一次调用），失败自动退回离线解析 |
-| 叙事 | 模板叙事 | 大模型流式叙事，经 **Narrative Guard** 规则校验，违规时自动换回模板 |
-| 规则 / 骰子 / 存档 | 本地引擎 | 本地引擎（完全相同） |
+| | 离线规则模式（默认） | 离线本地模型（MediaPipe） | 在线 AI 模式 |
+|---|---|---|---|
+| 需要网络 / Key | 否 | 否 | 是（DeepSeek / 通义千问 / 自定义 OpenAI 兼容） |
+| 输入理解 | 关键词 + 规则解析 | 设备本地模型结构化解析 | 在线大模型结构化解析，失败自动退回离线规则 |
+| 叙事 | 模板叙事 | 设备本地模型，经 **Narrative Guard** 校验 | 在线大模型，经 **Narrative Guard** 校验 |
+| 规则 / 骰子 / 存档 | 本地引擎 | 本地引擎（完全相同） | 本地引擎（完全相同） |
 
-在 **设置 → AI 叙事** 中选择服务商、填写 API Key，点 **测试连接**，再 **保存并应用**。Key 使用 Android Keystore（AES-GCM）加密后保存在本机，不写入存档、不上传。超时或出错时不会重复执行行动，也不会重新掷骰。
+在 Android **设置 → AI 叙事** 中选择服务商；在线服务填写 API Key，点 **测试连接**，再 **保存并应用**。Key 使用 Android Keystore（AES-GCM）加密后保存在本机，不写入存档、不上传。超时或出错时不会重复执行行动，也不会重新掷骰。
+
+选择 **离线本地模型（MediaPipe）** 后，可导入用户准备好的 MediaPipe `.task` 模型，并调整温度、上下文/KV 缓存预算、Top-K、Top-P。模型复制到 App 私有目录，只在本机推理；不支持直接加载 GGUF 或原始 Hugging Face 权重。MediaPipe LLM Inference 适配偏高端 Android 设备，模型越大越依赖设备内存与加速支持，建议先用小模型验证兼容性。
 
 预设：
 
@@ -66,7 +68,7 @@ IBUKI_AI_KEY=sk-... ./build/bin/ibukirpg -ai custom -base-url https://example.co
 | `make mobile-smoke` | gomobile 生成 `build/android/ibukirpg.aar`（冒烟） |
 | `make android-aar` | 为 App 生成 `android/app/libs/ibukirpg.aar`（arm / arm64 / x86_64） |
 | `make apk-debug` | 调试版 APK |
-| `make apk` | 签名发布版 `build/release/ibukiRPG-v0.1.0-rc1.apk`（签名配置见 docs/android.md） |
+| `make apk VERSION=0.1.1rc1` | 发布版 `build/release/ibukiRPG-v0.1.1rc1.apk`（签名配置见 docs/android.md） |
 
 ## 目录结构
 
@@ -87,7 +89,7 @@ android/           Android App（Kotlin + Compose + Material 3）
 docs/              架构文档（architecture-v0.2.md）与开发文档
 ```
 
-## 已知限制（v0.1.0-rc1）
+## 已知限制（v0.1.1rc1）
 
 - 内容规模很小：3 个地点、4 位 NPC、1 个事件；没有战斗系统（暴力行为会被拒绝并给出替代方案）。
 - NPC 只知道自己亲眼看到的事（Witness → Belief），暂不传播流言。

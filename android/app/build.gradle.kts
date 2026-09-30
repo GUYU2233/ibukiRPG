@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-val appVersionName = "0.1.0-rc1"
+val appVersionName = "0.1.1rc1"
 
 // 发布签名：密钥库放在仓库之外（默认 ~/.ibukirpg/keystore.properties），见 docs/android.md。
 val keystorePropsFile = providers.environmentVariable("IBUKIRPG_KEYSTORE_PROPERTIES")
@@ -26,7 +26,7 @@ android {
         applicationId = "com.guyu2233.ibukirpg"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
+        versionCode = 2
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -87,7 +87,7 @@ kotlin {
     }
 }
 
-// 输出文件名：ibukiRPG-v0.1.0-rc1.apk
+// 输出文件名：ibukiRPG-v0.1.1rc1.apk
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
@@ -116,6 +116,8 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    // On-device MediaPipe Tasks GenAI (model files are user-imported .task bundles).
+    implementation("com.google.mediapipe:tasks-genai:0.10.27")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")
