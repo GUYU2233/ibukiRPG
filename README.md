@@ -2,7 +2,9 @@
 
 > AI 驱动、事件化、可扩展的中文文字冒险 RPG。**用你自己的话行动，骰子与规则决定结果。**
 
-当前版本：**v0.1.1rc1（试玩版）** —— 一个小而完整的可玩切片：边境小镇的“锈酒杯”酒馆、4 位 NPC、3 个地点、1 个小事件《失窃的钱袋》。
+当前版本：**v0.1.2rc1（试玩版）** —— 两个内置故事包：《边境酒馆 · 失窃的钱袋》（4 位 NPC、3 个地点）与小短篇《雾港灯塔 · 守灯人的信》；支持导入第三方故事包（.zip，格式见 [docs/story-pack-format.md](docs/story-pack-format.md)）。
+
+v0.1.2 新增：NPC **对话记忆**（记得聊过什么、看到你做了什么，不再复读，存档后依然记得）、**故事包选择 / 导入**、聊天界面顶部的**实时状态栏**（位置、时间、铜币、当前目标、故事变量，由故事包定义）。
 
 - 引擎：Go，事件溯源（Command → Event → State），SQLite 存档，确定性骰子（可重放）。
 - 客户端：原生 Android（Kotlin + Jetpack Compose + Material 3），以及用于桌面调试的命令行客户端。
@@ -10,7 +12,7 @@
 
 ## 怎么玩
 
-1. 安装 APK（见 [Releases](https://github.com/GUYU2233/ibukiRPG/releases)），打开后点 **新游戏**，输入名字。
+1. 安装 APK（见 [Releases](https://github.com/GUYU2233/ibukiRPG/releases)），打开后点 **新游戏**，选择一个故事包，输入名字。
 2. 在底部输入框里直接写你想做的事，例如：
    - “环顾四周”“和老板打个招呼”“来一杯麦酒”
    - “仔细搜查奥托的座位附近”“说服伯林让我去储藏室看看”“威胁奥托闭嘴”
@@ -68,7 +70,8 @@ IBUKI_AI_KEY=sk-... ./build/bin/ibukirpg -ai custom -base-url https://example.co
 | `make mobile-smoke` | gomobile 生成 `build/android/ibukirpg.aar`（冒烟） |
 | `make android-aar` | 为 App 生成 `android/app/libs/ibukirpg.aar`（arm / arm64 / x86_64） |
 | `make apk-debug` | 调试版 APK |
-| `make apk VERSION=0.1.1rc1` | 发布版 `build/release/ibukiRPG-v0.1.1rc1.apk`（签名配置见 docs/android.md） |
+| `make apk VERSION=0.1.2rc1` | 发布版 `build/release/ibukiRPG-v0.1.2rc1.apk`（签名配置见 docs/android.md） |
+| `make pack-zip PACK=lighthouse` | 校验并把 `packages/<PACK>` 打包成可导入的 `build/packs/<id>-<version>.zip` |
 
 ## 目录结构
 
@@ -83,15 +86,19 @@ internal/narrative guard（不可变事实校验）
 internal/storage   sqlite / eventstore（事件、快照、命令幂等、存档槽）
 internal/api       dto（V1 视图）/ query（场景、建议、面板）
 internal/eval      Eval Runner
-packages/demo      Demo 内容包（YAML：地点、人物、物品、动作、事件、规则）
+packages/demo      内置故事包《边境酒馆》（YAML：地点、人物、台词池、物品、动作、事件、HUD）
+packages/lighthouse 内置示例故事包《雾港灯塔》（最小结构示例）
+internal/package   manifest / loader / registry（故事包发现、导入校验、删除）
 tests/eval         Eval 用例与录音
 android/           Android App（Kotlin + Compose + Material 3）
 docs/              架构文档（architecture-v0.2.md）与开发文档
 ```
 
-## 已知限制（v0.1.1rc1）
+## 已知限制（v0.1.2rc1）
 
-- 内容规模很小：3 个地点、4 位 NPC、1 个事件；没有战斗系统（暴力行为会被拒绝并给出替代方案）。
+- 内容规模很小：两个短故事；没有战斗系统（暴力行为会被拒绝并给出替代方案）。
+- 离线模式的台词来自故事包的台词池：说完所有台词后 NPC 会提起“说过了”，而不会编出新内容；想要更自由的对话请开启 AI 模式。
+- 故事包依赖（dependencies）只检查是否已安装及版本，暂不合并内容。
 - NPC 只知道自己亲眼看到的事（Witness → Belief），暂不传播流言。
 - 离线解析基于关键词，过于复杂或含糊的句子可能被当作“自由行动”处理。
 - AI 模式尚未经过真实 API 的大规模测试；Eval 录音为按预期手写的合成录音。

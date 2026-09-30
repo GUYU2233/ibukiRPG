@@ -7,7 +7,7 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 | 项目 | 值 |
 |---|---|
 | applicationId | `com.guyu2233.ibukirpg`（debug 版为 `.debug` 后缀，可与正式版共存） |
-| versionName / versionCode | `0.1.1rc1` / `2` |
+| versionName / versionCode | `0.1.2rc1` / `3` |
 | minSdk / targetSdk / compileSdk | 24 / 36 / 36 |
 | 工具链 | Gradle 8.14.3（wrapper）、AGP 8.13.2、Kotlin 2.3.21、Compose BOM 2025.10.01 |
 | ABI | armeabi-v7a、arm64-v8a、x86_64 |
@@ -18,9 +18,9 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 source /etc/profile.d/ibukirpg-dev.sh      # JAVA_HOME / ANDROID_HOME / ANDROID_NDK_HOME
 make android-aar                           # gomobile bind → android/app/libs/ibukirpg.aar
 cd android
-./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.1rc1-debug.apk
+./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.2rc1-debug.apk
 ./gradlew testDebugUnitTest                # JVM 截图测试（Robolectric + Roborazzi）→ ../build/screenshots/*.png
-./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.1.1rc1.apk
+./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.1.2rc1.apk
 ```
 
 或在仓库根目录执行 `make apk`（产物复制到 `build/release/`）。
