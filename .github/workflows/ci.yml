@@ -144,4 +144,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release create "${GITHUB_REF_NAME}" dist/* --generate-notes --verify-tag
+        run: |
+          # rc / alpha / beta 标签发布为 Pre-release
+          pre=""
+          case "${GITHUB_REF_NAME}" in *rc*|*alpha*|*beta*) pre="--prerelease" ;; esac
+          gh release create "${GITHUB_REF_NAME}" dist/* --generate-notes --verify-tag $pre
