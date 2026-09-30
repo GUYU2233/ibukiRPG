@@ -40,6 +40,8 @@ func TestHandle(t *testing.T) {
 
 func TestGameAPI(t *testing.T) {
 	dir := t.TempDir()
+	// Windows 上必须先关闭数据库文件，TempDir 才能清理。
+	t.Cleanup(func() { _ = Close() })
 	var events []string
 	SetSink(func(s string) { events = append(events, s) })
 	defer SetSink(nil)

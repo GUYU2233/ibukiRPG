@@ -53,6 +53,18 @@ func Session() *orchestrator.Session {
 	return sess
 }
 
+// Close 关闭当前 Session（释放数据库文件）。之后需要重新 init。
+func Close() error {
+	sessMu.Lock()
+	defer sessMu.Unlock()
+	if sess == nil {
+		return nil
+	}
+	err := sess.Close()
+	sess, sessPath = nil, ""
+	return err
+}
+
 func current() (*orchestrator.Session, error) {
 	sessMu.Lock()
 	defer sessMu.Unlock()

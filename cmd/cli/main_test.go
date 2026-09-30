@@ -5,11 +5,15 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	adapter "github.com/GUYU2233/ibukiRPG/internal/adapter/mobile"
 )
 
 // 端到端试玩：新游戏 → 自然语言输入 → 快捷建议 → 退出 → 重新启动并读档继续。
 func TestPlaythroughAndResume(t *testing.T) {
 	dir := t.TempDir()
+	// Windows 上必须先关闭数据库文件，TempDir 才能清理。
+	t.Cleanup(func() { _ = adapter.Close() })
 	o := options{dataDir: dir, provider: "offline", newGame: true, player: "阿澈", seed: 20260930}
 	var out bytes.Buffer
 	script := "/help\n环顾四周\n和老板打个招呼\n1\n来一杯麦酒\n我在酒馆里唱一首歌\n说服\n1\n/me\n/inv\n/npc\n/log\n/quit\n"
