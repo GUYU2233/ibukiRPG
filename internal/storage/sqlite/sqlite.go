@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	// 纯 Go SQLite 驱动（无 CGO），便于 Android / Windows 交叉编译。
 	_ "modernc.org/sqlite"
@@ -17,15 +18,18 @@ const MemoryDSN = ":memory:"
 
 // Open 打开数据库并设置推荐的 PRAGMA。
 //
-// 内存数据库每个连接都是独立库，因此限制为单连接。
+// 游戏是单用户场景：统一限制为单连接，避免 SQLITE_BUSY，也保证内存库（每个连接独立）可用。
+// 文件库的 PRAGMA 同时写进 DSN（modernc 的 _pragma 参数），连接重建后依然生效。
 func Open(ctx context.Context, dsn string) (*sql.DB, error) {
-	db, err := sql.Open(DriverName, dsn)
+	open := dsn
+	if dsn != MemoryDSN && !strings.Contains(dsn, "?") {
+		open = dsn + "?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)"
+	}
+	db, err := sql.Open(DriverName, open)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}
-	if dsn == MemoryDSN {
-		db.SetMaxOpenConns(1)
-	}
+	db.SetMaxOpenConns(1)
 	pragmas := []string{
 		"PRAGMA foreign_keys = ON",
 		"PRAGMA busy_timeout = 5000",
