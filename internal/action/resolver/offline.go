@@ -176,13 +176,7 @@ func (Offline) Resolve(_ context.Context, in Input) (Resolution, error) {
 	socialFirst := best != "" && bestScore >= 2 && len(npcHits) > 0 && p.Actions[best].Target == definition.TargetCharacter
 	if verb := firstContained(text, moveVerbs); verb != "" && !socialFirst {
 		locHits := findAliases(text, p.LocationIDs, locationAliases(p))
-		dest := ""
-		for _, h := range locHits {
-			if h.id != here {
-				dest = h.id
-				break
-			}
-		}
+		dest := reachableHit(p, here, text, locHits)
 		if dest == "" && (slices.Contains(leaveVerbs, verb) || (len(locHits) > 0 && locHits[0].id == here && slices.Contains(leaveVerbs, firstContained(text, leaveVerbs)))) {
 			dest = defaultExit(p, here)
 		}
@@ -306,6 +300,43 @@ func labelFor(p *loader.Package, d *definition.Definition, target, item string) 
 		l = d.Name + "{target}"
 	}
 	return strings.NewReplacer("{target}", p.EntityName(target), "{item}", p.EntityName(item)).Replace(l)
+}
+
+// reachableHit 在文本提到的地点中挑出目的地：优先当前地点能直接到达的出口；
+// 其次是出口标签里含有玩家所说地名的出口（“去锡兰”→“搭列车回锡兰”）；最后退回第一个非当前地点。
+func reachableHit(p *loader.Package, here, text string, hits []aliasHit) string {
+	loc := p.Locations[here]
+	var exits []loader.Exit
+	if loc != nil {
+		exits = loc.Exits
+	}
+	for _, h := range hits {
+		if h.id == here {
+			continue
+		}
+		for _, e := range exits {
+			if e.To == h.id {
+				return h.id
+			}
+		}
+	}
+	for _, h := range hits {
+		if h.id == here || h.pos < 0 || h.pos+h.n > len(text) {
+			continue
+		}
+		word := text[h.pos : h.pos+h.n]
+		for _, e := range exits {
+			if e.Label != "" && strings.Contains(e.Label, word) {
+				return e.To
+			}
+		}
+	}
+	for _, h := range hits {
+		if h.id != here {
+			return h.id
+		}
+	}
+	return ""
 }
 
 func defaultExit(p *loader.Package, here string) string {

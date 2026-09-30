@@ -276,7 +276,7 @@ func (c *client) printUnit(u dto.CombatUnitV1) {
 		mark = "▶ "
 	}
 	name := u.Name
-	if u.Mech {
+	if u.Mech && u.MechName != "" && u.MechName != u.Name {
 		name += "〔" + u.MechName + "〕"
 	}
 	line := fmt.Sprintf("%s%-10s Lv%-2d HP %s %d/%d", mark, name, u.Level, bar(u.HP, u.MaxHP, 12), u.HP, u.MaxHP)
