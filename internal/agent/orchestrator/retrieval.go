@@ -98,18 +98,22 @@ func directorRetrieval(g *game) string {
 // scheduleMemory 在回合结束后整理记忆摘要。默认在后台 goroutine 里运行（不阻塞玩家），
 // Options.MemorySync 为 true 时同步运行（测试）。同一时间只有一个整理任务。
 func (s *Session) scheduleMemory(slot string, g *game, st *state.State) {
+	s.memQ.Lock()
+	s.memJobs = append(s.memJobs, memJob{slot: slot, g: g, st: st})
+	s.memQ.Unlock()
 	run := func() {
 		s.memMu.Lock()
 		defer s.memMu.Unlock()
+		s.memQ.Lock()
+		if len(s.memJobs) == 0 {
+			s.memQ.Unlock()
+			return
+		}
+		job := s.memJobs[0]
+		s.memJobs = s.memJobs[1:]
+		s.memQ.Unlock()
+		slot := job.slot
 		ctx := context.Background()
-		tr, err := s.store.Transcript(ctx, slot, 600, 0)
-		if err != nil {
-			return
-		}
-		ms, err := s.store.Memories(ctx, slot)
-		if err != nil {
-			return
-		}
 		ag := &memory.Agent{}
 		if s.opts.MemoryLLM {
 			s.mu.RLock()
@@ -119,7 +123,15 @@ func (s *Session) scheduleMemory(slot string, g *game, st *state.State) {
 				ag.Summarizer = memory.LLM{Provider: provider.NewOpenAICompatible(cfg, s.opts.Transport)}
 			}
 		}
-		remove, add := ag.Plan(ctx, g.pkg, st, tr, ms)
+		tr, err := s.store.Transcript(ctx, slot, 600, 0)
+		if err != nil {
+			return
+		}
+		ms, err := s.store.Memories(ctx, slot)
+		if err != nil {
+			return
+		}
+		remove, add := ag.Plan(ctx, job.g.pkg, job.st, tr, ms)
 		if len(remove) == 0 && len(add) == 0 {
 			return
 		}

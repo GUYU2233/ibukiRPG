@@ -75,7 +75,17 @@ type Session struct {
 	sink   func(dto.StreamEventV1)
 
 	memWG sync.WaitGroup // 后台记忆整理任务
-	memMu sync.Mutex
+	memMu sync.Mutex     // 同一时间只有一个整理任务
+	memQ  sync.Mutex     // 保护 memJobs
+	// memJobs 是待整理的回合队列：后台 goroutine 无论以什么顺序被调度，都按回合顺序（FIFO）取任务，
+	// 结果与同步执行完全一致（摘要分块不受调度时机影响）。
+	memJobs []memJob
+}
+
+type memJob struct {
+	slot string
+	g    *game
+	st   *state.State
 }
 
 // Open 打开存档数据库并加载内容包。
