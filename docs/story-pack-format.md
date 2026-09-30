@@ -42,8 +42,7 @@ type: story                 # story（或 world）才能开新游戏
 engine: ">=0.1.2"           # 最低引擎版本（不满足时无法导入，并提示“请先更新 App”）
 save_compat: ">=0.1.0"      # 可选：本版本能继续读取哪些版本的存档；留空 = 只读同版本存档
 tagline: 一句话简介          # 故事包卡片上的副标题
-description: >              # 较长的介绍
-  ……
+description: 较长的介绍……   # 中文建议写成一行：YAML 的 > 折行会在行与行之间插入空格
 author: 你的名字            # 或 authors: [a, b]
 icon: lighthouse            # 可选：Material Symbols 图标名（没有封面时显示）
 accent: "#2F5D7C"           # 可选：卡片主色

@@ -56,6 +56,8 @@ objectives:
     text: 在酒馆里坐坐，和客人们聊聊
   - when: 'stories.lost_purse.status == "active" && world.player_location == "demo:location/back_room"'
     text: 在储藏室里仔细搜查，找到钱袋
+  - when: 'stories.lost_purse.status == "active" && "backroom_allowed" in world.flags'
+    text: 伯林同意了——去储藏室搜查，找到钱袋
   - when: 'stories.lost_purse.status == "active" && !("purse_clue_cat" in world.flags)'
     text: 查明钱袋的下落——调查奥托座位附近，或问问在场的人
   - when: 'stories.lost_purse.status == "active" && !("backroom_allowed" in world.flags) && npcs["demo:character/borin"].trust < 15'
