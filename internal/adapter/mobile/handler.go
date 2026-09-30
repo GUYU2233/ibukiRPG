@@ -13,7 +13,12 @@ import (
 )
 
 // Handle 处理一条 JSON 请求并返回 JSON 响应。永不 panic，错误写入响应体。
-func Handle(ctx context.Context, requestJSON string) string {
+func Handle(ctx context.Context, requestJSON string) (out string) {
+	defer func() {
+		if p := recover(); p != nil {
+			out = encode(dto.ResponseV1{Version: dto.V1, Error: fmt.Sprintf("internal error: %v", p)})
+		}
+	}()
 	var req dto.RequestV1
 	if err := json.Unmarshal([]byte(requestJSON), &req); err != nil {
 		return encode(dto.ResponseV1{Version: dto.V1, Error: "invalid json: " + err.Error()})
@@ -34,9 +39,14 @@ func Handle(ctx context.Context, requestJSON string) string {
 }
 
 func dispatch(ctx context.Context, req dto.RequestV1) (any, error) {
+	if v, ok, err := gameDispatch(ctx, req); ok {
+		return v, err
+	}
 	switch req.Type {
 	case "ping":
 		return map[string]string{"pong": buildinfo.Version}, nil
+	case "version":
+		return map[string]string{"version": buildinfo.Version, "commit": buildinfo.Commit, "api": dto.V1}, nil
 	case "sqlite_smoke":
 		return sqliteSmoke(ctx)
 	case "roll":
