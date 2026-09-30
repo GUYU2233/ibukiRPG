@@ -94,9 +94,16 @@ const (
 	KindCustom   = "custom"
 	// KindLocal 是设备本地模型（Android 端通过本地 HTTP 服务暴露），不支持函数调用。
 	KindLocal = "local"
-	// KindMediaPipe 是 Android 端 MediaPipe 本地模型（同样不支持函数调用）。
+	// KindLlamaCpp 是 Android 端 llama.cpp 本地 GGUF 模型（同样不支持函数调用，改用关键词预检索）。
+	KindLlamaCpp = "llamacpp"
+	// KindMediaPipe 是 0.1.1 的 MediaPipe 本地模型（已移除；保留常量以兼容旧配置）。
 	KindMediaPipe = "mediapipe"
 )
+
+// IsLocalKind 报告 kind 是否为设备本地模型（不支持函数调用）。
+func IsLocalKind(kind string) bool {
+	return kind == KindLocal || kind == KindLlamaCpp || kind == KindMediaPipe
+}
 
 // Preset 是内置的 OpenAI 兼容服务预设。
 type Preset struct {
@@ -170,10 +177,10 @@ func NewOpenAICompatible(cfg Config, transport http.RoundTripper) *OpenAICompati
 // Name 返回 Provider 名。
 func (p *OpenAICompatible) Name() string { return p.cfg.Kind + ":" + p.cfg.Model }
 
-// SupportsTools 报告是否尝试函数调用。设备本地模型（kind=local）不支持；其它 OpenAI 兼容服务先尝试，
+// SupportsTools 报告是否尝试函数调用。设备本地模型（local / llamacpp）不支持；其它 OpenAI 兼容服务先尝试，
 // 被服务端拒绝时返回 ErrToolsUnsupported。
 func (p *OpenAICompatible) SupportsTools() bool {
-	return p.cfg.Kind != KindLocal && p.cfg.Kind != KindMediaPipe && !p.cfg.NoTools
+	return !IsLocalKind(p.cfg.Kind) && !p.cfg.NoTools
 }
 
 type chatRequest struct {

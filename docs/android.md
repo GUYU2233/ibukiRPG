@@ -10,7 +10,8 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 | versionName / versionCode | `0.1.2-rc2` / `4` |
 | minSdk / targetSdk / compileSdk | 24 / 36 / 36 |
 | 工具链 | Gradle 8.14.3（wrapper）、AGP 8.13.2、Kotlin 2.3.21、Compose BOM 2025.10.01 |
-| ABI | armeabi-v7a、arm64-v8a、x86_64 |
+| ABI | armeabi-v7a、arm64-v8a、x86_64（llama.cpp 本地模型：arm64-v8a、x86_64） |
+| 原生构建 | NDK 27.3.13750724、CMake 3.31.6；llama.cpp v0.5.0（`app/src/main/cpp/CMakeLists.txt`） |
 
 ## 构建步骤
 
@@ -18,12 +19,18 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 source /etc/profile.d/ibukirpg-dev.sh      # JAVA_HOME / ANDROID_HOME / ANDROID_NDK_HOME
 make android-aar                           # gomobile bind → android/app/libs/ibukirpg.aar
 cd android
-./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.2-rc2-debug.apk
-./gradlew testDebugUnitTest                # JVM 截图测试（Robolectric + Roborazzi）→ ../build/screenshots/*.png
+./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.2-rc2-debug.apk（含 llama.cpp 原生库）
+./gradlew testDebugUnitTest                # JVM 单元测试 + 截图测试（Robolectric + Roborazzi）→ ../build/screenshots/*.png
 ./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.1.2-rc2.apk
 ```
 
 或在仓库根目录执行 `make apk`（产物复制到 `build/release/`）。
+
+第一次构建会下载 llama.cpp v0.5.0 源码（校验 SHA256）到 `android/.llama-cache/`，并为每个 ABI 编译一次（8 核约 1～2 分钟），之后增量构建。
+离线环境可用 `-Pibuki.llama.src=/path/to/llama.cpp` 指定本地源码；`-Pibuki.llama.abis=arm64-v8a` 只编译真机 ABI 以缩短构建时间。
+CI 缓存 NDK / CMake、`android/.llama-cache` 与 `android/app/.cxx`。
+
+APK 大小（v0.1.2-rc2，本地构建）：debug 62.2 MB、release（R8）40.4 MB。三个 ABI 的 Go 引擎各约 22 MB（未压缩）；llama.cpp 在 arm64-v8a 上约 12 MB、x86_64 上约 22 MB（含多个 CPU 变体与 libc++_shared）。
 
 ## 发布签名（密钥库不入库）
 
@@ -48,13 +55,19 @@ keytool -genkeypair -keystore ~/.ibukirpg/keystore -storetype PKCS12 -alias ibuk
 
 找不到该文件时 release 构建仍会成功，但 APK 未签名（无法直接安装）。**请备份密钥库**：后续版本必须用同一个密钥签名才能覆盖安装。
 
-## MediaPipe 本地模型
+## 本地模型（llama.cpp）
 
-Android App 集成 `com.google.mediapipe:tasks-genai:0.10.27`。设置页的“离线本地模型（MediaPipe）”使用系统文件选择器导入 MediaPipe `.task` bundle，并复制到 `filesDir/mediapipe-models/`；不会把外部 `content://` URI 传给原生推理。推理只由应用内 loopback HTTP bridge 暴露给 Go 引擎（绑定 `127.0.0.1` 且带随机 Bearer token），模型文件不上传。
+设置页的“离线本地模型（llama.cpp · GGUF）”用系统文件选择器导入 `.gguf` 文件，校验文件头后复制到 `filesDir/models/`；不会把外部 `content://` URI 传给原生代码。
+推理由 `llm/LocalLlm`（单实例、加载前内存检查、空闲 / onTrimMemory 释放）+ JNI（`libibuki_llama.so`）完成，经应用内 loopback HTTP bridge（`127.0.0.1` 随机端口 + 随机 Bearer token，SSE 流式）暴露给 Go 引擎；生成期间运行 `specialUse` 前台服务并显示可取消的通知。
+模型推荐、内存估算、后台运行与迁移说明见 [local-models.md](local-models.md)。
 
-`.task` 必须是 MediaPipe LLM Inference 支持/打包的模型；不能直接选 GGUF、普通 safetensors 或原始权重。上下文设置对应 MediaPipe 的 max-token/KV-cache 总预算（输入和输出合计），另可调 temperature、Top-K、Top-P。设备内存、模型上下文上限和硬件加速要求各不相同，加载/推理错误会显示在设置页；切回规则离线模式会卸载本地模型释放内存。
+## 稳定性
 
-注意：Google 将 MediaPipe LLM Inference 标记为 maintenance-only，并建议面向高端 Android 设备；项目最低 SDK 仍为 API 24，但这不代表 API 24 或低内存设备能运行任意模型。发布自制/微调模型前，请核实模型本身的许可证和分发条款。
+- 引擎 / DataStore / 文件 IO 都在 `Dispatchers.IO`；原生推理在后台线程；聊天列表使用稳定 key 与 contentType，内存中最多保留 400 条记录，更早的点“加载更早的记录”分页读取。
+- `GameViewModel` 用 `SavedStateHandle` 保存输入草稿与进行中的提交（command_id），进程被回收后恢复；每回合事件在提交时已写入 SQLite。
+- 未捕获异常写入 `files/crash/last_crash.txt`，Android 11+ 另读取 `ApplicationExitInfo`（原生崩溃 / ANR / 低内存）；首页下次启动时显示，可复制，不上传。
+- 不使用 `largeHeap`：模型权重是 mmap 的原生内存，不在 Java 堆里。
+- 电池优化豁免只作为可选引导（设置页按钮打开系统设置页），不申请 `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`。
 
 ## 截图
 
@@ -68,7 +81,7 @@ Android App 集成 `com.google.mediapipe:tasks-genai:0.10.27`。设置页的“�
 - 快捷行动随场景变化（事件提示、交谈对象、点酒、前往…）；澄清时直接给出可点选的选项。
 - 提交失败时输入会放回输入框，重试复用同一个 command_id —— 不会重复执行、不会重新掷骰。
 - 面板：角色 / 背包 / 人物（信任、畏惧、TA 知道的事及来源、社交行动成功率）/ 日志。
-- 设置：规则离线 / MediaPipe 本地模型 / DeepSeek / 通义千问 / 自定义；MediaPipe 支持本地 `.task` 导入和生成参数，在线 API Key 经 Android Keystore AES-GCM 加密存于 DataStore；文字大小、主题、动态取色（Android 12+）。
+- 设置：规则离线 / 本地模型（llama.cpp · GGUF）/ DeepSeek / 通义千问 / 自定义；本地模型支持 GGUF 导入和上下文、线程、采样等参数，在线 API Key 经 Android Keystore AES-GCM 加密存于 DataStore；文字大小、主题、动态取色（Android 12+）。
 - 动态取色不可用时使用以琥珀色 `#8C4A1C` 为种子的 Material 3 配色；全屏 edge-to-edge；中文字符串全部在 `res/values/strings.xml`；图标按钮均有 contentDescription。
 
 ## AI 检索工具与 MCP

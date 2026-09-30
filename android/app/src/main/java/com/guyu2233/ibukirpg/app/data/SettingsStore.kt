@@ -36,7 +36,17 @@ data class AppSettings(
     val localContextTokens: Int = 2048,
     val localTopK: Int = 40,
     val localTopP: Float = 0.95f,
-)
+    val localThreads: Int = 0,
+    val localGpuLayers: Int = 0,
+    val localMaxTokens: Int = 512,
+    /** 从 v0.1.1/v0.1.2rc1 的 MediaPipe 模式迁移过来时的一次性提示。 */
+    val migrationNotice: String? = null,
+) {
+    fun localConfig() = com.guyu2233.ibukirpg.app.llm.LocalModelConfig(
+        path = localModelPath, label = localModelName, contextTokens = localContextTokens, threads = localThreads,
+        gpuLayers = localGpuLayers, temperature = localTemperature, topP = localTopP, topK = localTopK, maxTokens = localMaxTokens,
+    )
+}
 
 /** DataStore 持久化设置；API Key 以 Keystore 加密后的密文保存。 */
 class SettingsStore(private val context: Context) {
@@ -48,12 +58,23 @@ class SettingsStore(private val context: Context) {
         val textScale = floatPreferencesKey("text_scale")
         val theme = stringPreferencesKey("theme")
         val dynamic = booleanPreferencesKey("dynamic_color")
-        val localModelPath = stringPreferencesKey("mediapipe_model_path")
-        val localModelName = stringPreferencesKey("mediapipe_model_name")
-        val localTemperature = floatPreferencesKey("mediapipe_temperature")
-        val localContextTokens = intPreferencesKey("mediapipe_context_tokens")
-        val localTopK = intPreferencesKey("mediapipe_top_k")
-        val localTopP = floatPreferencesKey("mediapipe_top_p")
+        val localModelPath = stringPreferencesKey("local_model_path")
+        val localModelName = stringPreferencesKey("local_model_name")
+        val localTemperature = floatPreferencesKey("local_temperature")
+        val localContextTokens = intPreferencesKey("local_context_tokens")
+        val localTopK = intPreferencesKey("local_top_k")
+        val localTopP = floatPreferencesKey("local_top_p")
+        val localThreads = intPreferencesKey("local_threads")
+        val localGpuLayers = intPreferencesKey("local_gpu_layers")
+        val localMaxTokens = intPreferencesKey("local_max_tokens")
+        val migrationNotice = stringPreferencesKey("migration_notice")
+        // v0.1.1 ~ v0.1.2rc1（MediaPipe）的旧键，仅用于迁移
+        val oldPath = stringPreferencesKey("mediapipe_model_path")
+        val oldName = stringPreferencesKey("mediapipe_model_name")
+        val oldTemperature = floatPreferencesKey("mediapipe_temperature")
+        val oldContext = intPreferencesKey("mediapipe_context_tokens")
+        val oldTopK = intPreferencesKey("mediapipe_top_k")
+        val oldTopP = floatPreferencesKey("mediapipe_top_p")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { it.toSettings() }
@@ -72,7 +93,38 @@ class SettingsStore(private val context: Context) {
         localContextTokens = (this[K.localContextTokens] ?: 2048).coerceIn(512, 8192),
         localTopK = (this[K.localTopK] ?: 40).coerceIn(1, 100),
         localTopP = (this[K.localTopP] ?: 0.95f).coerceIn(0.1f, 1f),
+        localThreads = (this[K.localThreads] ?: 0).coerceIn(0, 8),
+        localGpuLayers = (this[K.localGpuLayers] ?: 0).coerceIn(0, 999),
+        localMaxTokens = (this[K.localMaxTokens] ?: 512).coerceIn(32, 2048),
+        migrationNotice = this[K.migrationNotice],
     )
+
+    /**
+     * 一次性迁移：MediaPipe 本地模型已被 llama.cpp 取代。旧的 .task 模型无法再使用——删除它释放空间，
+     * 采样参数沿用，AI 模式退回离线并留下提示。
+     */
+    suspend fun migrateFromMediaPipe() = withContext(Dispatchers.IO) {
+        val p = context.dataStore.data.first()
+        val wasMediaPipe = p[K.kind] == "mediapipe"
+        val hadOld = p[K.oldPath] != null || wasMediaPipe
+        val oldDir = File(context.filesDir, "mediapipe-models")
+        if (oldDir.exists()) oldDir.deleteRecursively()
+        if (!hadOld) return@withContext
+        context.dataStore.edit {
+            it[K.oldTemperature]?.let { v -> it[K.localTemperature] = v }
+            it[K.oldContext]?.let { v -> it[K.localContextTokens] = v }
+            it[K.oldTopK]?.let { v -> it[K.localTopK] = v }
+            it[K.oldTopP]?.let { v -> it[K.localTopP] = v }
+            listOf(K.oldPath, K.oldName).forEach { k -> it.remove(k) }
+            it.remove(K.oldTemperature); it.remove(K.oldContext); it.remove(K.oldTopK); it.remove(K.oldTopP)
+            if (wasMediaPipe) {
+                it[K.kind] = "offline"
+                it[K.migrationNotice] = "本地模型已从 MediaPipe 换成 llama.cpp：请在设置中重新导入 GGUF 格式的模型（旧的 .task 文件已删除）。"
+            }
+        }
+    }
+
+    suspend fun clearMigrationNotice() = context.dataStore.edit { it.remove(K.migrationNotice) }
 
     /** 当前 AI 配置（含解密后的密钥），仅用于传给引擎。 */
     suspend fun aiConfig(): AIConfig {
@@ -96,7 +148,10 @@ class SettingsStore(private val context: Context) {
         }
     }
 
-    /** 把用户选中的 MediaPipe .task 复制到应用私有目录；引擎只接收真实文件路径，不保存外部 URI。 */
+    /**
+     * 把用户选中的 GGUF 模型复制到应用私有目录（SAF 导入）；引擎只接收真实文件路径，不保存外部 URI。
+     * 复制前检查剩余空间，复制后校验 GGUF 文件头；失败时保留旧模型。
+     */
     suspend fun importLocalModel(uri: Uri): String = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
         val readFlag = Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -105,19 +160,25 @@ class SettingsStore(private val context: Context) {
             val displayName = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
                 ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
                 ?: uri.lastPathSegment?.substringAfterLast('/')
-                ?: "model.task"
-            require(displayName.endsWith(".task", ignoreCase = true)) {
-                "请选择 MediaPipe .task 模型文件；GGUF 或原始权重不能直接加载。"
+                ?: "model.gguf"
+            require(displayName.endsWith(".gguf", ignoreCase = true)) {
+                "请选择 GGUF 格式的模型文件（.gguf）。MediaPipe .task、safetensors 等格式需要先转换。"
             }
-            val dir = File(context.filesDir, "mediapipe-models")
+            val size = resolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
+                ?.use { c -> if (c.moveToFirst() && !c.isNull(0)) c.getLong(0) else -1L } ?: -1L
+            val dir = File(context.filesDir, "models")
             check(dir.exists() || dir.mkdirs()) { "无法创建本地模型目录" }
-            val tmp = File(dir, "model.task.importing")
-            val target = File(dir, "model.task")
+            if (size > 0) check(dir.usableSpace > size + 200L * 1024 * 1024) { "存储空间不足：模型需要约 ${size / (1024 * 1024)} MB。" }
+            val tmp = File(dir, "model.gguf.importing")
+            val target = File(dir, "model.gguf")
             resolver.openInputStream(uri)?.use { input ->
-                tmp.outputStream().buffered().use { output -> input.copyTo(output) }
+                tmp.outputStream().buffered(1 shl 20).use { output -> input.copyTo(output, 1 shl 20) }
             } ?: error("无法读取所选模型文件")
-            check(tmp.length() > 0L) { "模型文件为空" }
-            val backup = File(dir, "model.task.previous")
+            when (val r = com.guyu2233.ibukirpg.app.llm.Gguf.check(tmp)) {
+                is com.guyu2233.ibukirpg.app.llm.Gguf.Result.Bad -> { tmp.delete(); error(r.reason) }
+                is com.guyu2233.ibukirpg.app.llm.Gguf.Result.Ok -> Unit
+            }
+            val backup = File(dir, "model.gguf.previous")
             if (backup.exists()) backup.delete()
             val hadOldModel = target.exists()
             if (hadOldModel) check(target.renameTo(backup)) { "无法暂存旧模型" }
@@ -144,7 +205,7 @@ class SettingsStore(private val context: Context) {
 
     suspend fun removeLocalModel() = withContext(Dispatchers.IO) {
         val path = context.dataStore.data.first()[K.localModelPath].orEmpty()
-        val modelDir = File(context.filesDir, "mediapipe-models").canonicalFile
+        val modelDir = File(context.filesDir, "models").canonicalFile
         if (path.isNotBlank()) {
             val file = File(path).canonicalFile
             if (file.parentFile == modelDir && file.exists()) file.delete()
@@ -155,11 +216,15 @@ class SettingsStore(private val context: Context) {
         }
     }
 
-    suspend fun saveLocalModelOptions(temperature: Float, contextTokens: Int, topK: Int, topP: Float) = context.dataStore.edit {
-        it[K.localTemperature] = temperature.coerceIn(0f, 1.5f)
-        it[K.localContextTokens] = contextTokens.coerceIn(512, 8192)
-        it[K.localTopK] = topK.coerceIn(1, 100)
-        it[K.localTopP] = topP.coerceIn(0.1f, 1f)
+    suspend fun saveLocalModelOptions(c: com.guyu2233.ibukirpg.app.llm.LocalModelConfig) = context.dataStore.edit {
+        val n = c.normalized()
+        it[K.localTemperature] = n.temperature
+        it[K.localContextTokens] = n.contextTokens
+        it[K.localTopK] = n.topK
+        it[K.localTopP] = n.topP
+        it[K.localThreads] = n.threads
+        it[K.localGpuLayers] = n.gpuLayers
+        it[K.localMaxTokens] = n.maxTokens
     }
 
     suspend fun setTextScale(v: Float) = context.dataStore.edit { it[K.textScale] = v }

@@ -110,6 +110,9 @@ class Engine(private val dataDir: String) {
     suspend fun loadGame(slotId: String): GameBundle =
         call("load_game", buildJsonObject { put("slot_id", slotId) }, decode = decoder())
     suspend fun bundle(): GameBundle = call("get_bundle", decode = decoder())
+    /** 分页读取更早的记录：id < beforeId 的最近 limit 条（时间顺序）。 */
+    suspend fun transcript(limit: Int, beforeId: Long): List<EntryV1> =
+        call("get_transcript", buildJsonObject { put("limit", limit); put("before_id", beforeId) }, decode = decoder())
     suspend fun deleteSave(slotId: String) { call("delete_save", buildJsonObject { put("slot_id", slotId) }) { } }
     suspend fun copySave(slotId: String, name: String) {
         call("copy_save", buildJsonObject { put("slot_id", slotId); put("name", name) }) { }

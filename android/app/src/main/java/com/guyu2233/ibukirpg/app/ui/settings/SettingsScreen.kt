@@ -84,8 +84,16 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
     val modelPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(vm::importLocalModel)
     }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // Android 13+：本地模型生成时会显示前台服务通知，选择本地模型时顺带申请通知权限（拒绝也不影响使用）
+    val notifPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val settings by vm.settings.collectAsStateWithLifecycle()
     val form by vm.form.collectAsStateWithLifecycle()
+    LaunchedEffect(form.kind) {
+        if (form.kind == "llamacpp" && Build.VERSION.SDK_INT >= 33 &&
+            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
     val saved by vm.saved.collectAsStateWithLifecycle()
     SettingsContent(
         settings = settings,
@@ -107,6 +115,10 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
             setContextTokens = vm::setContextTokens,
             setTopK = vm::setTopK,
             setTopP = vm::setTopP,
+            setThreads = vm::setThreads,
+            setGpuLayers = vm::setGpuLayers,
+            setMaxTokens = vm::setMaxTokens,
+            openBatterySettings = { BatteryHelp.open(context) },
             consumeSaved = vm::consumeSaved,
             setTextScale = { vm.setTextScale(it) },
             setTheme = { vm.setTheme(it) },
@@ -131,6 +143,10 @@ data class SettingsActions(
     val setContextTokens: (Int) -> Unit = {},
     val setTopK: (Int) -> Unit = {},
     val setTopP: (Float) -> Unit = {},
+    val setThreads: (Int) -> Unit = {},
+    val setGpuLayers: (Int) -> Unit = {},
+    val setMaxTokens: (Int) -> Unit = {},
+    val openBatterySettings: () -> Unit = {},
     val consumeSaved: () -> Unit = {},
     val setTextScale: (Float) -> Unit = {},
     val setTheme: (ThemeMode) -> Unit = {},
@@ -182,27 +198,27 @@ fun SettingsContent(
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                 Column(Modifier.selectableGroup()) {
                     ProviderOption("offline", stringResource(R.string.settings_offline), stringResource(R.string.settings_offline_desc), form.kind, vm.selectKind)
-                    ProviderOption("mediapipe", stringResource(R.string.settings_mediapipe), stringResource(R.string.settings_mediapipe_desc), form.kind, vm.selectKind)
+                    ProviderOption("llamacpp", stringResource(R.string.settings_local), stringResource(if (form.localAvailable) R.string.settings_local_desc else R.string.settings_local_unavailable), form.kind, vm.selectKind)
                     ProviderOption("deepseek", stringResource(R.string.settings_deepseek), "api.deepseek.com", form.kind, vm.selectKind)
                     ProviderOption("qwen", stringResource(R.string.settings_qwen), "DashScope 兼容模式", form.kind, vm.selectKind)
                     ProviderOption("custom", stringResource(R.string.settings_custom), null, form.kind, vm.selectKind)
                 }
             }
-            AnimatedVisibility(form.kind == "mediapipe") {
+            AnimatedVisibility(form.kind == "llamacpp") {
                 LocalModelFields(form, vm)
             }
-            AnimatedVisibility(form.kind != "offline" && form.kind != "mediapipe") {
+            AnimatedVisibility(form.kind != "offline" && form.kind != "llamacpp") {
                 AIFields(form, vm)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 if (form.kind != "offline") {
                     OutlinedButton(
                         onClick = vm.test,
-                        enabled = form.test != TestState.Running && if (form.kind == "mediapipe") form.localModelPath.isNotBlank() else (form.key.isNotBlank() || form.hasSavedKey),
+                        enabled = form.test != TestState.Running && if (form.kind == "llamacpp") form.localModelPath.isNotBlank() else (form.key.isNotBlank() || form.hasSavedKey),
                         modifier = Modifier.weight(1f),
                     ) { Text(stringResource(R.string.settings_test)) }
                 }
-                Button(onClick = vm.save, enabled = !form.saving && form.dirty && (form.kind != "mediapipe" || form.localModelPath.isNotBlank()), modifier = Modifier.weight(1f)) {
+                Button(onClick = vm.save, enabled = !form.saving && form.dirty && (form.kind != "llamacpp" || form.localModelPath.isNotBlank()), modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.settings_save))
                 }
             }
@@ -267,35 +283,48 @@ private fun ProviderOption(kind: String, title: String, subtitle: String?, selec
 @Composable
 private fun LocalModelFields(form: AIForm, vm: SettingsActions) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.settings_mediapipe_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedButton(onClick = vm.importLocalModel, enabled = !form.importingModel, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.settings_local_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = vm.importLocalModel, enabled = !form.importingModel && form.localAvailable, modifier = Modifier.fillMaxWidth()) {
             if (form.importingModel) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-            else Text(stringResource(R.string.settings_mediapipe_import))
+            else Text(stringResource(R.string.settings_local_import))
         }
         if (form.localModelName.isNotBlank()) {
             ListItem(
                 headlineContent = { Text(form.localModelName) },
-                supportingContent = { Text(stringResource(R.string.settings_mediapipe_local_only)) },
+                supportingContent = { Text(form.localStatus.ifBlank { stringResource(R.string.settings_local_local_only) }) },
                 colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                trailingContent = { TextButton(onClick = vm.removeLocalModel) { Text(stringResource(R.string.settings_mediapipe_remove)) } },
+                trailingContent = { TextButton(onClick = vm.removeLocalModel) { Text(stringResource(R.string.settings_local_remove)) } },
             )
         }
+        form.memoryWarning?.let { Text(it, color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.bodySmall) }
         form.modelError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
 
-        Text(stringResource(R.string.settings_mediapipe_temperature, form.temperature), style = MaterialTheme.typography.labelLarge)
-        Slider(value = form.temperature, onValueChange = vm.setTemperature, valueRange = 0f..1.5f, steps = 14)
-        Text(stringResource(R.string.settings_mediapipe_context, form.contextTokens), style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.settings_local_context, form.contextTokens), style = MaterialTheme.typography.labelLarge)
         Slider(
             value = form.contextTokens.toFloat(),
             onValueChange = { vm.setContextTokens((it / 512f).roundToInt().coerceIn(1, 16) * 512) },
             valueRange = 512f..8192f,
             steps = 14,
         )
-        Text(stringResource(R.string.settings_mediapipe_top_k, form.topK), style = MaterialTheme.typography.labelLarge)
-        Slider(value = form.topK.toFloat(), onValueChange = { vm.setTopK(it.roundToInt()) }, valueRange = 1f..100f)
-        Text(stringResource(R.string.settings_mediapipe_top_p, form.topP), style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.settings_local_max_tokens, form.maxTokens), style = MaterialTheme.typography.labelLarge)
+        Slider(value = form.maxTokens.toFloat(), onValueChange = { vm.setMaxTokens((it / 32f).roundToInt() * 32) }, valueRange = 64f..1024f, steps = 29)
+        Text(
+            if (form.threads == 0) stringResource(R.string.settings_local_threads_auto) else stringResource(R.string.settings_local_threads, form.threads),
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Slider(value = form.threads.toFloat(), onValueChange = { vm.setThreads(it.roundToInt()) }, valueRange = 0f..8f, steps = 7)
+        Text(stringResource(R.string.settings_local_temperature, form.temperature), style = MaterialTheme.typography.labelLarge)
+        Slider(value = form.temperature, onValueChange = vm.setTemperature, valueRange = 0f..1.5f, steps = 14)
+        Text(stringResource(R.string.settings_local_top_p, form.topP), style = MaterialTheme.typography.labelLarge)
         Slider(value = form.topP, onValueChange = vm.setTopP, valueRange = 0.1f..1f, steps = 17)
-        Text(stringResource(R.string.settings_mediapipe_context_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.settings_local_top_k, form.topK), style = MaterialTheme.typography.labelLarge)
+        Slider(value = form.topK.toFloat(), onValueChange = { vm.setTopK(it.roundToInt()) }, valueRange = 1f..100f)
+        Text(stringResource(R.string.settings_local_gpu_layers, form.gpuLayers), style = MaterialTheme.typography.labelLarge)
+        Slider(value = form.gpuLayers.toFloat(), onValueChange = { vm.setGpuLayers(it.roundToInt()) }, valueRange = 0f..99f, enabled = false)
+        Text(stringResource(R.string.settings_local_gpu_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.settings_local_context_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        TextButton(onClick = vm.openBatterySettings) { Text(stringResource(R.string.settings_local_battery)) }
+        Text(stringResource(R.string.settings_local_battery_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

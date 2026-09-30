@@ -93,3 +93,14 @@ func TestPresetsNormalize(t *testing.T) {
 		t.Fatalf("deepseek base url %q", d.BaseURL)
 	}
 }
+
+func TestLocalKindsSkipTools(t *testing.T) {
+	for _, k := range []string{KindLocal, KindLlamaCpp, KindMediaPipe} {
+		if !IsLocalKind(k) || NewOpenAICompatible(Config{Kind: k, BaseURL: "http://127.0.0.1:1", Model: "m"}, nil).SupportsTools() {
+			t.Fatalf("%s should be local without tools", k)
+		}
+	}
+	if IsLocalKind(KindDeepSeek) || !NewOpenAICompatible(Config{Kind: KindDeepSeek, BaseURL: "https://x", Model: "m"}, nil).SupportsTools() {
+		t.Fatal("deepseek should try tools")
+	}
+}

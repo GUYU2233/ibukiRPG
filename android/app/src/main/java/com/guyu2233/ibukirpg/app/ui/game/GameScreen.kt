@@ -110,6 +110,7 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
         onRetry = vm::load,
         onErrorShown = vm::consumeError,
         onNoticesShown = vm::consumeNotices,
+        onLoadEarlier = vm::loadEarlier,
     ) }
 }
 
@@ -131,6 +132,7 @@ fun GameContent(
     initialHudExpanded: Boolean = false,
     onNoticesShown: () -> Unit = {},
     dialogs: RpgDialogState = rememberRpgDialogState(),
+    onLoadEarlier: () -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     val combat = s.scene.combat
@@ -157,19 +159,25 @@ fun GameContent(
     }
 
     // 新回合到达：滚动到本回合第一条（玩家行动），方便从头阅读；提交时滚到底部。
-    var lastCount by remember { mutableIntStateOf(-1) }
-    LaunchedEffect(s.entries.size, s.loading) {
+    // 以最后一条记录的 id 判断“新回合”，这样向上加载更早的记录（头部插入）不会触发滚动。
+    val header = if (s.hasEarlier) 1 else 0
+    var lastTail by remember { mutableStateOf<Long?>(null) }
+    var lastVersion by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(s.version, s.loading, s.entries.isEmpty()) {
         if (s.loading) return@LaunchedEffect
         val n = s.entries.size
-        if (lastCount < 0) {
-            if (n > 0) list.scrollToItem(n - 1)
-        } else if (n > lastCount) {
-            list.animateScrollToItem(lastCount.coerceAtMost(n - 1))
+        if (n == 0) return@LaunchedEffect
+        if (lastVersion < 0) {
+            list.scrollToItem(n - 1 + header)
+        } else if (s.version != lastVersion) {
+            val prev = s.entries.indexOfLast { it.id == lastTail && it.id != 0L }
+            list.animateScrollToItem((prev + 1).coerceIn(0, n - 1) + header)
         }
-        lastCount = n
+        lastVersion = s.version
+        lastTail = s.entries.lastOrNull { it.id != 0L }?.id
     }
     LaunchedEffect(s.pending) {
-        if (s.pending != null) list.animateScrollToItem(s.entries.size)
+        if (s.pending != null) list.animateScrollToItem(s.entries.size + header)
     }
     val atBottom by remember { derivedStateOf { !list.canScrollForward } }
 
@@ -233,7 +241,19 @@ fun GameContent(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    itemsIndexed(s.entries, key = { i, e -> if (e.id != 0L) e.id else "i$i" }) { _, e ->
+                    if (s.hasEarlier) {
+                        item(key = "earlier", contentType = "earlier") {
+                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                if (s.loadingEarlier) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                                else androidx.compose.material3.TextButton(onClick = onLoadEarlier) { Text(stringResource(R.string.game_load_earlier)) }
+                            }
+                        }
+                    }
+                    itemsIndexed(
+                        s.entries,
+                        key = { i, e -> if (e.id != 0L) e.id else "i$i" },
+                        contentType = { _, e -> e.kind },
+                    ) { _, e ->
                         EntryItem(
                             entry = e,
                             animate = e.id in s.freshIds && e.id !in animated,

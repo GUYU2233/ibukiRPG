@@ -3,6 +3,10 @@
 
     <!-- 仅在启用 AI 模式时联网；离线模式完全本地运行。 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 本地模型（llama.cpp）生成期间的前台服务与进行中通知 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".IbukiApp"
@@ -25,5 +29,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 设备本地 LLM 推理：只在生成叙事期间运行，结束后立即停止（specialUse：设备端 AI 推理不属于其他任何类型） -->
+        <service
+            android:name=".llm.InferenceService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="On-device LLM inference for the player's current story turn; runs only while text is being generated and stops immediately afterwards." />
+        </service>
     </application>
 </manifest>

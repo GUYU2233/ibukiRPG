@@ -57,8 +57,12 @@ jobs:
         run: go test -count=1 ./...
 
   android:
-    name: android (aar + apk + screenshot tests)
+    name: android (aar + llama.cpp native + apk + unit/screenshot tests)
     runs-on: ubuntu-latest
+    env:
+      # 与 android/app/build.gradle.kts 中的 ndkVersion / cmake version 保持一致
+      IBUKI_NDK: 27.3.13750724
+      IBUKI_CMAKE: 3.31.6
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -74,14 +78,45 @@ jobs:
         run: |
           go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Cache NDK + CMake
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.ANDROID_HOME }}/ndk/${{ env.IBUKI_NDK }}
+            ${{ env.ANDROID_HOME }}/cmake/${{ env.IBUKI_CMAKE }}
+          key: android-sdk-ndk${{ env.IBUKI_NDK }}-cmake${{ env.IBUKI_CMAKE }}
+      - name: Install NDK + CMake
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;${IBUKI_NDK}" "cmake;${IBUKI_CMAKE}" > /dev/null
+      - name: Cache llama.cpp source + native build
+        uses: actions/cache@v4
+        with:
+          path: |
+            android/.llama-cache
+            android/app/.cxx
+          key: llama-${{ hashFiles('android/app/src/main/cpp/**', 'android/app/build.gradle.kts') }}
+          restore-keys: llama-
       - name: Build AAR
         run: |
-          export ANDROID_NDK_HOME="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_HOME}"
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/${IBUKI_NDK}"
           gomobile init
           make android-aar
-      - name: Assemble debug APK + JVM screenshot tests
+      - name: Assemble debug APK (with llama.cpp) + JVM unit / screenshot tests
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug testDebugUnitTest
+      - name: Check native libraries and APK size
+        run: |
+          set -euo pipefail
+          apk=$(ls android/app/build/outputs/apk/debug/*.apk)
+          unzip -l "$apk" | grep 'lib/' | tee native-libs.txt
+          for lib in libibuki_llama.so libllama.so libggml.so libggml-base.so libc++_shared.so libgojni.so; do
+            grep -q "lib/arm64-v8a/$lib" native-libs.txt || { echo "missing arm64-v8a/$lib"; exit 1; }
+          done
+          grep -q 'lib/arm64-v8a/libggml-cpu-' native-libs.txt || { echo "missing ggml cpu backends"; exit 1; }
+          echo "### APK size: $(du -h "$apk" | cut -f1) ($(basename "$apk"))" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: ibukiRPG-debug-apk
@@ -125,19 +160,15 @@ jobs:
               go build -trimpath -ldflags="-s -w -X github.com/GUYU2233/ibukiRPG/internal/buildinfo.Version=${VERSION} -X github.com/GUYU2233/ibukiRPG/internal/buildinfo.Commit=${COMMIT}" \
               -o "dist/${name}" ./cmd/cli
           done
+      # 直接使用 android 任务构建并测试过的 APK（含 llama.cpp 原生库），不再重复构建
+      - uses: actions/download-artifact@v4
+        with:
+          name: ibukiRPG-debug-apk
+          path: apk
       - name: Package installable Android debug APK
         run: |
           set -euo pipefail
-          export ANDROID_NDK_HOME="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_HOME}"
-          go install golang.org/x/mobile/cmd/gomobile golang.org/x/mobile/cmd/gobind
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-          export PATH="$(go env GOPATH)/bin:$PATH"
-          gomobile init
-          make android-aar
-          cd android
-          ./gradlew --no-daemon assembleDebug
-          cd ..
-          cp android/app/build/outputs/apk/debug/*.apk "dist/ibukiRPG-${GITHUB_REF_NAME}-android-debug.apk"
+          cp apk/*.apk "dist/ibukiRPG-${GITHUB_REF_NAME}-android-debug.apk"
       - name: Create checksums
         run: sha256sum dist/* > dist/SHA256SUMS.txt
       - name: Publish GitHub Release

@@ -226,8 +226,10 @@ func TestFallbackPrefetch(t *testing.T) {
 		t.Error("local model must not receive a tools request")
 		return nil, errors.New("unreachable")
 	})
-	local := &tools.Loop{Provider: provider.NewOpenAICompatible(provider.Config{Kind: provider.KindMediaPipe, BaseURL: "http://127.0.0.1:1", Model: "gemma"}, never), Env: e, Scope: tools.Player()}
-	check("mediapipe", local.Run(context.Background(), msgs, "伯林"))
+	local := &tools.Loop{Provider: provider.NewOpenAICompatible(provider.Config{Kind: provider.KindLlamaCpp, BaseURL: "http://127.0.0.1:1", Model: "qwen2.5-1.5b"}, never), Env: e, Scope: tools.Player()}
+	check("llamacpp", local.Run(context.Background(), msgs, "伯林"))
+	legacy := &tools.Loop{Provider: provider.NewOpenAICompatible(provider.Config{Kind: provider.KindMediaPipe, BaseURL: "http://127.0.0.1:1", Model: "gemma"}, never), Env: e, Scope: tools.Player()}
+	check("mediapipe", legacy.Run(context.Background(), msgs, "伯林"))
 
 	reject := transport.Func(func(*http.Request) (*http.Response, error) {
 		return &http.Response{StatusCode: 400, Body: io.NopCloser(strings.NewReader(`{"error":{"message":"tools is not supported for this model"}}`)), Header: http.Header{}}, nil

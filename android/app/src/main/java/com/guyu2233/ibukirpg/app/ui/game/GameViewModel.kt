@@ -1,5 +1,6 @@
 package com.guyu2233.ibukirpg.app.ui.game
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.guyu2233.ibukirpg.app.data.CardV1
@@ -45,7 +46,36 @@ data class GameState(
     val notices: List<NoticeV1> = emptyList(),
     /** 每次回合提交后递增，用来刷新已打开的机甲卡。 */
     val version: Int = 0,
+    /** 内存里只保留最近一段记录；更早的可以按需从存档分页读取。 */
+    val hasEarlier: Boolean = false,
+    val loadingEarlier: Boolean = false,
 )
+
+/** 聊天记录的内存窗口（纯函数，便于单元测试）。 */
+object TranscriptWindow {
+    /** 回合追加后内存里最多保留的条目数。 */
+    const val MAX_ENTRIES = 400
+    /** 向上翻页时允许的最大条目数（超过后不再加载更早的记录）。 */
+    const val MAX_WITH_EARLIER = 1200
+    const val PAGE = 100
+
+    /** 追加新条目并去重；超过上限时丢弃最早的条目。返回 (列表, 是否丢弃过)。 */
+    fun append(current: List<EntryV1>, incoming: List<EntryV1>, max: Int = MAX_ENTRIES): Pair<List<EntryV1>, Boolean> {
+        val known = current.mapTo(HashSet()) { it.id }
+        val fresh = incoming.filter { it.id == 0L || it.id !in known }
+        val all = current + fresh
+        return if (all.size > max) all.takeLast(max) to true else all to false
+    }
+
+    /** 在头部拼接更早的一页（按 id 去重，保持时间顺序）。 */
+    fun prepend(current: List<EntryV1>, older: List<EntryV1>): List<EntryV1> {
+        val known = current.mapTo(HashSet()) { it.id }
+        return older.filter { it.id !in known }.sortedBy { it.id } + current
+    }
+
+    /** 最早一条有 id 的记录（翻页游标）。 */
+    fun cursor(entries: List<EntryV1>): Long? = entries.firstOrNull { it.id > 0L }?.id
+}
 
 data class PanelsState(
     val loading: Boolean = false,
@@ -59,21 +89,35 @@ data class PanelsState(
     val mechs: MechsV1? = null,
 )
 
-class GameViewModel(private val engine: Engine) : ViewModel() {
+class GameViewModel(
+    private val engine: Engine,
+    /** 进程被系统回收后恢复：输入框草稿、正在进行 / 失败的提交（command_id 不变，引擎按它去重）。 */
+    private val saved: SavedStateHandle = SavedStateHandle(),
+) : ViewModel() {
     private val _state = MutableStateFlow(GameState())
     val state: StateFlow<GameState> = _state.asStateFlow()
 
     private val _panels = MutableStateFlow(PanelsState())
     val panels: StateFlow<PanelsState> = _panels.asStateFlow()
 
-    /** 输入框内容放在 ViewModel 中：旋转屏幕、出错都不会丢。 */
-    private val _input = MutableStateFlow("")
-    val input: StateFlow<String> = _input.asStateFlow()
+    /** 输入框内容放在 SavedStateHandle 中：旋转屏幕、出错、进程被回收都不会丢。 */
+    val input: StateFlow<String> = saved.getStateFlow(KEY_INPUT, "")
+    private var inputValue: String
+        get() = input.value
+        set(v) { saved[KEY_INPUT] = v }
 
     /** 上次失败的提交：玩家原样重试时复用 command_id，保证不会重复执行。 */
     private var lastFailed: Pending? = null
 
     init {
+        // 上次进程在回合进行中被系统结束：把那条文字放回输入框，并记住 command_id，
+        // 玩家点发送时原样重试；若引擎已经处理完那一回合，会直接返回同一结果而不会重复执行。
+        val interruptedId = saved.get<String>(KEY_PENDING_ID)
+        val interruptedText = saved.get<String>(KEY_PENDING_TEXT)
+        if (interruptedId != null && interruptedText != null) {
+            lastFailed = Pending(interruptedId, interruptedText, interruptedText, null)
+            if (inputValue.isBlank()) inputValue = interruptedText
+        }
         viewModelScope.launch {
             engine.events.collect { e ->
                 val p = _state.value.pending ?: return@collect
@@ -104,24 +148,52 @@ class GameViewModel(private val engine: Engine) : ViewModel() {
     }
 
     private fun apply(b: GameBundle) {
-        _state.update { it.copy(loading = false, scene = b.scene, entries = b.transcript, suggestions = b.suggestions, fatal = null) }
+        val (entries, trimmed) = TranscriptWindow.append(emptyList(), b.transcript)
+        _state.update {
+            it.copy(
+                loading = false, scene = b.scene, entries = entries, suggestions = b.suggestions, fatal = null,
+                // get_bundle 只返回最近 300 条：满页说明可能还有更早的
+                hasEarlier = trimmed || b.transcript.size >= BUNDLE_PAGE,
+            )
+        }
     }
 
-    fun onInput(v: String) { _input.value = v }
+    /** 从存档读取更早的一页记录（聊天记录很长时不一次性放进内存）。 */
+    fun loadEarlier() {
+        val s0 = _state.value
+        if (s0.loadingEarlier || !s0.hasEarlier) return
+        val before = TranscriptWindow.cursor(s0.entries) ?: return
+        _state.update { it.copy(loadingEarlier = true) }
+        viewModelScope.launch {
+            runCatching { engine.transcript(TranscriptWindow.PAGE, before) }
+                .onSuccess { older ->
+                    _state.update { s ->
+                        val merged = TranscriptWindow.prepend(s.entries, older)
+                        s.copy(
+                            entries = merged, loadingEarlier = false,
+                            hasEarlier = older.size >= TranscriptWindow.PAGE && merged.size < TranscriptWindow.MAX_WITH_EARLIER,
+                        )
+                    }
+                }
+                .onFailure { e -> _state.update { it.copy(loadingEarlier = false, error = e.message) } }
+        }
+    }
+
+    fun onInput(v: String) { inputValue = v }
 
     fun send() {
-        val text = _input.value.trim()
+        val text = inputValue.trim()
         if (text.isEmpty() || _state.value.pending != null) return
         val reuse = lastFailed?.takeIf { it.text == text }
         val p = Pending(reuse?.commandId ?: UUID.randomUUID().toString(), text, text, null)
-        _input.value = ""
+        inputValue = ""
         run(p)
     }
 
     fun quick(action: QuickActionV1, label: String) {
         if (_state.value.pending != null) return
         if (action.kind == "text" && !action.text.isNullOrBlank()) {
-            _input.value = action.text
+            inputValue = action.text
             send()
             return
         }
@@ -131,16 +203,22 @@ class GameViewModel(private val engine: Engine) : ViewModel() {
 
     private fun run(p: Pending) {
         _state.update { it.copy(pending = p, streaming = "", error = null) }
+        if (p.text != null) {
+            saved[KEY_PENDING_ID] = p.commandId
+            saved[KEY_PENDING_TEXT] = p.text
+        }
         viewModelScope.launch {
             runCatching {
                 if (p.action != null) engine.quickAction(p.commandId, p.action) else engine.submitText(p.commandId, p.text.orEmpty())
             }.onSuccess { turn ->
                 lastFailed = null
+                saved.remove<String>(KEY_PENDING_ID)
+                saved.remove<String>(KEY_PENDING_TEXT)
                 applyTurn(turn)
             }.onFailure { e ->
                 lastFailed = p
                 // 失败不丢输入：把文字放回输入框（若玩家没有重新输入）。
-                if (p.text != null && _input.value.isBlank()) _input.value = p.text
+                if (p.text != null && inputValue.isBlank()) inputValue = p.text
                 _state.update { it.copy(pending = null, streaming = "", error = e.message ?: "未知错误") }
             }
         }
@@ -148,10 +226,12 @@ class GameViewModel(private val engine: Engine) : ViewModel() {
 
     private fun applyTurn(t: TurnV1) {
         _state.update { s ->
-            val known = s.entries.map { it.id }.toHashSet()
+            val known = s.entries.mapTo(HashSet()) { it.id }
             val fresh = t.entries.filter { it.id == 0L || it.id !in known }
+            val (entries, trimmed) = TranscriptWindow.append(s.entries, fresh)
             s.copy(
-                entries = s.entries + fresh,
+                entries = entries,
+                hasEarlier = s.hasEarlier || trimmed,
                 scene = t.scene,
                 suggestions = t.suggestions,
                 pending = null,
@@ -205,5 +285,12 @@ class GameViewModel(private val engine: Engine) : ViewModel() {
             }.onSuccess { p -> _panels.value = p }
                 .onFailure { e -> _panels.update { it.copy(loading = false) }; _state.update { it.copy(error = e.message) } }
         }
+    }
+
+    private companion object {
+        const val KEY_INPUT = "input"
+        const val KEY_PENDING_ID = "pending_command_id"
+        const val KEY_PENDING_TEXT = "pending_text"
+        const val BUNDLE_PAGE = 300
     }
 }

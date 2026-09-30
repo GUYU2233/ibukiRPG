@@ -8,13 +8,15 @@ v0.1.2-rc2 新增：
 - **数值 RPG**：回合制战斗（技能、状态、敌人 AI、同伴、掉落）、**机甲形态**（能源 / 过热、改装槽与武器挂点、机甲卡与情报揭示）、成长与装备、**图鉴**、**关系网**（多维关系与变化原因）、**角色卡**（主要 / 次要角色升格、归档）、**立绘**（故事包内图片）。
 - **主线贴合度**：自由行动会累计偏离度，严重偏离时可以回到主线或进入**沙盒 / 自由推演**（AI 基于故事包已有内容生成新委托，离线模式用模板）。
 - **AI 记忆与检索**：滚动摘要 + 长期记忆压缩（后台运行，不阻塞回合）；信息不足时 AI 会通过**只读检索工具**查阅故事包与存档（按可见范围过滤，NPC 查不到秘密），不支持工具调用的模型改为关键词预取。
+- **离线本地模型改用 llama.cpp**：可导入任意 GGUF 模型（推荐 Qwen2.5-1.5B / 3B Instruct Q4_K_M），流式输出、可取消；生成时使用前台服务防止被系统中断，空闲或内存告急时自动释放模型，加载前检查内存与文件。详见 [docs/local-models.md](docs/local-models.md)。
+- **稳定性**：进程被系统回收后恢复输入与未完成的提交（不会重复执行）；长聊天记录分页加载；本地崩溃记录在下次启动时显示（不上传）。
 - **MCP 服务**：`ibukirpg mcp --save <存档>` 以 stdio 方式把同一套只读工具提供给 Claude Desktop / Cursor / VS Code 等 MCP 客户端，配置方法见 [docs/mcp.md](docs/mcp.md)。
 
 v0.1.2 新增：NPC **对话记忆**（记得聊过什么、看到你做了什么，不再复读，存档后依然记得）、**故事包选择 / 导入**、聊天界面顶部的**实时状态栏**（位置、时间、铜币、当前目标、故事变量，由故事包定义）。
 
 - 引擎：Go，事件溯源（Command → Event → State），SQLite 存档，确定性骰子（可重放）。
 - 客户端：原生 Android（Kotlin + Jetpack Compose + Material 3），以及用于桌面调试的命令行客户端。
-- AI：**默认规则离线模式**（无需联网、无需 API Key）；可选加载 MediaPipe `.task` 本地模型，或接入 DeepSeek、通义千问等 OpenAI 兼容服务。**LLM 永远不是真相源**：检定、金币、物品、关系都由本地引擎决定。
+- AI：**默认规则离线模式**（无需联网、无需 API Key）；可选在手机上离线运行 GGUF 本地模型（llama.cpp），或接入 DeepSeek、通义千问等 OpenAI 兼容服务。**LLM 永远不是真相源**：检定、金币、物品、关系都由本地引擎决定。
 
 ## 怎么玩
 
@@ -32,7 +34,7 @@ v0.1.2 新增：NPC **对话记忆**（记得聊过什么、看到你做了什�
 
 ## 离线模式与 AI 模式
 
-| | 离线规则模式（默认） | 离线本地模型（MediaPipe） | 在线 AI 模式 |
+| | 离线规则模式（默认） | 离线本地模型（llama.cpp · GGUF） | 在线 AI 模式 |
 |---|---|---|---|
 | 需要网络 / Key | 否 | 否 | 是（DeepSeek / 通义千问 / 自定义 OpenAI 兼容） |
 | 输入理解 | 关键词 + 规则解析 | 设备本地模型结构化解析 | 在线大模型结构化解析，失败自动退回离线规则 |
@@ -41,7 +43,7 @@ v0.1.2 新增：NPC **对话记忆**（记得聊过什么、看到你做了什�
 
 在 Android **设置 → AI 叙事** 中选择服务商；在线服务填写 API Key，点 **测试连接**，再 **保存并应用**。Key 使用 Android Keystore（AES-GCM）加密后保存在本机，不写入存档、不上传。超时或出错时不会重复执行行动，也不会重新掷骰。
 
-选择 **离线本地模型（MediaPipe）** 后，可导入用户准备好的 MediaPipe `.task` 模型，并调整温度、上下文/KV 缓存预算、Top-K、Top-P。模型复制到 App 私有目录，只在本机推理；不支持直接加载 GGUF 或原始 Hugging Face 权重。MediaPipe LLM Inference 适配偏高端 Android 设备，模型越大越依赖设备内存与加速支持，建议先用小模型验证兼容性。
+选择 **离线本地模型（llama.cpp · GGUF）** 后，导入任意 GGUF 模型文件（推荐 **Qwen2.5-1.5B-Instruct Q4_K_M**，约 1.1 GB，4 GB 以上内存的手机；或 3B Q4_K_M，约 2 GB，6～8 GB 内存），可调整上下文长度、CPU 线程、温度、Top-P / Top-K、单次最多生成 token 数。模型复制到 App 私有目录，只在本机推理；本地模型不使用函数调用，改用关键词预取故事资料。模型推荐、内存需求与后台运行说明见 [docs/local-models.md](docs/local-models.md)。
 
 预设：
 
@@ -69,7 +71,7 @@ MCP 服务（只读）：`./build/bin/ibukirpg mcp --save <存档目录或 .db>`
 
 ## 构建
 
-环境：Go 1.27.1+、golangci-lint v2；Android 需要 JDK 17、Android SDK（platform 36、build-tools 36.1.0）、NDK r27、gomobile。详见 [docs/dev-environment.md](docs/dev-environment.md) 和 [docs/android.md](docs/android.md)。
+环境：Go 1.27.1+、golangci-lint v2；Android 需要 JDK 17、Android SDK（platform 36、build-tools 36.1.0）、NDK r27（27.3.13750724）、CMake 3.31.6（构建 llama.cpp）、gomobile。详见 [docs/dev-environment.md](docs/dev-environment.md) 和 [docs/android.md](docs/android.md)。
 
 | 命令 | 说明 |
 |---|---|
@@ -116,5 +118,6 @@ docs/              架构文档（architecture-v0.2.md）与开发文档
 - NPC 只知道自己亲眼看到的事（Witness → Belief），暂不传播流言。
 - 离线解析基于关键词，过于复杂或含糊的句子可能被当作“自由行动”处理。
 - AI 模式尚未经过真实 API 的大规模测试；Eval 录音为按预期手写的合成录音。
+- llama.cpp 本地模型只在 CI / 构建机上完成编译与 JVM 单元测试，尚未在真机上验证推理速度与稳定性；当前只有 CPU 后端（不支持 GPU 加速），32 位 ARM 设备不可用。
 
 仓库：<https://github.com/GUYU2233/ibukiRPG> · 架构文档：[docs/architecture-v0.2.md](docs/architecture-v0.2.md)

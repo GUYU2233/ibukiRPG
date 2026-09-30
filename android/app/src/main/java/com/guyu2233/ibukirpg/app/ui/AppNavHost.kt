@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,6 +15,8 @@ import com.guyu2233.ibukirpg.app.ui.game.GameScreen
 import com.guyu2233.ibukirpg.app.ui.game.GameViewModel
 import com.guyu2233.ibukirpg.app.ui.home.HomeScreen
 import com.guyu2233.ibukirpg.app.ui.home.HomeViewModel
+import com.guyu2233.ibukirpg.app.ui.home.CrashLogSource
+import com.guyu2233.ibukirpg.app.crash.CrashReporter
 import com.guyu2233.ibukirpg.app.ui.packs.PacksScreen
 import com.guyu2233.ibukirpg.app.ui.packs.PacksViewModel
 import com.guyu2233.ibukirpg.app.ui.saves.SavesScreen
@@ -47,7 +50,12 @@ fun AppNavHost(app: IbukiApp) {
         popExitTransition = { slideOutHorizontally { it / 4 } + fadeOut() },
     ) {
         composable(Routes.HOME) {
-            val vm = viewModel { HomeViewModel(app.engine, app.settings, app.aiStartupReady) }
+            val vm = viewModel {
+                HomeViewModel(app.engine, app.settings, app.aiStartupReady, object : CrashLogSource {
+                    override fun pending() = CrashReporter.pending(app)
+                    override fun clear() = CrashReporter.clear(app)
+                })
+            }
             HomeScreen(
                 vm = vm,
                 onGameReady = toGame,
@@ -65,7 +73,7 @@ fun AppNavHost(app: IbukiApp) {
             PacksScreen(vm = vm, onBack = { nav.popBackStack() }, onGameReady = toGame)
         }
         composable(Routes.GAME) {
-            val vm = viewModel { GameViewModel(app.engine) }
+            val vm = viewModel { GameViewModel(app.engine, createSavedStateHandle()) }
             GameScreen(vm = vm, onBack = { nav.popBackStack(Routes.HOME, inclusive = false) })
         }
         composable(Routes.SETTINGS) {

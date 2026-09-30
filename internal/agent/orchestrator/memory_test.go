@@ -87,7 +87,7 @@ func TestNPCRemembersAcrossTurnsAndSaveLoad(t *testing.T) {
 	}
 }
 
-// 云端 AI / 本地 MediaPipe 共用同一条 Go 提示词路径：叙事提示词必须带上该 NPC 的记忆（NPCScope）。
+// 云端 AI / 本地 llama.cpp 模型共用同一条 Go 提示词路径：叙事提示词必须带上该 NPC 的记忆（NPCScope）。
 func TestAINarratorPromptIncludesNPCMemory(t *testing.T) {
 	ctx := context.Background()
 	var mu sync.Mutex

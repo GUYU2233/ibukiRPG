@@ -9,6 +9,10 @@ plugins {
 
 val appVersionName = "0.1.2-rc2"
 
+// llama.cpp 原生库的 ABI：默认 arm64-v8a + x86_64（模拟器）；CI 可用 -Pibuki.llama.abis=arm64-v8a 缩短构建时间
+val llamaAbis: List<String> = ((project.findProperty("ibuki.llama.abis") as String?) ?: "arm64-v8a,x86_64")
+    .split(',').map { it.trim() }.filter { it.isNotEmpty() }
+
 // 发布签名：密钥库放在仓库之外（默认 ~/.ibukirpg/keystore.properties），见 docs/android.md。
 val keystorePropsFile = providers.environmentVariable("IBUKIRPG_KEYSTORE_PROPERTIES")
     .orElse(System.getProperty("user.home") + "/.ibukirpg/keystore.properties")
@@ -32,7 +36,23 @@ android {
         vectorDrawables.useSupportLibrary = true
         // 与 gomobile AAR 中的 libgojni.so 保持一致（否则 x86 设备会因缺少引擎库而崩溃）
         ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64") }
+        // llama.cpp（本地 GGUF 推理）：只为 64 位 ABI 构建；armeabi-v7a 设备上本地模型不可用，其余功能照常
+        externalNativeBuild {
+            cmake {
+                abiFilters += llamaAbis
+                arguments += listOf("-DCMAKE_BUILD_TYPE=Release", "-DANDROID_STL=c++_shared")
+                (project.findProperty("ibuki.llama.src") as String?)?.let { arguments += "-DIBUKI_LLAMA_SOURCE_DIR=$it" }
+            }
+        }
     }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.31.6"
+        }
+    }
+    ndkVersion = "27.3.13750724"
 
     signingConfigs {
         if (keystoreProps.getProperty("storeFile") != null) {
@@ -86,6 +106,9 @@ android {
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        // 安装时把原生库解压到 nativeLibraryDir：llama.cpp 要在该目录里扫描 libggml-cpu-*.so，
+        // 按设备 CPU 特性（dotprod / i8mm / SVE …）选择最快的变体
+        jniLibs.useLegacyPackaging = true
     }
 }
 
@@ -124,8 +147,6 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    // On-device MediaPipe Tasks GenAI (model files are user-imported .task bundles).
-    implementation("com.google.mediapipe:tasks-genai:0.10.27")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")

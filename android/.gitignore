@@ -8,3 +8,7 @@ app/libs/*.aar
 app/libs/*.jar
 .kotlin/
 captures/
+
+# llama.cpp native build (CMake) and downloaded source cache
+.llama-cache/
+app/.cxx/

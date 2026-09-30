@@ -9,11 +9,7 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
-# MediaPipe Tasks GenAI generated protobuf/AutoValue annotations are compile-time metadata.
--dontwarn com.google.auto.value.AutoValue
--dontwarn com.google.auto.value.AutoValue$Builder
--dontwarn com.google.protobuf.Internal$ProtoMethodMayReturnNull
--dontwarn com.google.protobuf.Internal$ProtoNonnullApi
--dontwarn com.google.protobuf.ProtoField
--dontwarn com.google.protobuf.ProtoPresenceBits
--dontwarn com.google.protobuf.ProtoPresenceCheckedField
+# llama.cpp JNI：原生方法与回调接口按名字查找，不能被混淆
+-keep class com.guyu2233.ibukirpg.app.llm.LlamaNative { native <methods>; }
+-keep interface com.guyu2233.ibukirpg.app.llm.TokenSink { *; }
+-keep class * implements com.guyu2233.ibukirpg.app.llm.TokenSink { boolean onBytes(byte[]); }

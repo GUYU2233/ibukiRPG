@@ -7,6 +7,7 @@ import com.guyu2233.ibukirpg.app.data.Engine
 import com.guyu2233.ibukirpg.app.data.SettingsStore
 import com.guyu2233.ibukirpg.app.data.SlotV1
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,9 +24,35 @@ data class HomeState(
     val version: String = "",
 )
 
-class HomeViewModel(private val engine: Engine, private val settings: SettingsStore, private val aiStartupReady: Deferred<Unit>) : ViewModel() {
+/** 本地崩溃记录的读写（IO 线程调用）；测试里可替换。 */
+interface CrashLogSource {
+    fun pending(): String?
+    fun clear()
+}
+
+class HomeViewModel(
+    private val engine: Engine,
+    private val settings: SettingsStore,
+    private val aiStartupReady: Deferred<Unit>,
+    private val crashLog: CrashLogSource? = null,
+) : ViewModel() {
     private val _state = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = _state.asStateFlow()
+
+    /** 上次运行的崩溃 / 被系统终止记录（只在本机显示，不上传）。 */
+    private val _crash = MutableStateFlow<String?>(null)
+    val crash: StateFlow<String?> = _crash.asStateFlow()
+
+    init {
+        crashLog?.let { src ->
+            viewModelScope.launch(Dispatchers.IO) { _crash.value = runCatching { src.pending() }.getOrNull() }
+        }
+    }
+
+    fun dismissCrash() {
+        _crash.value = null
+        crashLog?.let { src -> viewModelScope.launch(Dispatchers.IO) { runCatching { src.clear() } } }
+    }
 
     fun refresh() {
         viewModelScope.launch {

@@ -1,9 +1,12 @@
-package com.guyu2233.ibukirpg.app.data
+package com.guyu2233.ibukirpg.app.llm
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.floatOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -18,13 +21,18 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Loopback-only OpenAI Chat Completions bridge used by the Go engine. */
+/** 推理请求：消息、可选 max_tokens / temperature，以及流式输出回调（返回 false = 客户端已断开，停止生成）。 */
+internal fun interface LocalGenerate {
+    fun generate(messages: List<Pair<String, String>>, maxTokens: Int?, temperature: Float?, emit: (String) -> Boolean): String
+}
+
+/** Loopback-only OpenAI Chat Completions bridge used by the Go engine（仅监听 127.0.0.1，带随机 Bearer token）。 */
 internal class LocalModelHttpServer(
     private val apiKey: String,
-    private val generate: (List<Pair<String, String>>) -> String,
+    private val generate: LocalGenerate,
+    private val port: Int = 0,
 ) : AutoCloseable {
     companion object {
-        const val PORT = 37123
         private const val MAX_HEADER_BYTES = 32 * 1024
         private const val MAX_BODY_BYTES = 4 * 1024 * 1024
         private val json = Json { ignoreUnknownKeys = true }
@@ -33,6 +41,9 @@ internal class LocalModelHttpServer(
     private val running = AtomicBoolean(false)
     private val workers = Executors.newCachedThreadPool { r -> Thread(r, "ibuki-local-llm-request").apply { isDaemon = true } }
     @Volatile private var listener: ServerSocket? = null
+
+    /** 实际监听的端口（port = 0 时由系统分配，避免与其他应用冲突）。 */
+    val boundPort: Int get() = listener?.localPort ?: -1
     @Volatile private var acceptThread: Thread? = null
 
     @Synchronized
@@ -40,7 +51,7 @@ internal class LocalModelHttpServer(
         if (running.get()) return
         val server = ServerSocket()
         server.reuseAddress = true
-        server.bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), PORT), 8)
+        server.bind(InetSocketAddress(InetAddress.getByName("127.0.0.1"), port), 8)
         listener = server
         running.set(true)
         acceptThread = Thread({
@@ -103,15 +114,27 @@ internal class LocalModelHttpServer(
                 }.orEmpty()
                 if (messages.isEmpty()) return writeError(client, 400, "No prompt messages")
 
-                val answer = generate(messages)
-                val model = root["model"]?.jsonPrimitive?.contentOrNull ?: "mediapipe-local"
-                if (root["stream"]?.jsonPrimitive?.contentOrNull == "true" || root["stream"]?.toString() == "true") {
-                    val sse = buildString {
-                        append("data: ").append(streamChunk(model, answer)).append("\n\n")
-                        append("data: [DONE]\n\n")
+                val model = root["model"]?.jsonPrimitive?.contentOrNull ?: "llamacpp-local"
+                val maxTokens = root["max_tokens"]?.jsonPrimitive?.intOrNull
+                val temperature = root["temperature"]?.jsonPrimitive?.floatOrNull
+                val stream = root["stream"]?.jsonPrimitive?.booleanOrNull == true
+                if (stream) {
+                    // 逐 token 推送 SSE；写失败说明 Go 端已取消（超时 / 玩家取消），立即停止推理
+                    val out = client.getOutputStream()
+                    out.write("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".toByteArray(StandardCharsets.ISO_8859_1))
+                    out.flush()
+                    generate.generate(messages, maxTokens, temperature) { piece ->
+                        runCatching {
+                            out.write(("data: " + streamChunk(model, piece, null) + "\n\n").toByteArray(StandardCharsets.UTF_8))
+                            out.flush()
+                        }.isSuccess
                     }
-                    writeResponse(client, 200, "text/event-stream; charset=utf-8", sse.toByteArray(StandardCharsets.UTF_8))
+                    runCatching {
+                        out.write(("data: " + streamChunk(model, "", "stop") + "\n\ndata: [DONE]\n\n").toByteArray(StandardCharsets.UTF_8))
+                        out.flush()
+                    }
                 } else {
+                    val answer = generate.generate(messages, maxTokens, temperature) { true }
                     writeJson(client, 200, completion(model, answer).toString())
                 }
             }.onFailure { error ->
@@ -156,7 +179,7 @@ internal class LocalModelHttpServer(
         })
     }
 
-    private fun streamChunk(model: String, text: String) = buildJsonObject {
+    private fun streamChunk(model: String, text: String, finish: String?) = buildJsonObject {
         put("id", "chatcmpl-ibuki-local")
         put("object", "chat.completion.chunk")
         put("model", model)
@@ -164,7 +187,7 @@ internal class LocalModelHttpServer(
             add(buildJsonObject {
                 put("index", 0)
                 put("delta", buildJsonObject { put("content", text) })
-                put("finish_reason", "stop")
+                if (finish != null) put("finish_reason", finish)
             })
         })
     }.toString()

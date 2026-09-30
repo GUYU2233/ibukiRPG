@@ -69,7 +69,9 @@ import com.guyu2233.ibukirpg.app.ui.common.formatTime
 @Composable
 fun HomeScreen(vm: HomeViewModel, onGameReady: () -> Unit, onNewGame: () -> Unit, onSaves: () -> Unit, onSettings: () -> Unit) {
     val s by vm.state.collectAsStateWithLifecycle()
+    val crash by vm.crash.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refresh() }
+    crash?.let { CrashDialog(text = it, onDismiss = vm::dismissCrash) }
     HomeContent(
         s = s,
         onContinue = { vm.continueLatest(onGameReady) },
@@ -121,7 +123,7 @@ fun HomeContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(12.dp))
-                ModeChip(online = s.ai.online, model = s.ai.model, localModel = s.ai.kind == "mediapipe", onClick = onSettings)
+                ModeChip(online = s.ai.online, model = s.ai.model, localModel = s.ai.kind == "llamacpp", onClick = onSettings)
                 Spacer(Modifier.height(28.dp))
 
                 if (s.loading) {
@@ -278,5 +280,30 @@ fun NewGameDialog(packName: String, onDismiss: () -> Unit, onStart: (String) -> 
         },
         confirmButton = { Button(onClick = submit) { Text(stringResource(R.string.new_game_start)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+/** 上次运行崩溃 / 被系统终止时的本地记录；可复制，关闭后删除。 */
+@Composable
+private fun CrashDialog(text: String, onDismiss: () -> Unit) {
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.crash_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.crash_desc), style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
+                    Text(text, style = MaterialTheme.typography.bodySmall, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                }
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.crash_dismiss)) } },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = { clipboard.setText(androidx.compose.ui.text.AnnotatedString(text)) }) {
+                Text(stringResource(R.string.crash_copy))
+            }
+        },
     )
 }
