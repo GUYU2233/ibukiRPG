@@ -169,6 +169,13 @@ class Engine(private val dataDir: String) {
     suspend fun worldChanges(query: String = "", limit: Int = 100): List<WorldChangeV1> =
         call("search_world_changes", buildJsonObject { put("query", query); put("limit", limit) }, decode = decoder())
     suspend fun revertChange(id: String): WorldLogV1 = call("revert_change", buildJsonObject { put("id", id) }, decode = decoder())
+    /** 让 AI 按要求修改 / 新建卡片：返回预览，确认后 applyPreview。target 为空 = 新建。 */
+    suspend fun requestEdit(target: String, instruction: String): ChangePreviewV1 =
+        call("request_edit", buildJsonObject { put("target", target); put("instruction", instruction) }, decode = decoder())
+    suspend fun applyPreview(token: String): WorldLogV1 = call("apply_preview", buildJsonObject { put("preview_token", token) }, decode = decoder())
+    suspend fun runAudit(): AuditV1 = call("run_audit", decode = decoder())
+    suspend fun resolveAuditSuggestion(id: String, action: String): WorldLogV1 =
+        call("resolve_audit_suggestion", buildJsonObject { put("id", id); put("action", action) }, decode = decoder())
     suspend fun usage(turn: Int = 0): UsageV1 = call("get_usage", buildJsonObject { put("turn", turn) }, decode = decoder())
     suspend fun wait(commandId: String, target: String): TurnV1 = call("wait", buildJsonObject { put("target", target) }, commandId, decoder())
     /** 导出存档到 dir（应用缓存目录），再由界面通过 SAF 复制到玩家选择的位置。 */

@@ -254,6 +254,8 @@ type ChangePreviewV1 struct {
 	Impact      int        `json:"impact"`
 	Types       []string   `json:"types,omitempty"`
 	Rejected    []RejectV1 `json:"rejected,omitempty"`
+	// Note 是卡片编辑器的一句话说明（可空）。
+	Note string `json:"note,omitempty"`
 }
 
 // RejectV1 是一项被校验器拒绝的提案。

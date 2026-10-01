@@ -235,3 +235,45 @@ func kindsOf(es []dto.EntryV1) string {
 	}
 	return strings.Join(ks, ",")
 }
+
+// cardLLM：卡片编辑请求返回脚本化的修改提案。
+type cardLLM struct{ reply string }
+
+func (f *cardLLM) RoundTrip(r *http.Request) (*http.Response, error) {
+	body, _ := io.ReadAll(r.Body)
+	if strings.Contains(string(body), "卡片编辑器") {
+		return chat(f.reply), nil
+	}
+	return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(sse("你环顾四周。"))), Header: http.Header{}}, nil
+}
+
+// TestRequestEdit：玩家要求修改卡片 → card_gen 提案 → 预览（不提交）→ 确认后才写入，来源为“你的指令”。
+func TestRequestEdit(t *testing.T) {
+	ctx := context.Background()
+	f := &cardLLM{reply: `{"changes":[{"op":"patch","target":"brass:item/wrench","path":"fields.description","value":"一把改装过的扳手，握柄里藏着一块小电池，敲上去会冒蓝色电火花。"}],"note":"加了电击效果"}`}
+	s := openPacks(t, f)
+	s.ConfigureProviders([]router.Provider{{ID: "ds", Kind: provider.KindDeepSeek, APIKey: "sk-test"}}, router.Settings{Mode: router.ModeUnified, Unified: router.Route{Provider: "ds"}})
+	if _, err := s.NewGameIn(ctx, "brass_trial", "", "阿砾", 7); err != nil {
+		t.Fatal(err)
+	}
+	pv, err := s.RequestEdit(ctx, "brass:item/wrench", "把我的扳手改成带电击的")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pv.Token == "" || len(pv.Changes) != 1 || pv.Note == "" || !strings.HasPrefix(pv.Changes[0].Reason, "你的要求") {
+		t.Fatalf("preview %+v", pv)
+	}
+	if chs, _ := s.WorldChanges("", "", 0); len(chs) != 0 {
+		t.Fatal("request_edit must not commit before confirmation")
+	}
+	if _, err := s.ApplyPreview(ctx, pv.Token, 0); err != nil {
+		t.Fatal(err)
+	}
+	chs, _ := s.WorldChanges("", "", 0)
+	if len(chs) != 1 || chs[0].Source != change.SourceUserRequest {
+		t.Fatalf("log %+v", chs)
+	}
+	if _, err := s.RequestEdit(ctx, "brass:item/nope", "随便改改"); err == nil {
+		t.Fatal("unknown target should fail")
+	}
+}

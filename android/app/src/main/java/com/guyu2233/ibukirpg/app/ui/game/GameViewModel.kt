@@ -277,6 +277,62 @@ class GameViewModel(
         open.forEach { loadWorldTab(it) }
     }
 
+    // ---------- 一致性审查 / 卡片修改 ----------
+
+    private val _edit = MutableStateFlow<EditState?>(null)
+    val edit: StateFlow<EditState?> = _edit.asStateFlow()
+    private val _auditBusy = MutableStateFlow(false)
+    val auditBusy: StateFlow<Boolean> = _auditBusy.asStateFlow()
+
+    fun resolveAuditSuggestion(id: String, action: String) = bundleOp { engine.resolveAuditSuggestion(id, action); engine.bundle() }
+
+    fun runAudit() {
+        if (_auditBusy.value) return
+        _auditBusy.value = true
+        viewModelScope.launch {
+            runCatching { engine.runAudit() }
+                .onSuccess { a ->
+                    val fixed = a.fixed?.changes?.size ?: 0
+                    val msg = if (a.findings.isEmpty()) "一致性检查没有发现问题" else "一致性检查修复了 $fixed 处" +
+                        (if (a.suggestions.isNotEmpty()) "，${a.suggestions.size} 条建议待确认" else "")
+                    _state.update { it.copy(notices = it.notices + NoticeV1(text = msg)) }
+                    runCatching { engine.bundle() }.onSuccess { b -> apply(b); _state.update { it.copy(version = it.version + 1) }; refreshWorld() }
+                }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
+            _auditBusy.value = false
+        }
+    }
+
+    fun startEdit(target: String, name: String) { _edit.value = EditState(target = target, targetName = name) }
+
+    fun submitEdit(instruction: String) {
+        val e = _edit.value ?: return
+        _edit.value = e.copy(busy = true, error = null)
+        viewModelScope.launch {
+            runCatching { engine.requestEdit(e.target, instruction) }
+                .onSuccess { pv -> _edit.value = _edit.value?.copy(busy = false, preview = pv) }
+                .onFailure { err -> _edit.value = _edit.value?.copy(busy = false, error = err.message) }
+        }
+    }
+
+    fun confirmEdit() {
+        val e = _edit.value ?: return
+        val token = e.preview?.previewToken ?: return
+        _edit.value = e.copy(busy = true, error = null)
+        viewModelScope.launch {
+            runCatching { engine.applyPreview(token); engine.bundle() }
+                .onSuccess { b ->
+                    _edit.value = null
+                    apply(b)
+                    _state.update { it.copy(version = it.version + 1, notices = it.notices + NoticeV1(text = "已修改设定，可在日志页撤销")) }
+                    refreshWorld()
+                }
+                .onFailure { err -> _edit.value = _edit.value?.copy(busy = false, error = err.message) }
+        }
+    }
+
+    fun cancelEdit() { _edit.value = null }
+
     fun revertChange(c: WorldChangeV1) = bundleOp { engine.revertChange(c.id); engine.bundle() }
 
     fun resolveDecision(accept: Boolean, notifyOnly: Boolean) {

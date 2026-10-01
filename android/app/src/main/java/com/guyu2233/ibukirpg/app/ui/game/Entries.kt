@@ -59,8 +59,10 @@ fun EntryItem(
     enabled: Boolean,
     onCard: (String) -> Unit = {},
     onRollback: ((Int) -> Unit)? = null,
+    onAudit: (id: String, action: String) -> Unit = { _, _ -> },
 ) {
     when (entry.kind) {
+        "audit" -> entry.audit?.let { AuditCard(it, enabled, onAudit) }
         "world" -> entry.world?.let { WorldEntry(it) }
         "adjudication" -> entry.adjudication?.let { AdjudicationCard(it) }
         "usage" -> entry.usage?.let { UsageLine(it, onRollback) }

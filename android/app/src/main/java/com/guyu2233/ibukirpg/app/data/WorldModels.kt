@@ -280,3 +280,33 @@ data class ExportResultV1(val path: String = "", val name: String = "", val byte
 
 @Immutable @Serializable
 data class ImportSaveResultV1(val slotId: String = "", val check: SaveCheckV1 = SaveCheckV1())
+
+/** 一组修改的预览（玩家明确要求的修改先预览、后确认）。 */
+@Immutable @Serializable
+data class ChangePreviewV1(
+    val previewToken: String = "",
+    val changes: List<WorldChangeV1> = emptyList(),
+    val hiddenCount: Int = 0,
+    val impact: Int = 0,
+    val types: List<String> = emptyList(),
+    val rejected: List<RejectV1> = emptyList(),
+    val note: String = "",
+)
+
+@Immutable @Serializable
+data class RejectV1(val target: String = "", val path: String = "", val op: String = "", val reason: String = "")
+
+/** 一致性审查结果（叙事流 kind=audit）。 */
+@Immutable @Serializable
+data class AuditV1(
+    val id: String = "",
+    val findings: List<AuditFindingV1> = emptyList(),
+    val fixed: WorldLogV1? = null,
+    val suggestions: List<AuditSuggestionV1> = emptyList(),
+)
+
+@Immutable @Serializable
+data class AuditFindingV1(val kind: String = "", val turn: Int = 0, val text: String = "", val note: String = "")
+
+@Immutable @Serializable
+data class AuditSuggestionV1(val id: String = "", val summary: String = "", val reason: String = "", val status: String = "pending")

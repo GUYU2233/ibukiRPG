@@ -35,6 +35,9 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -81,6 +84,14 @@ enum class WorldTab(val id: String, val label: String, val icon: ImageVector) {
 /** 世界面板数据：每个标签页按需加载。 */
 data class WorldState(val tabs: Map<String, WorldPanelV1> = emptyMap(), val loading: String? = null)
 
+/** 世界面板的附加操作：让 AI 修改 / 新建卡片、立即运行一致性检查。为空时不显示对应按钮。 */
+data class WorldExtras(
+    val onEdit: ((EntityViewV1) -> Unit)? = null,
+    val onNewCard: (() -> Unit)? = null,
+    val onRunAudit: (() -> Unit)? = null,
+    val auditBusy: Boolean = false,
+)
+
 /** 手机：底部抽屉。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,10 +102,11 @@ fun WorldPanelSheet(
     onTab: (String) -> Unit,
     onAction: (QuickActionV1, String) -> Unit,
     onRevert: (WorldChangeV1) -> Unit,
+    extras: WorldExtras = WorldExtras(),
 ) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
-        WorldPanelContent(world, busy, onTab, onAction, onRevert, Modifier.fillMaxHeight(0.9f))
+        WorldPanelContent(world, busy, onTab, onAction, onRevert, Modifier.fillMaxHeight(0.9f), extras = extras)
     }
 }
 
@@ -108,9 +120,10 @@ fun WorldPanelPane(
     onAction: (QuickActionV1, String) -> Unit,
     onRevert: (WorldChangeV1) -> Unit,
     modifier: Modifier = Modifier,
+    extras: WorldExtras = WorldExtras(),
 ) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = modifier.fillMaxHeight()) {
-        WorldPanelContent(world, busy, onTab, onAction, onRevert, onClose = onClose)
+        WorldPanelContent(world, busy, onTab, onAction, onRevert, onClose = onClose, extras = extras)
     }
 }
 
@@ -124,6 +137,7 @@ fun WorldPanelContent(
     modifier: Modifier = Modifier,
     initialTab: Int = 0,
     onClose: (() -> Unit)? = null,
+    extras: WorldExtras = WorldExtras(),
 ) {
     var tab by rememberSaveable { mutableStateOf(initialTab) }
     var focus by rememberSaveable { mutableStateOf<String?>(null) }
@@ -152,12 +166,36 @@ fun WorldPanelContent(
             modifier = Modifier.fillMaxWidth(),
         ) {
             when (current) {
-                WorldTab.Characters, WorldTab.Map, WorldTab.Factions -> entities(data.entities, current)
+                WorldTab.Characters, WorldTab.Map, WorldTab.Factions -> {
+                    if (current == WorldTab.Characters && extras.onNewCard != null) {
+                        item(key = "new-card") {
+                            OutlinedButton(onClick = extras.onNewCard, enabled = !busy) {
+                                Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("新建角色 / 卡片")
+                            }
+                        }
+                    }
+                    entities(data.entities, current, extras.onEdit, busy)
+                }
                 WorldTab.Relations -> data.relations?.let { relationsTab(it, focus) { f -> focus = f } } ?: empty("还没有认识的人")
                 WorldTab.Codex -> data.codex?.let { codexTab(it, null, category, { c -> category = c }, dialogs) } ?: empty("图鉴还是空的")
                 WorldTab.Equipment -> data.inventory?.let { inventoryTab(it, busy, onAction, dialogs) } ?: empty("身上什么都没有")
                 WorldTab.Timeline -> events(data.events)
-                WorldTab.Log -> changes(data.changes, busy, onRevert)
+                WorldTab.Log -> {
+                    extras.onRunAudit?.let { run ->
+                        item(key = "audit") {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("一致性检查会对照叙事与设定，补记遗漏、修正矛盾。", style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                                OutlinedButton(onClick = run, enabled = !busy && !extras.auditBusy) {
+                                    if (extras.auditBusy) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Text("立即检查")
+                                }
+                            }
+                        }
+                    }
+                    changes(data.changes, busy, onRevert)
+                }
             }
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
@@ -178,7 +216,7 @@ private fun LazyListScope.empty(text: String) {
     item { Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(24.dp)) }
 }
 
-private fun LazyListScope.entities(list: List<EntityViewV1>, tab: WorldTab) {
+private fun LazyListScope.entities(list: List<EntityViewV1>, tab: WorldTab, onEdit: ((EntityViewV1) -> Unit)?, busy: Boolean) {
     if (list.isEmpty()) {
         empty(
             when (tab) {
@@ -189,11 +227,11 @@ private fun LazyListScope.entities(list: List<EntityViewV1>, tab: WorldTab) {
         )
         return
     }
-    items(list, key = { it.id }) { EntityCard(it) }
+    items(list, key = { it.id }) { e -> EntityCard(e, onEdit?.takeIf { !busy && e.id != "player" }) }
 }
 
 @Composable
-fun EntityCard(e: EntityViewV1) {
+fun EntityCard(e: EntityViewV1, onEdit: ((EntityViewV1) -> Unit)? = null) {
     val c = MaterialTheme.colorScheme
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -220,6 +258,13 @@ fun EntityCard(e: EntityViewV1) {
                     Icon(Icons.Outlined.Star, contentDescription = null, tint = c.tertiary, modifier = Modifier.size(16.dp).padding(top = 2.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(s, style = MaterialTheme.typography.bodySmall, color = c.tertiary)
+                }
+            }
+            if (onEdit != null) {
+                TextButton(onClick = { onEdit(e) }, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                    Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("让 AI 修改")
                 }
             }
         }

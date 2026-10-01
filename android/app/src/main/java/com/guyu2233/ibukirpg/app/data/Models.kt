@@ -52,6 +52,7 @@ data class EntryV1(
     val world: WorldLogV1? = null,
     val adjudication: AdjudicationV1? = null,
     val usage: UsageV1? = null,
+    val audit: AuditV1? = null,
 )
 
 @Immutable @Serializable

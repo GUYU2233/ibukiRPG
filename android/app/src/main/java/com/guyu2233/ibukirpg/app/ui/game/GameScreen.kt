@@ -112,6 +112,8 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
     val world by vm.world.collectAsStateWithLifecycle()
     val timeline by vm.timeline.collectAsStateWithLifecycle()
     val prompts by vm.prompts.collectAsStateWithLifecycle()
+    val edit by vm.edit.collectAsStateWithLifecycle()
+    val auditBusy by vm.auditBusy.collectAsStateWithLifecycle()
     val rpgData = remember(vm) { RpgData(portrait = vm::portrait, card = vm::card, mech = vm::mech) }
     CompositionLocalProvider(LocalRpgData provides rpgData) { GameContent(
         s = s,
@@ -129,6 +131,8 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
         world = world,
         timeline = timeline,
         prompts = prompts,
+        edit = edit,
+        auditBusy = auditBusy,
         actions = WorldActions(
             onWorldTab = { vm.loadWorldTab(it) },
             onRevert = vm::revertChange,
@@ -139,6 +143,12 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
             onRollbackTurn = vm::rollbackTo,
             onCancelRollback = vm::cancelRollback,
             onWait = vm::wait,
+            onAuditSuggestion = vm::resolveAuditSuggestion,
+            onRunAudit = vm::runAudit,
+            onRequestEdit = vm::startEdit,
+            onSubmitEdit = vm::submitEdit,
+            onConfirmEdit = vm::confirmEdit,
+            onCancelEdit = vm::cancelEdit,
             timeline = TimelineActions(
                 onClose = vm::closeTimeline,
                 onRollback = vm::rollbackTo,
@@ -162,6 +172,14 @@ data class WorldActions(
     val onRollbackTurn: (Int) -> Unit = {},
     val onCancelRollback: () -> Unit = {},
     val onWait: (target: String, label: String) -> Unit = { _, _ -> },
+    /** 一致性审查：建议的应用 / 忽略、立即检查。 */
+    val onAuditSuggestion: (id: String, action: String) -> Unit = { _, _ -> },
+    val onRunAudit: (() -> Unit)? = null,
+    /** 让 AI 修改 / 新建卡片（target 为空 = 新建）→ 预览 → 确认。 */
+    val onRequestEdit: ((target: String, name: String) -> Unit)? = null,
+    val onSubmitEdit: (String) -> Unit = {},
+    val onConfirmEdit: () -> Unit = {},
+    val onCancelEdit: () -> Unit = {},
     val timeline: TimelineActions = TimelineActions(),
 )
 
@@ -191,7 +209,15 @@ fun GameContent(
     initialWorld: Boolean = false,
     /** 截图测试：不弹出偏离提示抽屉（改为直接渲染 DecisionContent）。 */
     showDecisionSheet: Boolean = true,
+    edit: EditState? = null,
+    auditBusy: Boolean = false,
 ) {
+    val extras = WorldExtras(
+        onEdit = actions.onRequestEdit?.let { f -> { e: com.guyu2233.ibukirpg.app.data.EntityViewV1 -> f(e.id, e.name) } },
+        onNewCard = actions.onRequestEdit?.let { f -> { f("", "") } },
+        onRunAudit = actions.onRunAudit,
+        auditBusy = auditBusy,
+    )
     val snackbar = remember { SnackbarHostState() }
     val combat = s.scene.combat
     val decision = s.scene.decision
@@ -340,6 +366,7 @@ fun GameContent(
                             enabled = s.pending == null,
                             onCard = { dialogs.cardId = it },
                             onRollback = actions.onRollbackTurn,
+                            onAudit = actions.onAuditSuggestion,
                         )
                     }
                     s.pending?.let { p ->
@@ -371,7 +398,7 @@ fun GameContent(
         if (wide && showWorld) {
             WorldPanelPane(
                 world, busy = s.pending != null, onClose = { showWorld = false }, onTab = actions.onWorldTab, onAction = onQuick,
-                onRevert = actions.onRevert, modifier = Modifier.width(400.dp),
+                onRevert = actions.onRevert, modifier = Modifier.width(400.dp), extras = extras,
             )
         }
       }
@@ -381,7 +408,12 @@ fun GameContent(
         WorldPanelSheet(world, busy = s.pending != null, onDismiss = { showWorld = false }, onTab = actions.onWorldTab, onAction = { qa, label ->
             if (qa.kind != "manage") showWorld = false
             onQuick(qa, label)
-        }, onRevert = actions.onRevert)
+        }, onRevert = actions.onRevert, extras = extras)
+    }
+
+    edit?.let { e ->
+        if (e.preview == null) EditRequestDialog(e, onSubmit = actions.onSubmitEdit, onDismiss = actions.onCancelEdit)
+        else ChangePreviewSheet(e, onConfirm = actions.onConfirmEdit, onCancel = actions.onCancelEdit)
     }
 
     if (decision != null && showDecisionSheet && s.pending == null) {

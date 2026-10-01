@@ -30,7 +30,7 @@ var worldTypes = map[string]bool{
 	"create_checkpoint": true, "restore_checkpoint": true, "rename_checkpoint": true, "delete_checkpoint": true,
 	"export_save": true, "inspect_save": true, "import_save": true,
 	"get_usage": true, "wait": true, "get_world_panel": true, "get_entity": true,
-	"preview_change": true, "apply_preview": true, "run_audit": true, "resolve_audit_suggestion": true,
+	"preview_change": true, "request_edit": true, "apply_preview": true, "run_audit": true, "resolve_audit_suggestion": true,
 }
 
 // legacyInfo 报告数据目录里是否还有 0.1.x 的旧存档。
@@ -163,6 +163,15 @@ func worldRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV
 			return nil, err
 		}
 		return s.PreviewChanges(ctx, change.SourceUserRequest, p.Changes)
+	case "request_edit":
+		p, err := decode[struct {
+			Target      string `json:"target"`
+			Instruction string `json:"instruction"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		return s.RequestEdit(ctx, p.Target, p.Instruction)
 	case "apply_preview":
 		p, err := decode[struct {
 			Token string `json:"preview_token"`

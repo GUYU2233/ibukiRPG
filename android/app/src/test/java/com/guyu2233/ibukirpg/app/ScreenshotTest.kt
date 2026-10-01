@@ -16,6 +16,15 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.guyu2233.ibukirpg.app.data.AuditFindingV1
+import com.guyu2233.ibukirpg.app.data.AuditSuggestionV1
+import com.guyu2233.ibukirpg.app.data.AuditV1
+import com.guyu2233.ibukirpg.app.data.EntryV1
+import com.guyu2233.ibukirpg.app.data.ChangePreviewV1
+import com.guyu2233.ibukirpg.app.data.WorldChangeV1
+import com.guyu2233.ibukirpg.app.data.WorldLogV1
+import com.guyu2233.ibukirpg.app.ui.game.ChangePreviewContent
+import com.guyu2233.ibukirpg.app.ui.game.WorldExtras
 import com.guyu2233.ibukirpg.app.data.GenSettingsV1
 import com.guyu2233.ibukirpg.app.data.PromptSettingsV1
 import com.guyu2233.ibukirpg.app.data.ProviderV1
@@ -431,6 +440,52 @@ class ScreenshotTest {
                 Spacer(Modifier.height(16.dp))
                 SensitivityContent(PromptSettingsV1(majorDeath = SensitivityV1("high", "modal"), storyImpact = SensitivityV1("low", "notify"))) {}
             }
+        }
+    }
+
+    private val sampleAudit = AuditV1(
+        id = "audit-16-x",
+        findings = listOf(
+            AuditFindingV1(kind = "omission", turn = 16, text = "叙事里北码头三号仓被烧塌，但地点描述没变"),
+            AuditFindingV1(kind = "omission", turn = 16, text = "托克把那张传单塞给了你，背包里却没有"),
+        ),
+        fixed = WorldLogV1(changes = listOf(WorldChangeV1(id = "wc-17-1", summary = "北码头：描述 → 三号仓只剩焦黑的木桩", sourceLabel = "审查修复"))),
+        suggestions = listOf(AuditSuggestionV1(id = "audit-16-x-s1", summary = "你 · 背包 → 钟停之时传单 ×1", reason = "补记：托克塞给你的传单")),
+    )
+
+    @Test fun v02Audit() = shoot("45-v02-audit.png") {
+        val g = rpgGame("v02_after.json")
+        GameContent(
+            g.copy(entries = g.entries + EntryV1(id = 99_999, turn = 17, kind = "audit", audit = sampleAudit)),
+            "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false,
+        )
+    }
+
+    @Test fun v02EditPreview() = shoot("46-v02-edit-preview.png") {
+        val g = rpgGame("v02_after.json")
+        SheetOver({ GameContent(g, "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false) }) {
+            ChangePreviewContent(
+                ChangePreviewV1(
+                    previewToken = "pv-1",
+                    note = "给扳手加了电击效果，数值保持在学徒档位内。",
+                    changes = listOf(
+                        WorldChangeV1(targetName = "扳手", path = "fields.description", before = "一把沉甸甸的铁扳手。", after = "一把改装过的扳手，握柄里藏着一块小电池，敲上去会冒蓝色电火花。"),
+                        WorldChangeV1(targetName = "扳手", path = "tags", before = "工具", after = "工具、电击"),
+                    ),
+                    hiddenCount = 1,
+                ),
+                busy = false, error = null, onConfirm = {}, onCancel = {},
+            )
+        }
+    }
+
+    @Test fun v02WorldEdit() = shoot("47-v02-world-edit.png") {
+        val g = rpgGame("v02_after.json")
+        SheetOver({ GameContent(g, "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false) }, heightFraction = 0.9f) {
+            WorldPanelContent(
+                worldTabs, busy = false, onTab = {}, onAction = { _, _ -> }, onRevert = {}, initialTab = 0,
+                extras = WorldExtras(onEdit = {}, onNewCard = {}, onRunAudit = {}),
+            )
         }
     }
 }
