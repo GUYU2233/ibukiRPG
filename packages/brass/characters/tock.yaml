@@ -59,3 +59,9 @@ dialogue:
       text: 托克对着沙袋打了一套组合拳：“拳头要快，脚要稳。”
       memory: 聊了聊拳法
 tags: [npc]
+importance: 3
+canon: minor
+knowledge:
+  public: [name, appearance, location]
+  discoverable: [identity, personality, background, goals, faction]
+alias_unknown: 缺门牙的拳手

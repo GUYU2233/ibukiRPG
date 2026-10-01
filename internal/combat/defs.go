@@ -377,6 +377,8 @@ type Encounter struct {
 	// NoFlee 禁止逃跑；AllowMech 允许启动机甲形态。
 	NoFlee    bool `yaml:"no_flee"`
 	AllowMech bool `yaml:"allow_mech"`
+	// Ambush 玩家先手偷袭：首轮目标视为未察觉（自由战斗 DC −2）。
+	Ambush bool `yaml:"ambush"`
 	// Available 为空时该遭遇只能由剧情效果（combat_start）触发；否则在地点处显示“挑战”按钮。
 	Available   string               `yaml:"available"`
 	Label       string               `yaml:"label"`

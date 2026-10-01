@@ -1,0 +1,34 @@
+factions:
+  - id: brass:faction/guild
+    name: 锈钟镇工匠行会
+    icon: engineering
+    description: 掌管全镇锅炉、齿轮与甲胄的行会。每年只收一名学徒，门楣上刻着“先学会修，再学会打”。
+    leader: brass:character/orin
+    goals: [让钟楼重新运转, 选出今年的学徒]
+    members: [brass:character/orin, brass:character/tock]
+    territory: [brass:location/workshop, brass:location/arena]
+    importance: 4
+    canon: major
+    knowledge:
+      public: [name, description, leader, territory]
+      discoverable: [goals, members]
+      hidden:
+        - id: prototype
+          text: 钟楼傀儡是行会二十年前的原型机，图纸被锁在工坊的铁柜里——行会一直对外说它“来历不明”。
+          reveal_when: '"golem_down" in world.flags'
+          leak_markers: [原型机, 铁柜, 二十年前的图纸]
+  - id: brass:faction/scavengers
+    name: 下水道拾荒者
+    icon: person_alert
+    description: 住在管道里的人，靠捡拾零件换面包——也靠抢。
+    goals: [在钟楼停摆期间多捞些铜件, 别被行会赶出管道]
+    territory: [brass:location/sewer]
+    importance: 2
+    canon: minor
+    knowledge:
+      public: [name, territory]
+      discoverable: [description, goals]
+      hidden:
+        - id: valve_thief
+          text: 拾荒者头目拧松了傀儡锅炉的泄压阀，想趁乱拆走钟楼的铜齿轮。
+          leak_markers: [拧松, 泄压阀被人动过]

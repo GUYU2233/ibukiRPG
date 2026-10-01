@@ -591,7 +591,8 @@ func (w *work) execWorldChange(res *Result) error {
 	env := w.eng.ValidationEnv(w.s, source, w.cmd.Tier)
 	changes, rejects := validate.Changes(env, w.cmd.Changes)
 	rv := validate.Reveals(env, w.cmd.Reveals)
-	res.Rejects = append(rejects, rv.Rejects...)
+	rejects = append(rejects, rv.Rejects...)
+	res.Rejects = rejects
 	res.Hidden = rv.Hidden
 	if len(changes) == 0 && len(rv.Reveals) == 0 {
 		if len(res.Rejects) > 0 {

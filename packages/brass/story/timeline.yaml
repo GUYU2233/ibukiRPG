@@ -1,0 +1,74 @@
+# 世界事件时间线（第 5 节）：世界按自己的日程运转，玩家可以加入、阻止、错过，或干脆不管。
+events:
+  - id: brass:event/trial_day
+    title: 学徒试炼日
+    summary: 行会在铁环竞技场举行一年一度的学徒试炼。候选人要连赢两场。
+    importance: 3
+    canon: major
+    known: true
+    window: {start: "D1 08:00", end: "D2 20:00"}
+    location: brass:location/arena
+    participants: [brass:character/orin, brass:character/tock]
+    stages:
+      - {id: open, at: "D1 09:00", text: 竞技场的铁门打开，看台上坐满了来看热闹的镇民。}
+    hooks:
+      - {id: cheer, label: 在看台上给候选人喝彩, tags: [join], minutes: 30, vars: {crowd: 1}}
+    outcomes:
+      - id: closed
+        title: 试炼日结束
+        default: true
+        text: 行会收起了竞技场的旗子——今年的试炼日结束了。
+  - id: brass:event/market
+    title: 钟楼集市
+    summary: 每隔一天，商贩们在钟楼广场摆摊，交换齿轮、燃料和小道消息。
+    importance: 1
+    canon: flavor
+    window: {start: "D2 10:00", end: "D2 16:00"}
+    location: brass:location/plaza
+    rumor:
+      - {at: "D1 18:00", where: [brass:location/workshop, brass:location/plaza], text: 听说明天广场有集市，煤车会顺路带来一批燃料罐。}
+    hooks:
+      - {id: haggle, label: 和小贩讨价还价, tags: [join], minutes: 20, vars: {deals: 1}}
+    outcomes:
+      - id: good_trade
+        title: 集市热闹收场
+        when: 'event.vars.deals > 0'
+        text: 你和小贩谈成了一笔，集市散场时大家都挺高兴。
+        effects:
+          - effect: {type: item_add, values: {item: brass:item/fuel_can, qty: 1}}
+      - id: quiet
+        title: 集市照常散场
+        default: true
+        text: 集市照常散场，广场上只剩下推车压过的车辙。
+  - id: brass:event/scavenger_raid
+    title: 拾荒者夜袭钟楼
+    summary: 拾荒者趁钟楼停摆，计划在夜里撬开钟楼底座，拆走铜齿轮。
+    importance: 4
+    canon: major
+    pivotal: true
+    window: {start: "D3 22:00", end: "D4 02:00"}
+    location: brass:location/plaza
+    participants: [brass:character/rivet]
+    preconditions: '!("golem_down" in world.flags)'
+    rumor:
+      - {at: "D2 12:00", where: [brass:location/sewer, brass:location/plaza], text: 管道里有人在磨撬棍，说要“趁钟不响的时候拿点利息”。}
+      - {at: "D3 08:00", where: [brass:location/arena], text: 托克说昨晚看见几个黑影在钟楼底座附近转悠。}
+    stages:
+      - {id: pry, at: "D3 23:00", text: 钟楼底座的检修门被撬开了一条缝。}
+    hooks:
+      - {id: warn_guild, label: 去工坊报信, tags: [disrupt], minutes: 15, vars: {guard: 2}}
+      - {id: confront, label: 直接拦住拾荒者, tags: [disrupt, resolve], minutes: 10, vars: {guard: 3}}
+      - {id: help_raid, label: 帮拾荒者望风, tags: [join], minutes: 30, vars: {loot: 2}}
+    outcomes:
+      - id: foiled
+        title: 夜袭被挫败
+        when: 'event.vars.guard >= 2'
+        text: 行会的人提着灯冲进广场，拾荒者丢下撬棍四散而逃。
+        effects:
+          - effect: {type: relation, values: {from: brass:character/orin, to: player, trust: 5, reason: 及时报信挫败了夜袭}}
+      - id: looted
+        title: 钟楼的铜齿轮被拆走
+        default: true
+        text: 天亮时，人们发现钟楼底座空了一大块——两只铜齿轮不见了。
+        effects:
+          - effect: {type: flag_set, values: {flag: gears_stolen}}

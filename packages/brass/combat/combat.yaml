@@ -16,6 +16,7 @@ rules:
 
 statuses:
   - id: brass:status/bleed
+    tags: [wound]
     name: 流血
     icon: water_drop
     turns: 3
@@ -23,6 +24,7 @@ statuses:
     debuff: true
     description: 伤口不断渗血，每回合损失 4 点生命。
   - id: brass:status/blind
+    tags: [blinded]
     name: 致盲
     icon: visibility_off
     turns: 2
@@ -30,6 +32,7 @@ statuses:
     debuff: true
     description: 视线被烟尘遮住，命中 -30。
   - id: brass:status/stagger
+    tags: [stagger, off_balance]
     name: 踉跄
     icon: sync_problem
     turns: 1
@@ -37,18 +40,51 @@ statuses:
     debuff: true
     description: 被重击打得站立不稳，跳过下一次行动。
   - id: brass:status/guarded
+    tags: [guarded]
     name: 架势
     icon: shield
     turns: 2
     mods: {def: 6}
     description: 摆好了架势，防御 +6。
   - id: brass:status/rust
+    tags: [rusted]
     name: 锈蚀
     icon: blur_on
     turns: 3
     mods: {def: -4}
     debuff: true
     description: 关节被锈水侵蚀，防御 -4。
+  - id: brass:status/prone
+    name: 倒地
+    icon: airline_seat_flat
+    turns: 1
+    stun: true
+    debuff: true
+    tags: [prone]
+    description: 摔倒在地，跳过下一次行动；被攻击时更容易被击中要害。
+  - id: brass:status/disarmed
+    name: 缴械
+    icon: back_hand
+    turns: 2
+    mods: {atk: -6}
+    debuff: true
+    tags: [disarmed]
+    description: 武器脱手，攻击 -6。
+
+# 自由战斗（第 9 节）：战技与情境修正标签。AI 只能选标签，数值由引擎决定。
+maneuvers:
+  - {id: shove, name: 推撞, keywords: [推, 撞开, 顶开], size_sensitive: true, dc: 1, status: brass:status/stagger, turns: 1, power: 40}
+  - {id: trip, name: 绊倒, keywords: [绊, 扫腿, 勾脚], size_sensitive: true, dc: 1, status: brass:status/prone, turns: 1}
+  - {id: disarm, name: 缴械, keywords: [缴械, 打掉武器, 夺下], dc: 2, status: brass:status/disarmed, turns: 2}
+  - {id: blind, name: 迷眼, keywords: [撒沙, 泼油, 蒸汽喷脸, 迷眼], dc: 1, status: brass:status/blind, turns: 2}
+tags:
+  - {id: flank, label: 绕到侧后, value: 1}
+  - {id: cover, label: 借助掩体, value: 1, requires: "fact:管道"}
+  - {id: high_ground, label: 居高临下, value: 1, requires: "fact:看台"}
+  - {id: prone_target, label: 目标倒地, value: 2, requires: "target_status:prone|stagger"}
+  - {id: cooling, label: 趁甲胄泄压冷却, value: 3, requires: "target_status:cooling", breach: true}
+  - {id: sneak, label: 趁其不备, value: 2, requires: unaware}
+  - {id: steam_vent, label: 利用喷出的蒸汽, value: 1, requires: "fact:蒸汽"}
 
 skills:
   - id: brass:skill/wrench_smash
@@ -183,6 +219,9 @@ enemies:
     gold: 3
     drops: [{item: brass:item/strong_tea, chance: 30}]
     description: 上满发条就到处乱咬的机械老鼠，据说最早是用来抓真老鼠的。
+    size: small
+    parts:
+      - {id: key, name: 发条钥匙, mult: 160, dc: 2, weak: true, hint: 背上那把发条钥匙转得飞快。}
     lore: 竞技场的饲养员每天早上给它们上一次弦，晚上再一只只捡回来。
   - id: brass:enemy/sentry
     name: 锈蚀哨兵
@@ -200,6 +239,10 @@ enemies:
     gold: 6
     drops: [{item: brass:item/fuel_can, chance: 25}]
     description: 被遗弃在下水道的旧式巡逻机器人，关节里淌着锈水。
+    size: human
+    parts:
+      - {id: eye, name: 红色眼灯, mult: 150, dc: 2, weak: true, hint: 红眼一闪一闪，像是唯一没生锈的地方。}
+      - {id: joint, name: 膝关节, mult: 110, dc: 1, break: 20, status: brass:status/prone}
   - id: brass:enemy/scavenger
     name: 下水道拾荒者
     icon: person_alert
@@ -256,6 +299,12 @@ enemies:
     gold: 40
     drops: [{item: brass:item/relief_valve, chance: 100}]
     description: 本该推动钟楼齿轮的巨型傀儡，锅炉失控后跑进了下水道，把传动轴卡死了。
+    size: huge
+    importance: 4
+    parts:
+      - {id: valve, name: 锅炉泄压阀, mult: 250, dc: 3, weak: true, break: 40, status: brass:status/stagger, hint: 胸口有一块阀门在嘶嘶漏气——好像被人拧松过。}
+      - {id: leg, name: 支撑腿, mult: 100, dc: 1, break: 60, status: brass:status/prone}
+      - {id: shell, name: 锅炉外壳, mult: 60}
     lore: 钢铁外壳厚得离谱——凡人的武器几乎敲不动它。行会的老人说，只有甲胄能和甲胄对话。
 
 mechs:

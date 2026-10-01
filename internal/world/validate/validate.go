@@ -348,7 +348,7 @@ func (e *Env) checkCreate(c *change.Change) error {
 	}
 	var d overlay.EntityDoc
 	if err := json.Unmarshal(c.Value, &d); err != nil {
-		return fmt.Errorf("新实体文档格式错误：%v", err)
+		return fmt.Errorf("新实体文档格式错误：%w", err)
 	}
 	if d.Fields == nil {
 		// 允许直接给字段 map
@@ -366,7 +366,7 @@ func (e *Env) checkCreate(c *change.Change) error {
 	}
 	for k, v := range d.Fields {
 		if err := textOK(v); err != nil {
-			return fmt.Errorf("字段 %s：%v", k, err)
+			return fmt.Errorf("字段 %s：%w", k, err)
 		}
 	}
 	if len(d.Hidden) > 0 && !slices.Contains(directorSources, e.Source) {
@@ -631,7 +631,7 @@ func (e *Env) checkLink(c *change.Change) error {
 func (e *Env) checkTimelineAdd(c *change.Change) error {
 	var ev timeline.Event
 	if err := json.Unmarshal(c.Value, &ev); err != nil {
-		return fmt.Errorf("时间线事件格式错误：%v", err)
+		return fmt.Errorf("时间线事件格式错误：%w", err)
 	}
 	ev.ID = c.Target
 	if strings.TrimSpace(ev.Title) == "" {
@@ -789,12 +789,12 @@ func Summary(e *Env, c change.Change) string {
 		if change.IsPlayerPath(c.Target, c.Path) {
 			var d int
 			_ = json.Unmarshal(c.Value, &d)
-			switch {
-			case c.Path == "gold":
+			switch c.Path {
+			case "gold":
 				return fmt.Sprintf("金钱 %+d", d)
-			case c.Path == "xp":
+			case "xp":
 				return fmt.Sprintf("经验 %+d", d)
-			case c.Path == "hp":
+			case "hp":
 				return fmt.Sprintf("生命 %+d", d)
 			}
 			return fmt.Sprintf("%s ×%+d", name(strings.TrimPrefix(c.Path, "inventory.")), d)

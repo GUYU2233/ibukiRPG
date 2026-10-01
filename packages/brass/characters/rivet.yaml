@@ -59,3 +59,13 @@ dialogue:
       text: 小铆钉掏出一把螺丝数了数：“十七、十八……又少了一个！”
       memory: 数着口袋里的螺丝
 tags: [npc]
+importance: 3
+canon: minor
+knowledge:
+  public: [name, appearance, location]
+  discoverable: [identity, personality, background, goals, faction]
+  hidden:
+    - id: scav_kin
+      text: 小铆钉的哥哥就是拾荒者的头目，她偷偷给管道里送过面包。
+      leak_markers: [哥哥是头目, 给管道送面包]
+alias_unknown: 灰扑扑的小孩

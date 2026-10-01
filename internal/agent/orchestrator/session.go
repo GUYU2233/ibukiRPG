@@ -255,6 +255,12 @@ func (s *Session) NewGame(ctx context.Context, saveName, playerName string, seed
 // NewGameIn 用指定故事包新建存档并设为当前游戏（存档绑定故事包 id + 版本，第 44 节）。
 // packID 为空时使用默认故事包；seed 为 0 时随机。
 func (s *Session) NewGameIn(ctx context.Context, packID, saveName, playerName string, seed uint64) (string, error) {
+	return s.NewGameWith(ctx, packID, saveName, seed, engine.Creation{Name: playerName})
+}
+
+// NewGameWith 按角色创建结果（预设主角 / 背景 / 自建）新建存档（第 12 节）。
+func (s *Session) NewGameWith(ctx context.Context, packID, saveName string, seed uint64, cr engine.Creation) (string, error) {
+	playerName := cr.Name
 	s.turnMu.Lock()
 	defer s.turnMu.Unlock()
 	if packID == "" {
@@ -272,6 +278,10 @@ func (s *Session) NewGameIn(ctx context.Context, packID, saveName, playerName st
 		playerName = string(r[:12])
 	}
 	st := state.New(g.pkg, seed, playerName)
+	cr.Name = playerName
+	if err := engine.Setup(g.pkg, st, cr); err != nil {
+		return "", err
+	}
 	saveName = strings.TrimSpace(saveName)
 	if saveName == "" {
 		saveName = st.Player.Name + "的旅程"

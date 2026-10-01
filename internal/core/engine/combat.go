@@ -431,6 +431,8 @@ func (w *work) playerAct(u *state.Unit) error {
 	c := w.combat()
 	g, key, counter := w.actStream(u.ID)
 	switch w.cmd.Action {
+	case "freeform":
+		return w.freeformAct(u)
 	case "attack":
 		t, err := w.pickTarget(u, combat.TargetEnemy, w.cmd.Target)
 		if err != nil {

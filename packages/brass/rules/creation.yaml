@@ -1,0 +1,33 @@
+# 角色创建（第 12 节）：选择预设主角，或自建角色（背景 + 属性点）。
+attribute_points: 6
+attr_min: 8
+attr_max: 5
+max_power: 90
+rules:
+  - 自建角色属于这座小镇：可以是学徒、拾荒者、外乡人，但不能是传奇甲胄驾驶员。
+  - 不能自带甲胄、魔法或超出“学徒 / 拳手”档位的能力。
+forbidden: [魔法, 神, 不死, 无敌, 龙, 天之炽]
+backgrounds:
+  - id: apprentice
+    name: 行会学徒候选人
+    description: 在工坊长大，扳手比筷子用得熟。开局认识欧琳。
+    attributes: {intelligence: 1}
+    items: {brass:item/bandage: 2, brass:item/fuel_can: 1}
+    gold: 10
+    known: [brass:character/orin, brass:faction/guild]
+  - id: scavenger
+    name: 管道里长大的孩子
+    description: 熟悉下水道的每一个岔口，手脚麻利，和行会关系微妙。
+    attributes: {agility: 1}
+    items: {brass:item/smoke_bomb: 1, brass:item/bandage: 1}
+    gold: 4
+    location: brass:location/plaza
+    known: [brass:character/rivet, brass:faction/scavengers, brass:location/sewer]
+  - id: outsider
+    name: 外乡来的拳手
+    description: 坐运煤车来到锈钟镇，想靠拳头在竞技场挣一口饭。
+    attributes: {strength: 1}
+    items: {brass:item/strong_tea: 2}
+    gold: 20
+    location: brass:location/arena
+    known: [brass:character/tock]

@@ -74,3 +74,15 @@ dialogue:
   callback:
     - 欧琳哼了一声：“我都听说了——{what}。别以为我不知道。”
 tags: [npc]
+importance: 4
+canon: major
+knowledge:
+  public: [name, identity, appearance, location]
+  discoverable: [personality, background, faction, goals]
+  hidden:
+    - id: blueprints
+      text: 欧琳知道钟楼傀儡是行会的旧原型机，图纸就锁在她工坊的铁柜里。她怕说出来，镇民会把账算到行会头上。
+      reveal_when: '"golem_down" in world.flags'
+      leak_markers: [铁柜里的图纸, 行会造的傀儡]
+  known_by: [brass:character/orin]
+alias_unknown: 戴护目镜的女人

@@ -1,0 +1,16 @@
+# 平衡与边界（架构 V0.3 第 9 / 10 节）。randomness 由故事包决定，玩家不能修改。
+randomness: 45
+size_classes: [tiny, small, human, large, huge, colossal]
+power_tiers:
+  - {id: commoner, name: 普通镇民, power: [0, 40]}
+  - {id: trained, name: 学徒 / 拳手, power: [40, 90]}
+  - {id: elite, name: 老练工匠, power: [90, 160]}
+  - {id: legend, name: 甲胄传奇, power: [160, 300]}
+player_start_tier: trained
+ability_limits:
+  - 这个世界没有魔法：一切力量来自蒸汽、齿轮与肌肉。
+  - 凡人的武器几乎敲不动甲胄的外壳，除非找到弱点或使用破甲工具。
+absurd_words: [火球, 咒语, 魔法, 法术, 召唤, 念力, 传送]
+caps: {gold_pct: 50, gold_flat: 40, xp_pct: 50, item_qty: 3}
+mortal_vs_mech: 20
+audit_every: 12

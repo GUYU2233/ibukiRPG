@@ -1,5 +1,7 @@
 id: brass:character/player
 type: player
+playable: true
+size: human
 identity:
   name: 阿砾
   role: 行会学徒候选人
