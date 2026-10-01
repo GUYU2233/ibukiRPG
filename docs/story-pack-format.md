@@ -1,15 +1,25 @@
-# 故事包格式（v0.1.2-rc2）
+# 故事包格式 3（ibukiRPG v0.2.0-alpha1）
 
 ibukiRPG 的每个故事（剧本）都是一个独立的**故事包**：一个目录，根目录放 `manifest.yaml`，其余是 YAML 内容文件。
 引擎只负责规则与判定，故事包提供世界、人物、台词、事件与界面上的实时信息（HUD）。
+
+**0.2.0 起只接受 `format: 3`。** format 3 把故事包从“剧本”改成了“开放世界设定库”：
+
+- 主线贴合度（mainline）与偏离弹窗被**世界事件时间线**（第 13 节）取代：世界按自己的日程运转，玩家可以加入、阻止、错过或不管。
+- 每个实体都有**知识层**（第 14 节）：哪些字段见到就知道、哪些要剧情揭示、哪些是只有 AI 知道的隐藏真相。玩家开局对大多数内容都是“未知”。
+- AI 可以在游戏中**修改世界**（地点描述、人物去留、势力控制……），所有修改都经过校验、记入世界变更日志、可撤销；修改的约束来自实体信封（`importance` / `canon` / `locked`，第 14 节）。
+- **平衡与随机性**（`rules/balance.yaml`，第 15 节）由故事包决定，玩家不能修改；**角色创建**规则见第 16 节。
+
+> 旧格式（没有 `format` 或 `format: 2`，即 v0.1.x 的故事包）导入时会被拒绝，并提示“这个故事包是旧格式（v0.1.x），ibukiRPG 0.2.0 不再支持”。**没有迁移工具**：请按本文档把内容改写为 format 3。
+> v0.1.x 的旧存档同样无法读取（首页会提示，可一键删除）。
 
 内置故事包：
 
 | id | 名称 | 说明 |
 |----|------|------|
-| `demo` | 边境酒馆 ·《失窃的钱袋》 | 完整示例：4 位 NPC、台词池、HUD、故事变量（`packages/demo`） |
-| `fog_lighthouse` | 雾港灯塔 ·《守灯人的信》 | 最小示例：2 个地点、2 位 NPC，没有声明 HUD（`packages/lighthouse`） |
-| `brass_trial` | 锈钟镇 ·《黄铜试炼》 | 数值 RPG 示例：战斗、机甲、成长、图鉴、关系网、角色卡、主线贴合度与沙盒、提示词补丁（`packages/brass`） |
+| `brass_trial` | 锈钟镇 ·《黄铜试炼》 | **format 3 完整示例（原创）**：世界事件时间线、势力、知识层与隐藏真相、AI 世界变更、自由战斗（部位 / 体型 / 情境标签）、机甲、角色创建、平衡设置、图鉴、关系网（`packages/brass`） |
+| `demo` | 边境酒馆 ·《失窃的钱袋》 | 台词池、HUD、故事变量的示例，已升级到 format 3（`packages/demo`） |
+| `fog_lighthouse` | 雾港灯塔 ·《守灯人的信》 | 最小示例：2 个地点、2 位 NPC，format 3（`packages/lighthouse`） |
 
 > 内置故事包通过 `go:embed` 编进引擎库，随 APK 一起分发（不在 Android `assets/` 里单独放一份，避免两份内容不同步）。
 > 玩家导入的故事包解压在 App 私有目录 `files/packs/<id>/`（CLI 为 `<存档目录>/packs/<id>/`）。
@@ -27,11 +37,14 @@ my_pack/
 ├── items/items.yaml       # 物品
 ├── actions/*.yaml         # 可执行动作（看、聊天、调查、说服……）
 ├── story/*.yaml           # 事件（Story Node）
-├── ui/hud.yaml            # 可选：HUD 与主线目标
+├── ui/hud.yaml            # 可选：HUD 与当前目标
 ├── combat/*.yaml          # 可选：数值 RPG（战斗规则、状态、技能、敌人、机甲、遭遇战）
 ├── codex/*.yaml           # 可选：额外图鉴条目
 ├── rules/relations.yaml   # 可选：关系维度与 NPC 之间的初始关系
-├── story/mainline.yaml    # 可选：主线锚点、偏离规则、沙盒模板
+├── world/factions.yaml    # 可选（format 3）：势力
+├── story/timeline.yaml    # 可选（format 3）：世界事件时间线
+├── rules/balance.yaml     # 可选（format 3）：随机性、强度档位、能力边界、单回合上限
+├── rules/creation.yaml    # 可选（format 3）：角色创建（背景、属性点、强度上限）
 ├── prompts/*.yaml         # 可选：AI 提示词段落补丁
 └── assets/                # 可选：立绘图片（portraits / mechs）
 ```
@@ -41,12 +54,13 @@ my_pack/
 ## 2. manifest.yaml
 
 ```yaml
+format: 3                   # 必需：0.2.0 只接受 3
 id: my_pack                 # 必需：全局唯一，小写字母开头，只能用 a-z 0-9 _ 和 .
 namespace: mine             # 必需：内容 ID 前缀（mine:character/xxx），不能与已安装的包重复
 name: "我的故事"            # 必需：显示名称
 version: 0.1.0              # 必需：语义化版本
 type: story                 # story（或 world）才能开新游戏
-engine: ">=0.1.2"           # 最低引擎版本（不满足时无法导入，并提示“请先更新 App”）
+engine: ">=0.2.0"           # 最低引擎版本（不满足时无法导入，并提示“请先更新 App”）
 save_compat: ">=0.1.0"      # 可选：本版本能继续读取哪些版本的存档；留空 = 只读同版本存档
 tagline: 一句话简介          # 故事包卡片上的副标题
 description: 较长的介绍……   # 中文建议写成一行：YAML 的 > 折行会在行与行之间插入空格
@@ -62,6 +76,9 @@ start:
   location: mine:location/dock   # 开局地点
   day: 1
   time: "06:30"
+  known:                         # 开局就知道的实体（整份）或字段（实体ID#字段）；其余一律“未知”
+    - mine:location/dock
+    - "mine:character/su#name"
   intro: |                       # 开场白
     ……
   variables:                     # 故事变量初始值（整数），CEL 中为 world.vars.<名字>
@@ -77,8 +94,11 @@ content:
   combat: [combat/combat.yaml]     # 以下为数值 RPG 扩展（v0.1.1 起），都可省略
   codex: [codex/codex.yaml]
   relations: [rules/relations.yaml]
-  mainline: [story/mainline.yaml]
   prompts: [prompts/retrieval.yaml]
+  factions: [world/factions.yaml]  # 以下为 format 3 新增，都可省略
+  timeline: [story/timeline.yaml]
+  balance: [rules/balance.yaml]
+  creation: [rules/creation.yaml]
 ```
 
 版本约束支持 `>=1.2.0`、`>1.0`、`<2`、`=1.0.0`、`^1.2`、`~1.2`，多个条件用逗号或空格分隔（同时满足）。
@@ -174,7 +194,7 @@ effects:
 
 ## 6. HUD（聊天界面的实时信息）
 
-`content.hud` 里的文件包含 `hud:`（字段列表）与 `objectives:`（主线目标）。每回合引擎计算一次，通过 `get_scene` / `get_hud` 返回，App 在顶栏下方显示：紧凑模式是一行信息条，点开后是完整的状态卡片。
+`content.hud` 里的文件包含 `hud:`（字段列表）与 `objectives:`（当前目标）。每回合引擎计算一次，通过 `get_scene` / `get_hud` 返回，App 在顶栏下方显示：紧凑模式是一行信息条，点开后是完整的状态卡片。
 
 ```yaml
 hud:
@@ -208,7 +228,7 @@ objectives:                             # 从上到下取第一个 when 成立�
 | `gold` | 铜币 |
 | `turn` | 回合数 |
 | `story` | 进行中的事件（没有时隐藏） |
-| `objective` | 当前主线目标（来自 `objectives`） |
+| `objective` | 当前目标（来自 `objectives`） |
 | `conditions` | 玩家状态（微醺、吃饱……） |
 | `var:<名字>` | 故事变量 |
 | `flag:<名字>` | 世界标记（是 / 否） |
@@ -280,7 +300,7 @@ encounters:
     repeatable: false                # 可重复挑战（陪练）
     no_flee: false                   # 禁止逃跑
     allow_mech: true                 # 允许启动机甲
-    victory:                         # 胜利效果（见第 14 节）
+    victory:                         # 胜利效果（见第 17 节）
       - effect: {type: flag_set, values: {flag: bout1_won}}
     defeat:                          # 战败不会 Game Over：分支 rescued / injured
       branch: rescued
@@ -388,43 +408,111 @@ portrait: assets/portraits/tock.png  # 见第 12 节
 角色与机甲可以写 `portrait: assets/...`：包内相对路径，必须位于 `assets/` 下，png / jpg / jpeg / webp，单个文件 ≤ 2 MB；文件不存在或超限时导入报错。没有立绘时界面显示图标 / 首字。
 记得把图片文件放进 zip（`packzip` 会自动带上 `assets/`）。使用他人作品的图片时请自行确认授权，公开分发的故事包不要包含未授权图片。
 
-## 13. 主线贴合度与沙盒（mainline）
+## 13. 世界事件时间线（timeline，format 3）
 
-`content.mainline` 把故事拆成若干**锚点**（章节）。玩家可以自由行动，但引擎会计算“偏离度”：远离锚点地点、主线长时间停滞、命中 `deviant` 规则都会增加偏离，推进主线会降低偏离。
+`content.timeline` 列出世界自己的日程。事件不需要玩家参与也会按时发生；玩家可以通过切入点（hooks）**加入**或**阻止**，也可以错过。AI 叙事只会提到玩家**知道**的事件（公开日程、听到的传闻、亲眼所见）。
 
 ```yaml
-thresholds: {mild: 35, heavy: 70}    # 轻微 / 严重偏离阈值（玩家可在设置里调整敏感度）
-style: 一句话文风说明（AI 叙事与沙盒生成使用）
-anchors:
-  - id: trial
-    title: 第一章 · 黄铜试炼
-    objective: 在竞技场赢下两场试炼。
-    story: my:story/trial            # 该事件 resolved 即完成本章；或者用 complete: CEL
-    locations: [my:location/arena, my:location/workshop]   # 主线舞台
-    budget_turns: 14                 # 超过这么多回合没有进展开始计“停滞”
-    nudges: [竞技场方向传来一阵欢呼……]   # 轻微偏离时的环境提醒
-    nudge_effects: [...]             # 提醒时附带的效果（例如让 NPC 走过来找你）
-    return_text: 你深吸一口气，朝竞技场走去。
-    return_effects: [...]
-deviant:
-  - {tag: violence, weight: 15, reason: 在镇上动粗}   # tag：自由行动标签（violence / stealth …）或 fled / defeat
-  - {action: my:action/steal, weight: 10, reason: 偷东西}
-sandbox:
-  templates:                         # 离线模式下沙盒委托的模板
-    - goal: defeat                   # defeat / reach / talk / obtain
-      title: 清理{location}的{enemy}
-      objective: 有人抱怨{location}出没着{enemy}。
-      locations: [my:location/sewer]
-      enemies: [my:enemy/rat]
-      reward_xp: 70
-max_reward_xp: 200                   # 沙盒奖励上限
+events:
+  - id: mine:event/raid
+    title: 拾荒者夜袭钟楼
+    summary: 拾荒者趁钟楼停摆，计划在夜里撬开钟楼底座。
+    importance: 4                  # 1–5；≥ 4 的事件结果会进入影响评估
+    canon: major                   # flavor / minor / major / core
+    pivotal: true                  # 关键事件：错过或改变会显著影响世界（界面标出）
+    known: false                   # true = 开局就知道（公开日程）
+    window: {start: "D3 22:00", end: "D4 02:00"}   # 发生窗口（D<天> HH:MM）；单点事件用 at
+    location: mine:location/plaza
+    participants: [mine:character/rivet]
+    preconditions: '!("golem_down" in world.flags)'  # CEL：不满足时事件取消
+    rumor:                         # 传闻：在指定时间、地点被玩家听到（false: true 为假传闻）
+      - {at: "D2 12:00", where: [mine:location/sewer], text: 管道里有人在磨撬棍……}
+    stages:                        # 进行中的阶段描写
+      - {id: pry, at: "D3 23:00", text: 钟楼底座的检修门被撬开了一条缝。}
+    hooks:                         # 玩家可以做的切入点（显示为快捷行动）
+      - {id: warn, label: 去工坊报信, tags: [disrupt], minutes: 15, vars: {guard: 2}}
+      - {id: help, label: 帮拾荒者望风, tags: [join], minutes: 30, vars: {loot: 2}}
+    outcomes:                      # 按顺序匹配 when（CEL，可用 event.vars.*）；都不满足时取 default
+      - id: foiled
+        title: 夜袭被挫败
+        when: 'event.vars.guard >= 2'
+        text: 行会的人提着灯冲进广场，拾荒者四散而逃。
+        effects: [...]             # 与第 17 节相同的效果
+      - id: looted
+        title: 铜齿轮被拆走
+        default: true
+        text: 天亮时，钟楼底座空了一大块。
+    resolve: rules                 # rules（按 outcomes 判定）/ ai（联网时由世界模拟决定，离线退回 rules）
 ```
 
-严重偏离时界面弹出选择：**回到主线**（偏离度降到轻微阈值以下，并执行 `return_effects`）或**进入自由推演 / 沙盒**。沙盒模式下云端 AI 的规划 Agent 会基于故事包已有的人物、地点、敌人生成新的委托节点（离线模式用上面的模板），并受静态设定（Static Canon）约束。
+时间推进：每个行动都消耗游戏时间；玩家也可以“等待”（10 分钟 / 1 小时 / 到天亮 / 到某个已知事件开始）。界面状态栏显示即将发生的已知事件与倒计时。
 
-## 14. 效果（effects）一览
+## 14. 实体信封与知识层（format 3）
 
-事件步骤、结局、台词、遭遇战胜负、锚点提醒都使用同一套效果：`- effect: {type: <类型>, target: <可选>, values: {...}}`。
+所有实体（地点、人物、物品、势力、事件……）都可以带同一组信封字段：
+
+```yaml
+importance: 3          # 1–5：重要度。≥ 3 的人物死亡会触发“重要角色死亡”提示；AI 不能新建 ≥ 4 的实体
+canon: major           # flavor / minor / major / core：AI 修改 major / core 设定会计入“偏离原设定”
+locked: [fields.name]  # AI 永远不能修改的路径
+fields: {controller: mine:faction/council}   # 额外字段（世界面板与 AI 检索可见）
+alias_unknown: 戴面具的人   # 玩家还不知道名字时显示的称呼
+knowledge:
+  public: [name, description]        # 见到就知道（缺省：人物 = 外貌；地点 = 名称 / 描述 / 出口；物品 = 名称 / 描述）
+  discoverable: [goals, members]     # 需要剧情揭示（对话、调查、亲眼所见）后才解锁
+  known_by: [mine:character/su]      # 这些人物知道全部可揭示字段（对话渠道）
+  hidden:                            # 隐藏真相：只有 AI 能看到
+    - id: prototype
+      text: 钟楼傀儡是行会二十年前的原型机。
+      reveal_when: '"golem_down" in world.flags'   # 可选：满足后才允许揭示
+      leak_markers: [原型机, 二十年前的图纸]        # 叙事出现这些词即视为泄露（守卫检查）
+```
+
+- 知识按**字段**解锁，每个字段有三种状态：未知 / 传闻 / 已知。世界面板与 AI 叙事只使用玩家已知的内容。
+- 没有 `reveal_when` 的隐藏真相可以由 AI 在合适时揭示，但揭示会计入影响评估；影响严重时会弹出“对故事影响很大”的提示。有 `reveal_when` 的真相在条件满足前不能揭示。
+- 人物的 `secrets`（旧字段）会自动转换为 `hidden`。
+
+## 15. 平衡与随机性（rules/balance.yaml，format 3）
+
+```yaml
+randomness: 45          # 0–100：自由战斗与检定的随机性（故事包决定，玩家不能修改）
+size_classes: [tiny, small, human, large, huge, colossal]
+power_tiers:            # 强度档位（角色创建、卡片生成、审查都用它判断“太强 / 太弱”）
+  - {id: trained, name: 学徒 / 拳手, power: [40, 90]}
+player_start_tier: trained
+ability_limits:         # 世界的能力边界（写进 AI 提示词；违反的自由行动会被降级）
+  - 这个世界没有魔法。
+absurd_words: [火球, 咒语, 魔法]   # 自由战斗中出现即判为“荒谬”并降级为可行的动作
+caps: {gold_pct: 50, gold_flat: 40, xp_pct: 50, item_qty: 3}   # AI 单回合给玩家资源的上限
+mortal_vs_mech: 20      # 凡人武器对机甲的伤害倍率（%）
+audit_every: 12         # 一致性自审的默认间隔（回合；玩家可在生成设置里改或关闭）
+```
+
+## 16. 角色创建（rules/creation.yaml，format 3）
+
+```yaml
+attribute_points: 6     # 自建角色可分配的属性点
+attr_min: 8
+attr_max: 15
+max_power: 115          # 引擎强度分上限（超过不能开局）
+rules: [自建角色属于这座小镇……]     # 给审查 Agent 的设定约束
+forbidden: [魔法, 不死]             # 背景 / 外貌 / 性格里出现即判为不符合设定
+backgrounds:
+  - id: apprentice
+    name: 行会学徒候选人
+    description: 在工坊长大。
+    attributes: {intelligence: 1}
+    items: {mine:item/bandage: 2}
+    gold: 10
+    location: mine:location/workshop   # 可选：开局地点
+    known: [mine:character/orin]       # 开局就知道的实体
+```
+
+开局时玩家可以选择预设主角（`characters/player.yaml`），或自建角色：引擎先做规则检查（点数、上限、强度分、禁用词），联网时再由审查 Agent 检查设定契合度、强度与冲突，并给出建议与推荐卡。
+
+## 17. 效果（effects）一览
+
+事件步骤、结局、台词、遭遇战胜负、时间线事件结局都使用同一套效果：`- effect: {type: <类型>, target: <可选>, values: {...}}`。
 
 | type | values | 说明 |
 |------|--------|------|
@@ -446,12 +534,11 @@ max_reward_xp: 200                   # 沙盒奖励上限
 | `learn_skill` | `skill` | 习得技能 |
 | `codex_unlock` | `id` | 解锁图鉴条目 |
 | `card_create` / `card_archive` / `card_restore` / `npc_death` | `npc` `reason` | 角色卡 |
-| `deviation` | `delta` `reason` | 直接调整主线偏离度 |
 | `mech_status` / `mech_reveal` / `mech_install` / `mech_remove` / `mech_pilot` | 见第 8 节 | 机甲 |
 
 数值字段可以写整数，也可以写 CEL 表达式字符串。
 
-## 15. 数值 RPG 的 HUD 绑定与 CEL 变量
+## 18. 数值 RPG 的 HUD 绑定与 CEL 变量
 
 HUD 额外的 `bind`：
 
@@ -461,8 +548,6 @@ HUD 额外的 `bind`：
 | `xp` | 经验 `当前/升级所需` |
 | `hp` / `sp` | 生命 / 体力（战斗中取战斗单位的实时值） |
 | `mercury` | 机甲能源（配合 `max:` 显示进度条） |
-| `deviation` | 主线贴合度百分比（沙盒模式显示“—”） |
-| `mode` | 进程：`主线 · 第一章 …` / `沙盒` |
 
 CEL 额外变量：
 
@@ -471,12 +556,11 @@ CEL 额外变量：
 | `actor.level` `actor.xp` `actor.hp` `actor.max_hp` `actor.mercury` `actor.in_combat` | 成长与生命 |
 | `actor.equipment` / `actor.combat_skills` | 装备（槽位 → 物品 ID）/ 已掌握的战斗技能 |
 | `world.combats.<遭遇短名>.result` / `.wins` / `.losses` | 遭遇战记录 |
-| `world.mode` / `world.deviation` / `world.anchor` | 主线模式（main / sandbox …）/ 偏离度 / 当前锚点 ID |
 | `world.cards` | 角色卡状态 |
 | `npcs["<id>"].relation` / `.card` / `.alive` / `.interaction` | 关系网、角色卡状态、是否在场、互动分 |
 | 敌人 AI：`self.hp` `self.hp_pct` `self.sp` `self.heat_pct` `self.mech` `self.statuses`，`battle.round` | 仅在 `ai.when` 中可用 |
 
-## 16. 提示词段落补丁（prompts）
+## 19. 提示词段落补丁（prompts）
 
 `content.prompts` 可以给 AI Agent 的提示词段落追加或替换文字，用于写本故事特有的检索规则与文风。当前可补丁的段落：
 
@@ -498,7 +582,7 @@ sections:
 引擎默认的检索规则已经包含：不编造故事包里查得到的事实、不与静态设定冲突、遵守可见范围（NPC 只能查到自己知道的，叙事者只能查到玩家可见的信息与允许的伏笔）。`replace` 会去掉这些默认规则，除非确有必要请用 `append`。
 检索工具只在需要时启用（云端模型支持 function calling 时走工具调用循环；本地模型或不支持工具调用的服务改为按关键词预取，放进 `[RETRIEVED]` 段落），每回合有调用次数与结果长度上限。
 
-## 17. 打包与导入
+## 20. 打包与导入
 
 1. 确认目录根部就是 `manifest.yaml`（也可以把整个目录作为 zip 里唯一的顶层文件夹）；
 2. 打包成 zip：
@@ -519,18 +603,20 @@ sections:
 | 检查 | 失败提示示例 |
 |------|-------------|
 | zip 安全：≤ 2000 个文件、解压后总计 ≤ 64 MB、单个文件 ≤ 16 MB，不允许 `..` 路径与符号链接 | “压缩包里有不安全的路径：../evil.txt” |
-| 找到 `manifest.yaml` 并解析；id / namespace / 版本格式；必须有 name | “压缩包里找不到 manifest.yaml：它应该在压缩包根目录，或者唯一的顶层文件夹里” |
-| 包类型为 story / world；引擎版本满足 `engine` | “需要引擎版本 >=0.2.0，当前是 0.1.2-rc2。请先更新 App。” |
+| 找到 `manifest.yaml` 并解析；`format: 3`；id / namespace / 版本格式；必须有 name | “这个故事包是旧格式（v0.1.x），ibukiRPG 0.2.0 不再支持。请向作者索取 format 3 版本的故事包” |
+| （同上） | “压缩包里找不到 manifest.yaml：它应该在压缩包根目录，或者唯一的顶层文件夹里” |
+| 包类型为 story / world；引擎版本满足 `engine` | “需要引擎版本 >=0.2.0，当前是 0.1.3-rc1。请先更新 App。” |
 | id 不能与内置包相同；namespace 不能与其他已安装包相同 | “命名空间 "demo" 已被故事包「边境酒馆」使用，请换一个命名空间” |
 | 依赖已安装且版本满足 | “缺少依赖的故事包 …，请先导入它” |
 | 完整加载：YAML 结构、引用完整性、所有 CEL 表达式编译 | “故事包内容校验失败：…” |
 
 再次导入同 id 的包会**覆盖更新**（提示旧版本号）。删除导入的包不会删除存档，但这些存档在重新导入前无法读取。内置故事包不能删除。
 
-## 18. 当前限制
+## 21. 当前限制
 
 - `dependencies` 只做存在性与版本检查，不合并被依赖包的内容；每个故事包需自带完整的动作、技能等定义（可从 demo 复制）。
 - 台词、HUD 与事件条件使用 CEL；表达式在导入时编译校验，但逻辑错误（例如永远为假）不会被发现，请用 CLI 试玩。
 - 封面图片只在故事包选择界面显示，≤ 1 MB；立绘 ≤ 2 MB，图鉴条目（除人物 / 机甲立绘外）暂不支持配图。
-- AI 在自由推演中临时生成的角色只有角色卡（没有立绘和台词池）。
-- 战斗中的自然语言输入由规则解析器识别，复杂的指令请用快捷按钮。
+- AI 生成的实体（`<namespace>.gen:*`）只有文档与角色卡，没有立绘和台词池。
+- 自由战斗离线时用规则解析器识别动作，联网时由战斗意图解析器与裁定流程处理；`absurd_words` 只做关键词匹配。
+- 时间线事件的 `resolve: ai` 在离线时退回规则判定。

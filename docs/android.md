@@ -7,7 +7,7 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 | 项目 | 值 |
 |---|---|
 | applicationId | `com.guyu2233.ibukirpg`（debug 版为 `.debug` 后缀，可与正式版共存） |
-| versionName / versionCode | `0.1.3-rc1` / `5` |
+| versionName / versionCode | `0.2.0-alpha1` / `6` |
 | minSdk / targetSdk / compileSdk | 24 / 36 / 36 |
 | 工具链 | Gradle 8.14.3（wrapper）、AGP 8.13.2、Kotlin 2.3.21、Compose BOM 2025.10.01 |
 | ABI | armeabi-v7a、arm64-v8a、x86_64（llama.cpp 本地模型：arm64-v8a、x86_64） |
@@ -19,9 +19,9 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 source /etc/profile.d/ibukirpg-dev.sh      # JAVA_HOME / ANDROID_HOME / ANDROID_NDK_HOME
 make android-aar                           # gomobile bind → android/app/libs/ibukirpg.aar
 cd android
-./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.3-rc1-debug.apk（含 llama.cpp 原生库）
+./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.2.0-alpha1-debug.apk（含 llama.cpp 原生库）
 ./gradlew testDebugUnitTest                # JVM 单元测试 + 截图测试（Robolectric + Roborazzi）→ ../build/screenshots/*.png
-./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.1.3-rc1.apk
+./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.2.0-alpha1.apk
 ```
 
 或在仓库根目录执行 `make apk`（产物复制到 `build/release/`）。
@@ -85,17 +85,26 @@ gomobile 生成的 `libgojni.so` 需显式传 `-ldflags '… -extldflags=-Wl,-z,
 
 ## 截图
 
-`android/app/src/test/.../ScreenshotTest.kt` 用 Robolectric 原生图形模式渲染真实的界面 Composable（首页、游戏、面板、设置，浅色 / 深色）。
-游戏数据来自 `go run ./cmd/uifixtures`：真实 Go 引擎离线试玩 5 回合后导出的 JSON（`app/src/test/resources/fixtures/`）。
+`android/app/src/test/.../ScreenshotTest.kt` 用 Robolectric 原生图形模式渲染真实的界面 Composable（首页、游戏、世界面板、战斗、
+决策提示、时间线、审查卡片、卡片修改预览、API 设置 / 生成设置 / 提示灵敏度，浅色 / 深色，手机与平板宽度），输出到仓库根目录的 `build/screenshots/`。
+游戏数据来自 `go run ./cmd/uifixtures`：真实 Go 引擎用格式 3 示例包《锈钟镇》离线试玩后导出的 JSON（`app/src/test/resources/fixtures/`，
+v0.2 截图使用 `v02-*.json` 夹具：叙事流、世界面板、时间线、战斗裁定、变更预览等）。界面设计稿见 `docs/design/v03/`。
 
 ## 设计要点（易用性）
 
 - 首页“继续游戏”为最醒目的主按钮；没有存档时主按钮变为“新游戏”。
-- 游戏页：聊天式记录（玩家气泡 / 叙事正文 / 检定卡片 / 结果小标签 / 事件横幅），新叙事逐字出现（点击立即显示全文）。
-- 快捷行动随场景变化（事件提示、交谈对象、点酒、前往…）；澄清时直接给出可点选的选项。
-- 提交失败时输入会放回输入框，重试复用同一个 command_id —— 不会重复执行、不会重新掷骰。
-- 面板：角色 / 背包 / 人物（信任、畏惧、TA 知道的事及来源、社交行动成功率）/ 日志。
-- 设置：规则离线 / 本地模型（llama.cpp · GGUF）/ DeepSeek / 通义千问 / 自定义；本地模型支持 GGUF 导入和上下文、线程、采样等参数，在线 API Key 经 Android Keystore AES-GCM 加密存于 DataStore；文字大小、主题、动态取色（Android 12+）。
+- 游戏页（v0.2）：叙事流（玩家行动 / 叙事正文 / 检定与**战斗裁定卡片**（解析→合理性→修正→掷骰→成功度→状态）/ 世界变更与**知识解锁小标签** / 事件横幅 /
+  每回合 **token 用量**行），顶部**状态条**（位置、时间、HP、货币、当前目标，由故事包 HUD 定义），战斗中在叙事流上方显示**战斗头部**（敌我状态、回合）。
+- **世界面板**（8 个标签：角色 / 关系网 / 图鉴 / 装备 / 地图 / 势力 / 时间线 / 日志）：手机上是底部抽屉，平板（≥ 840dp）上是右侧常驻栏；
+  未解锁的字段显示“未知”，解锁后显示来源回合。角色卡可以“让 AI 修改”或“新建角色 / 卡片”，修改先显示**差异预览**，确认后才写入（可在日志中撤销）。
+- **决策底部抽屉**：AI 的改动偏离设定、重要角色死亡或严重影响剧情时弹出（接受并继续 / 回到上一回合 / 以后只通知），并显示自动创建的检查点，灵敏度按提示类型在设置中调整，也可设为“只通知”。
+- **时间线 / 分支导航**：回到任意回合（旧分支保留）、切换分支、手动检查点（重要决定前自动创建，可关闭）。
+- **一致性审查卡片**：定期或手动审查后显示自动修正（设定 / 文字，可撤销）与需确认的建议（物品、金钱、经验、生死）。
+- 存档页支持**导出 / 导入 `.ibksave`**（不含 API Key，带引擎与故事包版本；0.1.x 存档会被拒绝并提示）。
+- 快捷行动随场景变化；澄清时直接给出可点选的选项。提交失败时输入会放回输入框，重试复用同一个 command_id —— 不会重复执行、不会重新掷骰。
+- **API 设置**：多个服务商（DeepSeek / 通义千问 / 自定义 OpenAI 兼容 / 本地 llama.cpp），每个服务商的 Key 经 Android Keystore AES-GCM 加密存于 DataStore。
+  **生成设置**：统一模型或按任务分配（叙事 + 世界更新、意图解析、战斗裁定、记忆、世界模拟、一致性审查、卡片生成、角色审查），ⓘ 图标说明哪些任务适合本地模型；
+  token 用量显示、审查间隔。另有文字大小、主题、动态取色（Android 12+）。
 - 动态取色不可用时使用以琥珀色 `#8C4A1C` 为种子的 Material 3 配色；全屏 edge-to-edge；中文字符串全部在 `res/values/strings.xml`；图标按钮均有 contentDescription。
 
 ## AI 检索工具与 MCP

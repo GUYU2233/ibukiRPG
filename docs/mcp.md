@@ -1,7 +1,7 @@
-# MCP 适配器与只读检索工具
+# MCP 适配器：检索工具与（门控的）世界写入
 
 ibukiRPG 的 AI Agent（叙述者、导演 / 自由推演规划、NPC）在信息不足时会**主动查资料**：
-上下文被压缩成摘要之后、玩家跑出预设剧本（自由推演 / 沙盒）时、或者玩家提到了当前上下文里没有的人物和名词时。
+上下文被压缩成摘要之后、世界被改写之后、或者玩家提到了当前上下文里没有的人物和名词时。
 查资料用的是一组**只读检索工具**。这组工具有两种暴露方式：
 
 | 使用方 | 通道 | 说明 |
@@ -10,8 +10,9 @@ ibukiRPG 的 AI Agent（叙述者、导演 / 自由推演规划、NPC）在信�
 | Android 客户端 | 移动端 JSON API：`list_tools` / `call_tool` | 同一套工具，进程内调用（手机上不跑 MCP） |
 | 桌面 / CLI 上的 MCP 客户端 | `ibukirpg mcp`（stdio） | 本文重点 |
 
-所有工具都是**只读**的：不会提交输入、不会执行动作、不会存档或读档，也不会改动任何游戏状态。
-MCP 服务器只暴露这些读取工具（架构文档第 48 节：MCP 只是 Command / Query API 之上的一层适配器）。
+检索工具都是**只读**的：不会提交输入、不会执行动作、不会存档或读档，也不会改动任何游戏状态。
+MCP 服务器默认只暴露读取工具（架构文档第 48 节：MCP 只是 Command / Query API 之上的一层适配器）。
+0.2.0 起，故事包作者可以用 `--allow-write` 打开**世界写入工具**（见下文“世界写入（门控）”）：它们和游戏内 AI 的修改走同一个校验网关与事件日志，不存在第二条写入路径。
 
 ## 工具一览
 
@@ -26,10 +27,13 @@ MCP 里的工具名用下划线（`pack_search`），与游戏内函数调用的
 | `mech_get_card(id)` | 机甲卡：型号、驾驶者、规格、挂载；未掌握的字段显示“未知” | 全部 |
 | `relationship_get(who, other?)` | 人物关系（信任 / 好感 / 敌意……） | 全部 |
 | `memory_search(query, who?, limit?)` | NPC 记忆、事件日志、滚动对话摘要与长期记忆 | 全部（NPC 只能查自己的） |
-| `story_get_state()` | 主线模式、当前锚点与目标、进行中的事件、自由推演节点 | player / director |
-| `story_anchors()` | 主线锚点列表 | player / director |
+| `story_get_state()` | 回合、所在地、当前目标、进行中的剧情事件 | player / director |
 | `world_get_location(id?)` | 地点描述、场景事实、出口、在场人物（省略 id 为玩家当前位置） | 全部 |
 | `rules_get_action(id)` | 动作规则：说明、关键词、检定技能、耗时 | 全部 |
+
+| `world_change_log(query?, since_turn?)` | 世界变更日志（谁、何时、为什么改了什么；隐藏真相相关的只给脱敏摘要） | 全部 |
+| `timeline_get()` | 世界事件时间线（玩家知道的：公开日程、传闻、亲眼所见） | 全部 |
+| `knowledge_get(entity)` | 一个实体对玩家可见的字段（未解锁的显示“未知”） | 全部 |
 
 结果是 JSON 文本，大小有上限（每次最多 8 条结果、单字段 280 字、总计约 6 KB），同样的输入总是得到同样的输出。
 
@@ -37,9 +41,10 @@ MCP 里的工具名用下划线（`pack_search`），与游戏内函数调用的
 
 | 范围 | 对应 Agent | 可见内容 |
 | --- | --- | --- |
-| `player`（默认，别名 `narrator`） | 叙述者 | 玩家已知的内容（PlayerScope）：见过、交谈过、图鉴已解锁的实体；只能看到当前锚点（允许的伏笔），看不到后续锚点和任何人物秘密 |
-| `npc:<角色ID>` | NPC Agent | 该 NPC 知道的内容（NPCScope）：公开资料 + 自己的来历与秘密 + 自己的记忆；看不到别人的秘密和记忆，看不到剧本节点与锚点 |
-| `director`（别名 `planner`） | 导演 / 自由推演规划 | 完整设定：全部秘密、隐藏的机甲规格、全部锚点与剧情节点 |
+| `player`（默认，别名 `narrator`） | 叙述者 | 玩家已知的内容（PlayerScope）：按知识层逐字段解锁的内容；看不到任何隐藏真相 |
+| `npc:<角色ID>` | NPC Agent | 该 NPC 知道的内容（NPCScope）：公开资料 + 自己的来历与秘密 + 自己的记忆；看不到别人的秘密和记忆，看不到剧本节点 |
+| `director`（别名 `planner`） | 导演 / 世界模拟 / 审查 | 完整设定：全部隐藏真相、隐藏的机甲规格、全部剧情节点 |
+| `author` | 故事包作者调试 | 读权限同 `director`；配合 `--allow-write` 可以写入世界 |
 
 “不存在”和“无权查看”返回同样的错误，因此不会通过报错泄露“这里有个秘密”。
 
@@ -61,14 +66,38 @@ ibukirpg mcp --save ./saves --scope director
 
 - `--save`：存档数据库文件 `ibukirpg.db`，或者包含它的目录。默认是 CLI 的存档目录：Linux 为 `~/.config/ibukiRPG/`，Windows 为 `%AppData%\ibukiRPG\`，macOS 为 `~/Library/Application Support/ibukiRPG/`。
 - `--slot`：存档 ID。留空时使用最近更新的存档。存档 ID 可以在 CLI 里用 `/saves` 查看。
-- `--scope`：`player` / `director` / `npc:<角色ID>`。
+- `--scope`：`player` / `director` / `author` / `npc:<角色ID>`。
+- `--allow-write`：打开世界写入工具。只对 `director` / `author` 范围有效；`player` 与 `npc:*` 范围永远只读。
 - `--packs`：导入故事包所在的目录，默认是存档目录下的 `packs/`。存档用的是导入的故事包时，需要它才能载入。
 
 服务器使用 stdio 传输：每行一条 JSON-RPC 2.0 消息。stdout 只输出协议消息，日志写到 stderr。
-每次工具调用都会重新以只读方式载入存档，所以可以一边在 CLI 或桌面端玩，一边在 MCP 客户端里查。
+每次工具调用都会重新载入存档，所以可以一边在 CLI 或桌面端玩，一边在 MCP 客户端里查。
 已实现的方法有 `initialize`、`notifications/initialized`、`ping`、`tools/list` 和 `tools/call`。`resources/list` 与 `prompts/list` 返回空列表。
 
-> 说明：服务器不会写任何游戏数据。第一次用新版本打开旧存档时，数据库会像游戏本身一样自动补建空的 `memory` 表（记忆摘要表），这一步不影响存档内容。
+## 世界写入（门控）
+
+```bash
+ibukirpg mcp --save ./saves --scope author --allow-write
+```
+
+写入需要同时满足三个条件：`--allow-write`、范围为 `director` / `author`、存档**没有被游戏占用**。CLI 或桌面游戏打开存档时会持有存档锁（`<存档目录>/locks/<存档ID>.lock`，每 10 秒刷新一次，30 秒过期）；这时写入会返回“存档正在被游戏使用，请先退出游戏或只读查询”。读取工具不受影响。
+
+| 工具 | 说明 |
+| --- | --- |
+| `world_preview_change(changes[])` | 预览一组修改：返回字段级差异、影响分、被拒绝项与原因，以及 `preview_token`。**不会修改存档** |
+| `world_apply_change(preview_token, accept_impact?)` | 只接受预览过的提案。预览之后存档发生了变化（例如游戏又走了一回合）则失败，需要重新预览；影响分超过 50 时必须带 `accept_impact: true` |
+| `world_revert_change(change_id)` | 单项撤销一条世界变更（之后的变更依赖它时会失败） |
+| `checkpoint_create(name?)` | 在当前回合新建手动检查点 |
+
+变更格式与游戏内 AI 的 WORLD 段相同，例如：
+
+```json
+{"changes":[{"op":"patch","target":"brass:location/north_dock","path":"fields.description","value":"三号仓只剩焦黑的木桩。","reason":"作者调试"}]}
+```
+
+`op` 可以是 `patch` / `create` / `retire` / `restore` / `link` / `unlink`。所有写入都经过与游戏内相同的校验（实体存在、`locked` 路径、重要度上限、玩家资源单回合上限……），以“外部工具”来源记入世界变更日志，可以在 App 的“世界面板 → 日志”里看到并撤销。MCP 写入不会弹出偏离提示（没有玩家界面）。Android 不运行 MCP 服务。
+
+> 说明：只读模式下服务器不会写任何游戏数据。第一次用新版本打开旧存档时，数据库会像游戏本身一样自动补建空的 `memory` 表（记忆摘要表），这一步不影响存档内容。
 
 ## 在 MCP 客户端里配置
 
