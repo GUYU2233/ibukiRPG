@@ -14,7 +14,6 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/rules/checks"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/expression"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/rng"
-	"github.com/GUYU2233/ibukiRPG/internal/story/director"
 	"github.com/GUYU2233/ibukiRPG/internal/world/worldtime"
 )
 
@@ -58,10 +57,8 @@ type work struct {
 	// combatTouched 表示本回合是战斗回合；combatOutcome 是本回合结束的战斗结果。
 	combatTouched bool
 	combatOutcome string
-	// passive 表示本回合是不推动世界的操作（整理装备、主线选择），不计入偏离评分与节奏。
+	// passive 表示本回合是不推动世界的操作（整理装备），不计入节奏。
 	passive bool
-	// deviation 是本回合由故事包效果（deviation）直接追加的偏离。
-	deviation []director.Hit
 }
 
 // Execute 在 s 的副本上执行命令，返回结果与新状态。s 本身不会被修改。
@@ -76,8 +73,7 @@ func (e *Engine) Execute(s *state.State, cmd command.Command) (*Result, *state.S
 		}
 	}
 	var err error
-	if w.s.RPG != nil && w.s.RPG.Combat != nil && cmd.Kind != command.KindCombat && cmd.Kind != command.KindMainline &&
-		(cmd.Kind != command.KindManage || cmd.Action != "thresholds") {
+	if w.s.RPG != nil && w.s.RPG.Combat != nil && cmd.Kind != command.KindCombat && cmd.Kind != command.KindManage {
 		res.Reason = "正在战斗中：请选择攻击、技能、物品、防御或逃跑。"
 		return res, s, nil
 	}
@@ -92,10 +88,6 @@ func (e *Engine) Execute(s *state.State, cmd command.Command) (*Result, *state.S
 		err = w.execCombat()
 	case command.KindManage:
 		err = w.execManage()
-	case command.KindMainline:
-		err = w.execMainline()
-	case command.KindDirector:
-		err = w.execDirector()
 	default:
 		err = fmt.Errorf("unknown command kind %q", cmd.Kind)
 	}

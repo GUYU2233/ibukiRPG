@@ -47,14 +47,6 @@ var recallCues = []string{"之前", "上次", "以前", "当初", "那次", "还
 // lookupReasons 判断叙述者是否信息不足、需要先检索（返回原因；为空表示不需要）。
 func lookupReasons(b narrator.Brief, st *state.State, env *tools.Env) []string {
 	var out []string
-	if st.RPG != nil {
-		switch st.RPG.Main.CurrentMode() {
-		case state.ModeFree:
-			out = append(out, "自由推演模式：剧本之外的内容要先查设定")
-		case state.ModeSandbox:
-			out = append(out, "沙盒模式：剧本之外的内容要先查设定")
-		}
-	}
 	if refs := tools.UnknownRefs(env, tools.Player(), b.Input, b.Known()); len(refs) > 0 {
 		out = append(out, "玩家提到了上下文里没有的："+strings.Join(refs, "、"))
 	}
@@ -86,11 +78,6 @@ func (s *Session) prepareBrief(ctx context.Context, slot string, g *game, after 
 		}
 		return "", tools.Flatten(msgs, o)
 	}
-}
-
-// directorRetrieval 返回导演的检索段落。
-func directorRetrieval(g *game) string {
-	return sections.Render(g.pkg, sections.Director, "TOOLS") + sections.Render(g.pkg, sections.Director, "RETRIEVAL_POLICY")
 }
 
 // ---------- 记忆 Agent（关键路径之外） ----------

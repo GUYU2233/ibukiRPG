@@ -78,23 +78,6 @@ func rpgParts(p *loader.Package, before, after *state.State, cmd command.Command
 					parts = append(parts, "你用了"+it.Name+"，感觉好多了。")
 				}
 			}
-		case event.MainlineNudged:
-			parts = append(parts, d.Text)
-		case event.MainlineModeChanged:
-			switch d.To {
-			case state.ModeFree:
-				parts = append(parts, "你决定不再沿着既定的轨迹前进。命运的齿轮换了一个方向转动——接下来的故事，由你和这个世界一起写。")
-			case state.ModeSandbox:
-				parts = append(parts, "你决定按自己的方式活下去。镇上总有人需要帮手——新的委托会一件件找上门来。")
-			}
-		case event.MainlineNodeCanonized:
-			if d.Node != nil {
-				parts = append(parts, "新的目标浮现："+d.Node.Title+"——"+d.Node.Objective)
-			}
-		case event.MainlineNodeCompleted:
-			parts = append(parts, "目标达成："+d.Title+"。")
-		case event.MainlineAnchorReached:
-			parts = append(parts, "【主线】"+d.Title+" 完成。")
 		case event.CharacterDied:
 			parts = append(parts, p.EntityName(d.Target)+"永远地离开了。")
 		}

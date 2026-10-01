@@ -122,7 +122,6 @@ func rpgVars(p *loader.Package, s *state.State, actor, world map[string]any) {
 	skills := []any{}
 	combats := map[string]any{}
 	xp, merc, inCombat := 0, 0, false
-	mode, dev, anchor := state.ModeMain, 0, ""
 	if r := s.RPG; r != nil {
 		xp, merc, inCombat = r.XP, r.Mercury, r.Combat != nil
 		for k, v := range r.Equipment {
@@ -134,10 +133,6 @@ func rpgVars(p *loader.Package, s *state.State, actor, world map[string]any) {
 		for id, rec := range r.Encounters {
 			combats[loader.Key(id)] = map[string]any{"result": rec.Result, "wins": int64(rec.Wins), "losses": int64(rec.Losses)}
 		}
-		mode, dev = r.Main.CurrentMode(), r.Main.Deviation
-	}
-	if a := CurrentAnchor(p, s); a != nil {
-		anchor = a.ID
 	}
 	for _, id := range p.Combat.EncIDs {
 		k := loader.Key(id)
@@ -146,7 +141,7 @@ func rpgVars(p *loader.Package, s *state.State, actor, world map[string]any) {
 		}
 	}
 	actor["xp"], actor["mercury"], actor["in_combat"], actor["equipment"], actor["combat_skills"] = int64(xp), int64(merc), inCombat, eq, skills
-	world["combats"], world["mode"], world["deviation"], world["anchor"] = combats, mode, int64(dev), anchor
+	world["combats"] = combats
 }
 
 // Stories 按故事短名（demo:story/lost_purse → lost_purse）构造全部故事状态，供 CEL 使用。

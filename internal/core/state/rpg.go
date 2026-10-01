@@ -48,7 +48,6 @@ type RPG struct {
 	Cards      map[string]*Card            `json:"cards,omitempty"`
 	Combat     *Combat                     `json:"combat,omitempty"`
 	Encounters map[string]*EncounterRecord `json:"encounters,omitempty"`
-	Main       Mainline                    `json:"main"`
 	// Mechs 是机甲卡的运行时状态（只存与故事包定义不同的部分）。
 	Mechs map[string]*MechState `json:"mechs,omitempty"`
 }
@@ -310,46 +309,6 @@ func (c *Combat) Alive(side string) []*Unit {
 		}
 	}
 	return out
-}
-
-// Node 是一个动态主线节点。
-type Node struct {
-	event.Node
-	Status  string `json:"status"` // active / done
-	Created int    `json:"created"`
-}
-
-// Mainline 是主线贴合度状态。
-type Mainline struct {
-	Mode             string  `json:"mode,omitempty"` // 空 = main
-	Deviation        int     `json:"deviation,omitempty"`
-	Anchor           int     `json:"anchor,omitempty"`
-	LastProgressTurn int     `json:"last_progress_turn,omitempty"`
-	LastNudgeTurn    int     `json:"last_nudge_turn,omitempty"`
-	Nudges           int     `json:"nudges,omitempty"`
-	Pending          bool    `json:"pending,omitempty"`
-	Prompts          int     `json:"prompts,omitempty"`
-	Mild             int     `json:"mild,omitempty"`
-	Heavy            int     `json:"heavy,omitempty"`
-	Nodes            []*Node `json:"nodes,omitempty"`
-}
-
-// CurrentMode 返回主线模式（空视为 main）。
-func (m *Mainline) CurrentMode() string {
-	if m.Mode == "" {
-		return ModeMain
-	}
-	return m.Mode
-}
-
-// ActiveNode 返回进行中的动态节点。
-func (m *Mainline) ActiveNode() *Node {
-	for _, n := range m.Nodes {
-		if n.Status == "active" {
-			return n
-		}
-	}
-	return nil
 }
 
 // EdgeKey 返回有向关系边的键。
@@ -747,47 +706,6 @@ func applyRPG(s *State, e event.Event) (handled bool, err error) {
 		if n, ok := s.NPCs[d.Target]; ok {
 			n.Location = ""
 		}
-	case event.DeviationChanged:
-		m := &s.R().Main
-		m.Deviation = clamp(d.Total, 0, 100)
-		if d.Success {
-			m.LastProgressTurn = e.Turn
-		}
-	case event.MainlineNudged:
-		m := &s.R().Main
-		m.LastNudgeTurn = e.Turn
-		m.Nudges++
-	case event.MainlinePrompted:
-		m := &s.R().Main
-		m.Pending = true
-		m.Prompts++
-	case event.MainlineModeChanged:
-		m := &s.R().Main
-		m.Mode, m.Pending = d.To, false
-		m.Deviation = clamp(d.Total, 0, 100)
-		m.LastProgressTurn = e.Turn
-	case event.MainlineAnchorReached:
-		m := &s.R().Main
-		m.Anchor = d.Delta
-		m.LastProgressTurn = e.Turn
-	case event.MainlineThresholds:
-		m := &s.R().Main
-		m.Mild, m.Heavy = d.Values["mild"], d.Values["heavy"]
-	case event.MainlineNodeCanonized:
-		if d.Node == nil {
-			return true, fmt.Errorf("MainlineNodeCanonized without node")
-		}
-		m := &s.R().Main
-		m.Nodes = append(m.Nodes, &Node{Node: *d.Node, Status: "active", Created: e.Turn})
-		m.LastProgressTurn = e.Turn
-	case event.MainlineNodeCompleted:
-		m := &s.R().Main
-		for _, n := range m.Nodes {
-			if n.ID == d.Story {
-				n.Status = "done"
-			}
-		}
-		m.LastProgressTurn = e.Turn
 	default:
 		return false, nil
 	}

@@ -3,7 +3,6 @@ package engine_test
 import (
 	"bytes"
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/GUYU2233/ibukiRPG/internal/api/query"
@@ -239,74 +238,6 @@ func TestRelationVisibility(t *testing.T) {
 	}
 	if r.s.Edge(bTock, bRivet)["affection"] == before {
 		t.Fatal("underlying edge should have changed")
-	}
-}
-
-// TestDeviationModeSwitch：动粗累积偏离 → 严重偏离弹窗 → 回到主线 / 进入沙盒（模板节点）。
-func TestDeviationModeSwitch(t *testing.T) {
-	eng, s := brassSetup(t, 13)
-	q := &query.Q{Pkg: eng.Pkg, Eval: eng.Eval}
-	r := &runner{t: t, eng: eng, s: s}
-	violent := command.Command{Kind: command.KindFreeform, Freeform: &command.Freeform{Description: "踢翻了工作台", Tags: []string{"violence"}}}
-	nudged := false
-	for i := 0; i < 12 && !r.s.RPG.Main.Pending; i++ {
-		res := mustAccept(t, r, violent)
-		nudged = nudged || has(res, event.MainlineNudged)
-	}
-	m := q.Mainline(r.s)
-	if !r.s.RPG.Main.Pending || m.Level != 2 || !nudged {
-		t.Fatalf("expected nudges then heavy prompt: %+v nudged=%v", m, nudged)
-	}
-	// 回到主线：偏离度降到轻微线以下
-	mustAccept(t, r, command.Command{Kind: command.KindMainline, Action: "return"})
-	if mild, _ := engine.Thresholds(eng.Pkg, r.s); r.s.RPG.Main.Pending || r.s.RPG.Main.Deviation >= mild {
-		t.Fatalf("return should reset deviation: %+v", r.s.RPG.Main)
-	}
-	for i := 0; i < 12 && !r.s.RPG.Main.Pending; i++ {
-		mustAccept(t, r, violent)
-	}
-	res := mustAccept(t, r, command.Command{Kind: command.KindMainline, Action: "free", Target: "sandbox"})
-	if !has(res, event.MainlineModeChanged) || r.s.RPG.Main.CurrentMode() != state.ModeSandbox {
-		t.Fatalf("mode: %q", r.s.RPG.Main.CurrentMode())
-	}
-	n := r.s.RPG.Main.ActiveNode()
-	if n == nil || n.Source != "template" {
-		t.Fatalf("sandbox should create a template node: %+v", n)
-	}
-	if !strings.Contains(q.Objective(r.s), n.Title) {
-		t.Fatalf("HUD objective should follow the node: %q", q.Objective(r.s))
-	}
-	// 严格敏感度预设
-	mustAccept(t, r, command.Command{Kind: command.KindManage, Action: "thresholds", Target: "strict"})
-	if mild, heavy := engine.Thresholds(eng.Pkg, r.s); mild != 25 || heavy != 55 {
-		t.Fatalf("thresholds: %d/%d", mild, heavy)
-	}
-}
-
-// TestProposalValidation：AI 提案必须引用存在的实体、敌人不超预算、不得指定关键道具。
-func TestProposalValidation(t *testing.T) {
-	eng, s := brassSetup(t, 1)
-	p := eng.Pkg
-	ok := &command.NodeProposal{Title: "巡查竞技场", Objective: "去竞技场看看有没有可疑的人。", Goal: "reach", Ref: bArena, RewardXP: 9999}
-	n, err := engine.ValidateProposal(p, s, ok)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n.Reward["xp"] != p.Mainline.MaxRewardXP {
-		t.Fatalf("reward not clamped: %v", n.Reward)
-	}
-	bad := []*command.NodeProposal{
-		{Title: "去月球", Objective: "登上月球看看。", Goal: "reach", Ref: "brass:location/moon"},
-		{Title: "打倒傀儡", Objective: "击败蒸汽傀儡。", Goal: "defeat", Enemies: []string{"brass:enemy/steam_golem"}},
-		{Title: "大扫除", Objective: "清理下水道的哨兵。", Goal: "defeat", Enemies: []string{"brass:enemy/sentry", "brass:enemy/sentry", "brass:enemy/sentry", "brass:enemy/sentry"}},
-		{Title: "拿徽章", Objective: "拿到行会徽章。", Goal: "obtain", Ref: "brass:item/guild_badge"},
-		{Title: "x", Objective: "太短", Goal: "reach", Ref: bArena},
-		{Title: "找人", Objective: "找一个不存在的人。", Goal: "talk", Ref: "brass:character/nobody"},
-	}
-	for i, b := range bad {
-		if _, err := engine.ValidateProposal(p, s, b); err == nil {
-			t.Errorf("bad proposal %d accepted", i)
-		}
 	}
 }
 

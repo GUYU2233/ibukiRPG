@@ -110,7 +110,7 @@ func TestDeterministicReadOnly(t *testing.T) {
 	if string(before) != string(after) {
 		t.Error("tools mutated state")
 	}
-	if len(tools.Specs(tools.Director())) < 11 {
+	if len(tools.Specs(tools.Director())) < 10 {
 		t.Errorf("director specs: %d", len(tools.Specs(tools.Director())))
 	}
 }

@@ -8,9 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/GUYU2233/ibukiRPG/internal/action/resolver"
-	"github.com/GUYU2233/ibukiRPG/internal/agent/canon"
 	"github.com/GUYU2233/ibukiRPG/internal/agent/narrator"
-	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
 	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
 	"github.com/GUYU2233/ibukiRPG/internal/core/command"
 	"github.com/GUYU2233/ibukiRPG/internal/core/engine"
@@ -47,14 +45,6 @@ func (s *Session) Quick(ctx context.Context, cmdID string, qa dto.QuickActionV1)
 		c = command.Command{Kind: command.KindMove, Destination: qa.Destination}
 	case command.KindCombat, command.KindManage:
 		c = command.Command{Kind: qa.Kind, Action: qa.Action, Target: qa.Target, Item: qa.Item, Skill: qa.Skill}
-	case command.KindMainline:
-		c = command.Command{Kind: command.KindMainline, Action: qa.Action, Target: qa.Target}
-		if qa.Action == "free" {
-			c.Target = "sandbox"
-			if s.online() {
-				c.Target = "free"
-			}
-		}
 	default:
 		return dto.TurnV1{}, errors.New("未知的快捷动作")
 	}
@@ -179,15 +169,8 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 	}
 	s.emit(dto.StreamEventV1{Type: "narration_done", CommandID: cmdID, Text: out.Text, Corrected: out.Corrected, Source: out.Source})
 	notices := g.q.Notices(after, result.Events)
-	// 自由推演 / 沙盒：当前没有主线节点时，由导演生成下一个节点（AI 提案 → Core 校验 → 正史）
-	extra, dnotices, derr := s.directorTurn(ctx, slot, cmdID, g, after)
-	if derr != nil {
-		return dto.TurnV1{}, derr
-	}
-	notices = append(notices, dnotices...)
 	s.scheduleMemory(slot, g, s.stateOr(after))
 	v, err := s.view(ctx, slot, cmdID, true)
-	v.Entries = append(v.Entries, extra...)
 	v.Notices = notices
 	v.Resolver = resolverName
 	s.emit(dto.StreamEventV1{Type: "turn_done", CommandID: cmdID})
@@ -196,7 +179,7 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 
 func templateOnly(cmd command.Command, res *engine.Result) bool {
 	switch cmd.Kind {
-	case command.KindManage, command.KindMainline, command.KindDirector:
+	case command.KindManage, command.KindDecision, command.KindWorldChange:
 		return true
 	case command.KindCombat:
 		for _, e := range res.Events {
@@ -207,80 +190,6 @@ func templateOnly(cmd command.Command, res *engine.Result) bool {
 		return true
 	}
 	return false
-}
-
-// directorTurn 在自由推演模式下补全下一个主线节点，作为独立的被动回合提交。
-func (s *Session) directorTurn(ctx context.Context, slot, cmdID string, g *game, st *state.State) ([]dto.EntryV1, []dto.NoticeV1, error) {
-	if st.RPG == nil || st.RPG.Combat != nil || st.RPG.Main.CurrentMode() != state.ModeFree || st.RPG.Main.ActiveNode() != nil {
-		return nil, nil, nil
-	}
-	cmd := command.Command{Kind: command.KindDirector, Input: "（导演）", Source: "director", ID: cmdID + ":director"}
-	if s.online() {
-		cfg := func() provider.Config { s.mu.RLock(); defer s.mu.RUnlock(); return s.ai }()
-		pctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.opts.NarratorTimeout)
-		pr, err := (&canon.Proposer{Provider: provider.NewOpenAICompatible(cfg, s.opts.Transport), Env: s.toolEnv(pctx, slot, g, st), Retrieval: directorRetrieval(g)}).Propose(pctx, g.pkg, st, recentFacts(g, st))
-		cancel()
-		if err == nil {
-			if _, verr := engine.ValidateProposal(g.pkg, st, pr); verr == nil {
-				cmd.Proposal, cmd.Source = pr, "director:ai"
-			} else {
-				err = verr
-			}
-		}
-		if err != nil {
-			s.mu.Lock()
-			s.aiErr = "自由推演降级为模板节点：" + err.Error()
-			s.mu.Unlock()
-		}
-	}
-	result, after, err := g.eng.Execute(st, cmd)
-	if err != nil || !result.Accepted {
-		return nil, nil, err
-	}
-	entries := g.q.TurnEntries(st, after, result, "")
-	var ses []eventstore.Entry
-	var kept []dto.EntryV1
-	for _, e := range entries {
-		if e.Kind == "player" {
-			continue
-		}
-		kept = append(kept, e)
-		ses = append(ses, fromEntry(e))
-	}
-	empty := ""
-	if err := s.store.CommitTurn(ctx, slot, eventstore.Commit{
-		CommandID: cmd.ID, Accepted: true, Command: cmd, Result: result, Events: result.Events, After: after,
-		Entries: ses, Summary: g.summary(after), Narration: &empty,
-	}); err != nil && !errors.Is(err, eventstore.ErrDuplicateCommand) {
-		return nil, nil, err
-	}
-	s.mu.Lock()
-	if s.slot == slot {
-		s.st = after
-	}
-	s.mu.Unlock()
-	return kept, g.q.Notices(after, result.Events), nil
-}
-
-// recentFacts 给导演 AI 的最近局势摘要（只含玩家可见信息）。
-func recentFacts(g *game, st *state.State) []string {
-	var out []string
-	if st.RPG != nil {
-		for _, n := range st.RPG.Main.Nodes {
-			if n.Summary != "" {
-				out = append(out, n.Title+"："+n.Summary)
-			}
-		}
-		for id, r := range st.RPG.Encounters {
-			if r.Wins > 0 {
-				out = append(out, "已击败遭遇："+g.pkg.EntityName(id))
-			}
-		}
-	}
-	if len(out) > 12 {
-		out = out[len(out)-12:]
-	}
-	return out
 }
 
 func (s *Session) commitRejection(ctx context.Context, slot, cmdID, input string, turn int, reason string, opts []resolver.Option, resolverName string) (dto.TurnV1, error) {

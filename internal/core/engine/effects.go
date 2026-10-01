@@ -7,7 +7,6 @@ import (
 
 	"github.com/GUYU2233/ibukiRPG/internal/combat"
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
-	"github.com/GUYU2233/ibukiRPG/internal/story/director"
 
 	"github.com/GUYU2233/ibukiRPG/internal/action/definition"
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
@@ -312,17 +311,6 @@ func (w *work) applyRPGEffect(typ, tgt string, str func(string) string, num func
 			}
 			return true, w.emit(event.CharacterDied, event.Data{Target: id, Reason: reason})
 		}
-	case "deviation":
-		n, err := num("delta", 0)
-		if err != nil {
-			return true, err
-		}
-		reason := str("reason")
-		if reason == "<nil>" {
-			reason = "偏离主线的举动"
-		}
-		w.deviation = append(w.deviation, director.Hit{Weight: n, Reason: reason})
-		return true, nil
 	case "learn_skill":
 		id := str("skill")
 		if _, ok := p.Combat.Skills[id]; !ok {

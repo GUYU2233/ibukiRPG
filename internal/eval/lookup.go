@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/GUYU2233/ibukiRPG/internal/agent/canon"
+	"github.com/GUYU2233/ibukiRPG/internal/agent/narrator"
 	"github.com/GUYU2233/ibukiRPG/internal/agent/tools"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/transport"
+	"github.com/GUYU2233/ibukiRPG/internal/core/command"
+	"github.com/GUYU2233/ibukiRPG/internal/core/engine"
 )
 
 // scriptedModel 是按脚本调用工具的假模型（OpenAI 兼容响应），最后给出固定回答。
@@ -79,7 +81,8 @@ func (r *Runner) runLookup(ctx context.Context, c Case) []Result {
 	var pre []string
 	if lc.NeedsLookup {
 		var base strings.Builder
-		for _, m := range canon.BuildMessages(r.Pkg, st, nil) {
+		b := narrator.Build(r.Pkg, st, st, command.Command{Kind: command.KindWait, Input: lc.Question}, &engine.Result{})
+		for _, m := range narrator.BuildMessages(b) {
 			base.WriteString(m.Content)
 		}
 		for _, w := range lc.ExpectContains {

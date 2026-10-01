@@ -12,7 +12,6 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
 	"github.com/GUYU2233/ibukiRPG/internal/package/loader"
-	"github.com/GUYU2233/ibukiRPG/internal/story/director"
 	"github.com/GUYU2233/ibukiRPG/internal/world/worldtime"
 )
 
@@ -429,43 +428,6 @@ func (q *Q) check(s *state.State, expr string) (bool, error) {
 		return true, nil
 	}
 	return q.Eval.EvalBool(expr, engine.Vars(q.Pkg, s, "", ""))
-}
-
-// ---------- 主线 ----------
-
-var modeLabels = map[string]string{state.ModeMain: "主线", state.ModeFree: "自由推演", state.ModeSandbox: "沙盒"}
-
-// Mainline 构造主线贴合度视图（故事包没有主线锚点时为 nil）。
-func (q *Q) Mainline(s *state.State) *dto.MainlineV1 {
-	p := q.Pkg
-	if !p.Mainline.Enabled() {
-		return nil
-	}
-	var m state.Mainline
-	if s.RPG != nil {
-		m = s.RPG.Main
-	}
-	mild, heavy := engine.Thresholds(p, s)
-	v := &dto.MainlineV1{Mode: m.CurrentMode(), ModeLabel: modeLabels[m.CurrentMode()], Deviation: m.Deviation, Adherence: director.Adherence(m.Deviation),
-		Mild: mild, Heavy: heavy, Level: director.Level(m.Deviation, mild, heavy), Pending: m.Pending, Anchors: len(p.Mainline.Anchors), AnchorIdx: m.Anchor}
-	if a := engine.CurrentAnchor(p, s); a != nil {
-		v.Anchor, v.Objective = a.Title, a.Objective
-	} else {
-		v.Anchor = "主线已完成"
-	}
-	if n := m.ActiveNode(); n != nil {
-		v.Node = &dto.NodeV1{ID: n.ID, Title: n.Title, Objective: n.Objective, Goal: n.Goal, Source: n.Source, Location: p.EntityName(n.Location)}
-		var rw []string
-		if x := n.Reward["xp"]; x > 0 {
-			rw = append(rw, fmt.Sprintf("经验 %d", x))
-		}
-		if g := n.Reward["gold"]; g > 0 {
-			rw = append(rw, fmt.Sprintf("铜币 %d", g))
-		}
-		v.Node.Reward = strings.Join(rw, " · ")
-		v.Objective = n.Objective
-	}
-	return v
 }
 
 // ---------- 关系网 ----------
@@ -887,14 +849,6 @@ func (q *Q) Notices(s *state.State, evs []event.Event) []dto.NoticeV1 {
 			if d.Reason != "visit" && d.Reason != "met" {
 				codex++
 			}
-		case event.MainlinePrompted:
-			out = append(out, dto.NoticeV1{Kind: "mainline", Text: "你已严重偏离主线"})
-		case event.MainlineNodeCanonized:
-			if d.Node != nil {
-				out = append(out, dto.NoticeV1{Kind: "node", Text: "新的主线：" + d.Node.Title, Ref: d.Node.ID})
-			}
-		case event.MainlineAnchorReached:
-			out = append(out, dto.NoticeV1{Kind: "node", Text: "主线章节完成：" + d.Title})
 		case event.MechRevealed:
 			out = append(out, dto.NoticeV1{Kind: "mech", Text: "机甲情报更新：" + p.EntityName(d.Target), Ref: d.Target})
 		case event.MechStatusChanged:
@@ -957,10 +911,6 @@ func (q *Q) rpgChips(s *state.State, e event.Event) (string, bool) {
 		return fmt.Sprintf("%s→%s %s", q.personName(s, d.Actor), q.personName(s, d.Target), strings.Join(parts, "，")), true
 	case event.RelationRevealed:
 		return fmt.Sprintf("得知 %s→%s 的关系", q.personName(s, d.Actor), q.personName(s, d.Target)), true
-	case event.DeviationChanged:
-		if d.Delta >= 5 || d.Delta <= -10 {
-			return fmt.Sprintf("主线偏离 %+d", d.Delta), true
-		}
 	case event.UnitResource:
 		if d.Key == "mercury" && d.Delta > 0 {
 			return fmt.Sprintf("%s +%d", p.Combat.Config.ResourceName, d.Delta), true
@@ -983,25 +933,6 @@ func (q *Q) rpgStoryEntry(e event.Event) (string, bool) {
 			return "战败（" + map[string]string{"captured": "被俘", "injured": "重伤", "rescued": "获救"}[d.Reason] + "）：" + d.Title, true
 		}
 		return "脱离战斗：" + d.Title, true
-	case event.MainlineNudged:
-		return d.Text, true
-	case event.MainlineModeChanged:
-		if d.To != state.ModeMain {
-			return "进入" + modeLabels[d.To] + "模式", true
-		}
-		return "回到主线", true
-	case event.MainlineNodeCanonized:
-		if d.Node != nil {
-			prefix := "新的主线："
-			if d.Source == "template" {
-				prefix = "新的委托："
-			}
-			return prefix + d.Node.Title + " —— " + d.Node.Objective, true
-		}
-	case event.MainlineNodeCompleted:
-		return "目标完成：" + d.Title, true
-	case event.MainlineAnchorReached:
-		return "主线章节完成：" + d.Title, true
 	case event.CharacterCardCreated:
 		if d.Reason != "主要角色" {
 			return "新角色卡：" + q.Pkg.EntityName(d.Target) + "（" + d.Reason + "）", true
@@ -1032,11 +963,6 @@ func (q *Q) EncounterSuggestions(s *state.State) []dto.SuggestionV1 {
 			label = "挑战：" + e.Title
 		}
 		out = append(out, dto.SuggestionV1{Label: label, Icon: "swords", Hint: e.Title, Action: dto.QuickActionV1{Kind: "combat", Action: "start", Target: id, Label: label}})
-	}
-	if s.RPG != nil {
-		if n := s.RPG.Main.ActiveNode(); n != nil && n.Goal == "defeat" && (n.Location == "" || n.Location == s.Player.Location) {
-			out = append(out, dto.SuggestionV1{Label: "迎战：" + n.Title, Icon: "swords", Action: dto.QuickActionV1{Kind: "combat", Action: "start", Target: "node:" + n.ID, Label: "迎战：" + n.Title}})
-		}
 	}
 	return out
 }

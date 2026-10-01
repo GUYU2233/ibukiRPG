@@ -77,14 +77,6 @@ const (
 	CharacterDied         = "CharacterDied"
 
 	// ---- 主线贴合度 / 自由推演 ----
-	DeviationChanged      = "DeviationChanged" // Delta，Total，Tags=原因
-	MainlineNudged        = "MainlineNudged"
-	MainlinePrompted      = "MainlinePrompted"
-	MainlineModeChanged   = "MainlineModeChanged" // From/To
-	MainlineAnchorReached = "MainlineAnchorReached"
-	MainlineThresholds    = "MainlineThresholdsSet"
-	MainlineNodeCanonized = "MainlineNodeCanonized" // Node
-	MainlineNodeCompleted = "MainlineNodeCompleted"
 	// ---- 机械甲胄卡（v0.1.2-rc2）----
 	MechStatusChanged = "MechStatusChanged" // Target=机甲 Key=状态 Reason
 	MechPartChanged   = "MechPartChanged"   // Target=机甲 Key=槽位 Item=部件 Remove=卸下

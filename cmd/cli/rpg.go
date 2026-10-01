@@ -82,35 +82,10 @@ func (c *client) rpgCommand(cmd, arg string) bool {
 		c.showRelations(arg)
 	case "/cards":
 		c.showCards()
-	case "/main":
-		c.showMainline()
-	case "/mode":
-		switch first {
-		case "return", "back", "回到主线":
-			c.quick(dto.QuickActionV1{Kind: "mainline", Action: "return", Label: "回到主线"})
-		case "free", "自由推演":
-			c.quick(dto.QuickActionV1{Kind: "mainline", Action: "free", Label: "进入自由推演"})
-		default:
-			c.printf("用法：/mode return|free\n")
-		}
-	case "/sens":
-		if first == "" {
-			first = "standard"
-		}
-		c.manage("thresholds", first, "", "")
 	default:
 		return false
 	}
 	return true
-}
-
-func (c *client) scene() (dto.SceneV1, bool) {
-	var sc dto.SceneV1
-	if err := c.call("get_scene", "", nil, &sc); err != nil {
-		c.printf("%v\n", err)
-		return sc, false
-	}
-	return sc, true
 }
 
 func (c *client) fight(arg string) {
@@ -512,28 +487,6 @@ func (c *client) showCards() {
 	pr("已故", cs.Dead)
 }
 
-func (c *client) showMainline() {
-	sc, ok := c.scene()
-	if !ok || sc.Mainline == nil {
-		c.printf("这个故事包没有主线追踪。\n")
-		return
-	}
-	m := sc.Mainline
-	c.printf("模式：%s  贴合度 %d%%（偏离 %d，轻微 %d / 严重 %d）\n", m.ModeLabel, m.Adherence, m.Deviation, m.Mild, m.Heavy)
-	if m.Anchor != "" {
-		c.printf("主线章节 %d/%d：%s\n", m.AnchorIdx+1, m.Anchors, m.Anchor)
-	}
-	if m.Objective != "" {
-		c.printf("目标：%s\n", m.Objective)
-	}
-	if m.Node != nil {
-		c.printf("当前节点：%s — %s（%s）\n", m.Node.Title, m.Node.Objective, m.Node.Source)
-	}
-	if m.Pending {
-		c.printf("⚠ 你已严重偏离主线：/mode return 回到主线，或 /mode free 进入自由推演。\n")
-	}
-}
-
 // showRPG 在每回合后打印战斗面板、通知与主线提示。
 func (c *client) showRPG(v dto.TurnV1) {
 	for _, n := range v.Notices {
@@ -541,13 +494,6 @@ func (c *client) showRPG(v dto.TurnV1) {
 	}
 	if v.Scene.Combat != nil {
 		c.printCombat(v.Scene.Combat)
-	}
-	if m := v.Scene.Mainline; m != nil && m.Pending {
-		label := "进入自由推演（AI 生成新主线）"
-		if !m.FreeOnline {
-			label = "进入沙盒模式（离线：模板委托）"
-		}
-		c.printf("\n  ⚠ 你已严重偏离主线（贴合度 %d%%）。\n    /mode return  回到主线\n    /mode free    %s\n", m.Adherence, label)
 	}
 }
 

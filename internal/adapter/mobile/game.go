@@ -18,7 +18,7 @@ import (
 )
 
 // DBFileName 是数据目录下的存档数据库文件名。
-const DBFileName = "ibukirpg.db"
+const DBFileName = "ibukirpg-v2.db"
 
 // PackDirName 是数据目录下存放导入故事包的子目录。
 const PackDirName = "packs"

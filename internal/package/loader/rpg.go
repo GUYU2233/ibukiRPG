@@ -73,65 +73,6 @@ func (r *Relations) Dimension(id string) (Dimension, bool) {
 	return Dimension{}, false
 }
 
-// Anchor 是主线锚点章节：主线由若干锚点组成，玩家可以自由行动，但 Director 会把故事拉回锚点附近。
-type Anchor struct {
-	ID        string `yaml:"id"`
-	Title     string `yaml:"title"`
-	Objective string `yaml:"objective"`
-	// Story 是锚点对应的故事节点；Complete 为空时以该故事结束作为锚点达成。
-	Story    string `yaml:"story"`
-	Complete string `yaml:"complete"`
-	// Locations 是“在主线上”的地点；为空表示不按地点计算偏离。
-	Locations   []string             `yaml:"locations"`
-	BudgetTurns int                  `yaml:"budget_turns"`
-	Nudges      []string             `yaml:"nudges"`
-	NudgeEffect []definition.Outcome `yaml:"nudge_effects"`
-	Return      []definition.Outcome `yaml:"return_effects"`
-	ReturnText  string               `yaml:"return_text"`
-}
-
-// Deviant 是一条会增加偏离度的行为规则（动作 ID、自由行动标签或战斗结果）。
-type Deviant struct {
-	Action string `yaml:"action"` // 动作 ID
-	Tag    string `yaml:"tag"`    // 自由行动标签（violence / stealth ...）或 fled / defeat
-	Weight int    `yaml:"weight"`
-	Reason string `yaml:"reason"`
-}
-
-// SandboxTemplate 是离线沙盒模式的委托模板。
-type SandboxTemplate struct {
-	Goal       string   `yaml:"goal"` // defeat / reach / talk / obtain
-	Title      string   `yaml:"title"`
-	Objective  string   `yaml:"objective"` // 可用 {location} {enemy} {npc} {item}
-	Locations  []string `yaml:"locations"`
-	Enemies    []string `yaml:"enemies"`
-	NPCs       []string `yaml:"npcs"`
-	Items      []string `yaml:"items"`
-	RewardXP   int      `yaml:"reward_xp"`
-	RewardGold int      `yaml:"reward_gold"`
-}
-
-// Mainline 是主线贴合度配置。
-type Mainline struct {
-	Anchors []Anchor `yaml:"anchors"`
-	// Thresholds：mild（轻微偏离，开始修正）与 heavy（严重偏离，弹出提示）。
-	Thresholds struct {
-		Mild  int `yaml:"mild"`
-		Heavy int `yaml:"heavy"`
-	} `yaml:"thresholds"`
-	Deviant []Deviant `yaml:"deviant"`
-	Sandbox struct {
-		Templates []SandboxTemplate `yaml:"templates"`
-	} `yaml:"sandbox"`
-	// Style 是给自由推演 AI 的世界观提示（原创概述，不要放原文）。
-	Style string `yaml:"style"`
-	// MaxRewardXP 是 AI 节点奖励上限（默认 150）。
-	MaxRewardXP int `yaml:"max_reward_xp"`
-}
-
-// Enabled 报告故事包是否声明了主线锚点。
-func (m *Mainline) Enabled() bool { return len(m.Anchors) > 0 }
-
 // HasCombat 报告故事包是否带战斗内容。
 func (p *Package) HasCombat() bool {
 	return p.Combat != nil && (len(p.Combat.EnemyIDs) > 0 || len(p.Combat.SkillIDs) > 0)
@@ -270,26 +211,6 @@ func (p *Package) loadRPG(fsys fs.FS, m *manifest.Manifest) error {
 					p.Relations.Dimensions = append(p.Relations.Dimensions, d)
 				}
 			}
-		}
-	}
-	for _, f := range m.Content["mainline"] {
-		if err := readYAML(fsys, f, &p.Mainline); err != nil {
-			return err
-		}
-	}
-	ml := &p.Mainline
-	if ml.Thresholds.Mild == 0 {
-		ml.Thresholds.Mild = 35
-	}
-	if ml.Thresholds.Heavy == 0 {
-		ml.Thresholds.Heavy = 70
-	}
-	if ml.MaxRewardXP == 0 {
-		ml.MaxRewardXP = 150
-	}
-	for i := range ml.Anchors {
-		if ml.Anchors[i].BudgetTurns == 0 {
-			ml.Anchors[i].BudgetTurns = 14
 		}
 	}
 	for _, id := range p.ItemIDs {
@@ -493,58 +414,6 @@ func (p *Package) validateRPG(compile func(where, expr string)) []error {
 		for k := range e.Values {
 			if _, ok := p.Relations.Dimension(k); !ok {
 				bad("关系 %s → %s：未知维度 %q", e.From, e.To, k)
-			}
-		}
-	}
-	for _, a := range p.Mainline.Anchors {
-		if a.ID == "" || a.Title == "" {
-			bad("主线锚点需要 id 与 title")
-		}
-		if a.Story != "" {
-			if _, ok := p.Stories[a.Story]; !ok {
-				bad("主线锚点 %s：故事 %q 不存在", a.ID, a.Story)
-			}
-		}
-		if a.Story == "" && a.Complete == "" {
-			bad("主线锚点 %s：需要 story 或 complete", a.ID)
-		}
-		compile("anchor "+a.ID, a.Complete)
-		for _, l := range a.Locations {
-			if _, ok := p.Locations[l]; !ok {
-				bad("主线锚点 %s：地点 %q 不存在", a.ID, l)
-			}
-		}
-		outcomes("anchor "+a.ID, a.NudgeEffect)
-		outcomes("anchor "+a.ID, a.Return)
-	}
-	if t := p.Mainline.Thresholds; t.Mild >= t.Heavy {
-		bad("主线阈值：mild（%d）必须小于 heavy（%d）", t.Mild, t.Heavy)
-	}
-	for i, t := range p.Mainline.Sandbox.Templates {
-		where := fmt.Sprintf("沙盒模板 #%d", i+1)
-		switch t.Goal {
-		case "defeat", "reach", "talk", "obtain":
-		default:
-			bad("%s：未知目标 %q", where, t.Goal)
-		}
-		for _, l := range t.Locations {
-			if _, ok := p.Locations[l]; !ok {
-				bad("%s：地点 %q 不存在", where, l)
-			}
-		}
-		for _, e := range t.Enemies {
-			if _, ok := c.Enemies[e]; !ok {
-				bad("%s：敌人 %q 不存在", where, e)
-			}
-		}
-		for _, n := range t.NPCs {
-			if _, ok := p.Characters[n]; !ok {
-				bad("%s：角色 %q 不存在", where, n)
-			}
-		}
-		for _, it := range t.Items {
-			if _, ok := p.Items[it]; !ok {
-				bad("%s：物品 %q 不存在", where, it)
 			}
 		}
 	}

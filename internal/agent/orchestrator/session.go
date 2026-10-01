@@ -467,9 +467,6 @@ func (s *Session) Scene(ctx context.Context) (dto.SceneV1, error) {
 	}
 	v := g.q.Scene(st)
 	v.SlotID = slot
-	if v.Mainline != nil {
-		v.Mainline.FreeOnline = s.online()
-	}
 	if sl, err := s.store.GetSlot(ctx, slot); err == nil {
 		v.SaveName = sl.Name
 	}

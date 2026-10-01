@@ -54,8 +54,7 @@ func (q *Q) Scene(s *state.State) dto.SceneV1 {
 	}
 	v.Hud = q.Hud(s)
 	v.Combat = q.Combat(s)
-	v.Mainline = q.Mainline(s)
-	v.HasRPG = p.HasCombat() || p.Mainline.Enabled()
+	v.HasRPG = p.HasCombat()
 	for _, id := range s.NPCsAt(p, loc.ID) {
 		c := p.Characters[id]
 		v.Present = append(v.Present, dto.NPCBriefV1{ID: id, Name: c.Name(), Role: c.Identity.Role, Attitude: narrator.Attitude(s.NPCs[id]), Portrait: c.Portrait != ""})
@@ -368,7 +367,7 @@ func (q *Q) Journal(events []event.Event, playerName string) []dto.JournalEntryV
 			if d.Flag == "backroom_allowed" {
 				add(e, "world", "伯林允许你进入储藏室")
 			}
-		case event.CombatStarted, event.CombatEnded, event.MainlineModeChanged, event.MainlineNodeCanonized, event.MainlineNodeCompleted, event.MainlineAnchorReached, event.CharacterDied:
+		case event.CombatStarted, event.CombatEnded, event.CharacterDied:
 			if text, ok := q.rpgStoryEntry(e); ok {
 				kind := "combat"
 				if e.Type != event.CombatStarted && e.Type != event.CombatEnded {

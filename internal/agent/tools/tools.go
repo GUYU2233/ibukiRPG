@@ -68,7 +68,7 @@ func strProp(desc string) map[string]any {
 	return map[string]any{"type": "string", "description": desc}
 }
 
-var entityTypes = []string{"character", "location", "item", "skill", "enemy", "mech", "faction", "tech", "lore", "story", "anchor", "action"}
+var entityTypes = []string{"character", "location", "item", "skill", "enemy", "mech", "faction", "tech", "lore", "story", "action"}
 
 // All 返回全部工具（按名字排序，确定）。
 func All() []Tool {
@@ -91,8 +91,6 @@ func All() []Tool {
 			Scopes: []ScopeKind{ScopeNPC, ScopePlayer, ScopeDirector}, run: memorySearch},
 		{Name: "story.get_state", Description: "当前剧情状态：主线模式与锚点、当前目标、进行中的事件、自由推演节点。",
 			Params: obj(map[string]any{}), Scopes: []ScopeKind{ScopePlayer, ScopeDirector}, run: storyState},
-		{Name: "story.anchors", Description: "主线锚点列表（导演可见全部目标；叙述者只见已完成与当前锚点）。",
-			Params: obj(map[string]any{}), Scopes: []ScopeKind{ScopePlayer, ScopeDirector}, run: anchors},
 		{Name: "world.get_location", Description: "读取地点：描述、场景事实、出口、在场人物。省略 id 表示玩家当前位置。",
 			Params: obj(map[string]any{"id": strProp("可选：地点 ID 或名字")}), run: location},
 		{Name: "rules.get_action", Description: "读取一个动作规则：说明、关键词、检定技能与耗时。",
@@ -727,13 +725,6 @@ func storyState(e *Env, sc Scope, _ args) (any, error) {
 	out := map[string]any{"turn": s.Turn, "location": p.EntityName(s.Player.Location)}
 	if e.Q != nil {
 		out["objective"] = e.Q.Objective(s)
-		if ml := e.Q.Mainline(s); ml != nil {
-			m := map[string]any{"mode": ml.ModeLabel, "deviation": ml.Deviation, "anchor": ml.Anchor, "anchor_objective": ml.Objective}
-			if ml.Node != nil {
-				m["node"] = map[string]any{"title": ml.Node.Title, "objective": ml.Node.Objective, "goal": ml.Node.Goal}
-			}
-			out["mainline"] = m
-		}
 	}
 	var stories []map[string]any
 	for _, id := range p.StoryIDs {
@@ -748,38 +739,7 @@ func storyState(e *Env, sc Scope, _ args) (any, error) {
 		stories = append(stories, x)
 	}
 	out["stories"] = stories
-	if s.RPG != nil && len(s.RPG.Main.Nodes) > 0 {
-		var ns []string
-		for _, n := range s.RPG.Main.Nodes {
-			ns = append(ns, n.Title+"（"+n.Status+"）")
-		}
-		out["free_nodes"] = ns
-	}
 	return out, nil
-}
-
-func anchors(e *Env, sc Scope, _ args) (any, error) {
-	p, s := e.Pkg, e.State
-	cur := -1
-	if s.RPG != nil {
-		cur = s.RPG.Main.Anchor
-	}
-	res := []map[string]any{}
-	for i, a := range p.Mainline.Anchors {
-		x := map[string]any{"index": i, "title": a.Title}
-		switch {
-		case sc.Kind == ScopeDirector:
-			x["objective"], x["story"], x["locations"] = a.Objective, a.Story, a.Locations
-		case i < cur:
-			x["done"] = true
-		case i == cur:
-			x["objective"], x["current"] = a.Objective, true
-		default:
-			continue // 之后的锚点对叙述者保密
-		}
-		res = append(res, x)
-	}
-	return map[string]any{"current": cur, "results": res}, nil
 }
 
 func location(e *Env, sc Scope, a args) (any, error) {

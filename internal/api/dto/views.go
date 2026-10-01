@@ -125,8 +125,6 @@ type SceneV1 struct {
 	PackName string `json:"pack_name,omitempty"`
 	// Combat 非空表示正在战斗（界面切换为战斗面板）。
 	Combat *CombatV1 `json:"combat,omitempty"`
-	// Mainline 是主线贴合度状态（故事包声明了主线锚点时）。
-	Mainline *MainlineV1 `json:"mainline,omitempty"`
 	// HasRPG 表示故事包带数值 RPG 内容（显示图鉴 / 关系网 / 成长入口）。
 	HasRPG bool `json:"has_rpg,omitempty"`
 }
@@ -195,25 +193,6 @@ type CombatV1 struct {
 	ResourceName string           `json:"resource_name"`
 	Mercury      int              `json:"mercury"`
 	MercuryMax   int              `json:"mercury_max"`
-}
-
-// MainlineV1 是主线贴合度。
-type MainlineV1 struct {
-	Mode      string `json:"mode"` // main / free / sandbox
-	ModeLabel string `json:"mode_label"`
-	Deviation int    `json:"deviation"`
-	Adherence int    `json:"adherence"`
-	Mild      int    `json:"mild"`
-	Heavy     int    `json:"heavy"`
-	Level     int    `json:"level"` // 0 贴合 / 1 轻微偏离 / 2 严重偏离
-	Pending   bool   `json:"pending,omitempty"`
-	Anchor    string `json:"anchor,omitempty"`
-	Objective string `json:"objective,omitempty"`
-	// Node 是自由推演 / 沙盒模式下的当前节点。
-	Node       *NodeV1 `json:"node,omitempty"`
-	FreeOnline bool    `json:"free_online,omitempty"` // 选择自由推演时是否由 AI 生成（否则为沙盒）
-	Anchors    int     `json:"anchors"`
-	AnchorIdx  int     `json:"anchor_idx"`
 }
 
 // NodeV1 是动态主线节点。

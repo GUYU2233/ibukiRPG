@@ -246,22 +246,11 @@ func (e *Env) docs() []doc {
 		}
 		out = append(out, doc{ID: id, Type: "story", Name: st.Title, Known: st.Intro, Secret: strings.Join(steps, "；")})
 	}
-	for i, a := range p.Mainline.Anchors {
-		out = append(out, doc{ID: "anchor:" + a.ID, Type: "anchor", Name: a.Title, Secret: join(a.Objective, strings.Join(a.Nudges, "；")), Known: anchorKnown(e, i, a.Objective)})
-	}
 	for _, id := range p.ActionIDs {
 		a := p.Actions[id]
 		out = append(out, doc{ID: id, Type: "action", Name: a.Name, Aliases: a.Keywords, Public: a.Description})
 	}
 	return out
-}
-
-// anchorKnown：当前锚点的目标对叙述者可见（允许的伏笔）；之后的锚点只有 director 可见。
-func anchorKnown(e *Env, idx int, objective string) string {
-	if e.State != nil && e.State.RPG != nil && e.State.RPG.Main.Anchor == idx {
-		return objective
-	}
-	return ""
 }
 
 func codexType(kind string) string {

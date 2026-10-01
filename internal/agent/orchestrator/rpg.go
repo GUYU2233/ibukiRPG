@@ -7,13 +7,6 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
 )
 
-// online 报告当前是否配置了可用的 AI。
-func (s *Session) online() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.ai.Online()
-}
-
 // Codex 返回图鉴。
 func (s *Session) Codex() (dto.CodexV1, error) {
 	_, st, g, err := s.current()

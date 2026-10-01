@@ -324,7 +324,6 @@ type Package struct {
 	// Prompts 是提示词段落补丁（manifest content.prompts）。
 	Prompts   []PromptPatch
 	Relations Relations
-	Mainline  Mainline
 }
 
 // Key 返回命名空间化 ID 的最后一段，例如 demo:action/talk → talk。

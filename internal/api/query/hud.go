@@ -9,7 +9,6 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/core/engine"
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
 	"github.com/GUYU2233/ibukiRPG/internal/package/loader"
-	"github.com/GUYU2233/ibukiRPG/internal/story/director"
 	"github.com/GUYU2233/ibukiRPG/internal/world/worldtime"
 )
 
@@ -25,12 +24,6 @@ var toneOrder = []string{"danger", "warning", "success", "normal"}
 
 // Objective 返回当前主线目标（故事包 objectives 中第一个成立的）。
 func (q *Q) Objective(s *state.State) string {
-	if s.RPG != nil && s.RPG.Main.CurrentMode() != state.ModeMain {
-		if n := s.RPG.Main.ActiveNode(); n != nil {
-			return n.Title + "：" + n.Objective
-		}
-		return "自由行动——新的目标即将出现"
-	}
 	vars := engine.Vars(q.Pkg, s, "", "")
 	for _, o := range q.Pkg.Objectives {
 		if o.When == "" {
@@ -159,39 +152,6 @@ func (q *Q) hudValue(s *state.State, f loader.HUDField, vars map[string]any) (st
 			m = s.RPG.Mercury
 		}
 		return fmt.Sprint(m), int64(m), true
-	case f.Bind == "deviation":
-		if !p.Mainline.Enabled() {
-			return "", 0, false
-		}
-		d := 0
-		if s.RPG != nil {
-			d = s.RPG.Main.Deviation
-		}
-		if s.RPG != nil && s.RPG.Main.CurrentMode() != state.ModeMain {
-			return "—", 0, false
-		}
-		a := director.Adherence(d)
-		return fmt.Sprintf("%d%%", a), int64(a), true
-	case f.Bind == "mode":
-		if !p.Mainline.Enabled() {
-			return "", 0, false
-		}
-		m := state.ModeMain
-		if s.RPG != nil {
-			m = s.RPG.Main.CurrentMode()
-		}
-		if m == state.ModeMain {
-			if a := engine.CurrentAnchor(p, s); a != nil {
-				return "主线 · " + a.Title, 0, false
-			}
-			return "主线 · 已完成", 0, false
-		}
-		return modeLabels[m], 0, false
-	case f.Bind == "anchor":
-		if a := engine.CurrentAnchor(p, s); a != nil {
-			return a.Title, 0, false
-		}
-		return "", 0, false
 	case f.Bind == "combat":
 		if s.RPG != nil && s.RPG.Combat != nil {
 			return fmt.Sprintf("%s · 第 %d 回合", s.RPG.Combat.Title, s.RPG.Combat.Round), int64(s.RPG.Combat.Round), true

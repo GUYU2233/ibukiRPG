@@ -124,17 +124,7 @@ func (w *work) startCombat(ref string) error {
 	}
 	var enc combat.Encounter
 	nodeID := ""
-	if strings.HasPrefix(ref, "node:") {
-		nodeID = strings.TrimPrefix(ref, "node:")
-		n := r.Main.ActiveNode()
-		if n == nil || n.ID != nodeID || n.Goal != "defeat" {
-			return reject("这里没有需要迎战的对手。")
-		}
-		if n.Location != "" && n.Location != w.s.Player.Location {
-			return reject("对手在%s。", w.name(n.Location))
-		}
-		enc = combat.Encounter{ID: ref, Title: n.Title, Enemies: n.Enemies, AllowMech: true, Defeat: combat.Defeat{Branch: "injured"}}
-	} else {
+	{
 		e, ok := p.Combat.Encounters[ref]
 		if !ok {
 			return reject("没有这场战斗。")
