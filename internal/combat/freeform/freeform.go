@@ -215,7 +215,7 @@ func Consequences(p Profile, degree string) []string {
 func ConsequenceLabel(c string) string {
 	switch c {
 	case "off_balance":
-		return "失衡（下回合 −2）"
+		return "失衡（命中 −10 · 1 回合）"
 	case "counter":
 		return "被反击"
 	case "stamina":

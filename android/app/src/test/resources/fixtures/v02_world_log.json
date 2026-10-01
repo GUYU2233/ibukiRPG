@@ -1,0 +1,21 @@
+{
+  "changes": [
+    {
+      "after": "替煤烟帮送完最后一批货，攒钱给妹妹买药",
+      "can_revert": true,
+      "id": "wc-4-1",
+      "impact": 19,
+      "op": "patch",
+      "path": "fields.goals",
+      "reason": "托克亲口承认在替煤烟帮跑腿",
+      "source": "narrate",
+      "source_label": "AI 叙事",
+      "summary": "托克：目标 → 替煤烟帮送完最后一批货，攒钱给妹妹买药",
+      "target": "brass:character/tock",
+      "target_name": "托克",
+      "time": "第1天 08:16 · 上午",
+      "turn": 4
+    }
+  ],
+  "tab": "log"
+}

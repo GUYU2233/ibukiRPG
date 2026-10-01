@@ -47,13 +47,21 @@ statuses:
     debuff: true
     description: 视线被烟尘遮住，命中 -30。
   - id: brass:status/stagger
-    tags: [stagger, off_balance]
+    tags: [stagger]
     name: 踉跄
     icon: sync_problem
     turns: 1
     stun: true
     debuff: true
     description: 被重击打得站立不稳，跳过下一次行动。
+  - id: brass:status/off_balance
+    tags: [off_balance]
+    name: 失衡
+    icon: sync_problem
+    turns: 1
+    mods: {acc: -10, def: -2}
+    debuff: true
+    description: 动作落空、重心不稳，命中 -10、防御 -2。
   - id: brass:status/guarded
     tags: [guarded]
     name: 架势

@@ -241,14 +241,18 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 	s.dailyCheckpoint(context.WithoutCancel(ctx), slot, branch, st, final)
 	notices := g.q.Notices(final, result.Events)
 	s.scheduleMemory(slot, g, s.stateOr(final))
+	var usage *dto.UsageV1
+	if s.router.Settings().ShowUsage && online {
+		if u, uerr := s.Usage(ctx, result.Turn); uerr == nil && u.Calls > 0 {
+			usage = &u
+			// 用量行作为条目落盘：重新打开存档后叙事流里仍能看到“回合 N · ↑… ↓…”。
+			_ = s.store.AppendEntries(ctx, slot, []eventstore.Entry{fromEntry(dto.EntryV1{CommandID: cmdID + ":usage", Kind: "usage", Turn: result.Turn, Usage: usage})})
+		}
+	}
 	v, err := s.view(ctx, slot, cmdID, true)
 	v.Notices = notices
 	v.Resolver = resolverName
-	if s.router.Settings().ShowUsage && online {
-		if u, uerr := s.Usage(ctx, result.Turn); uerr == nil && u.Calls > 0 {
-			v.Usage = &u
-		}
-	}
+	v.Usage = usage
 	s.emit(dto.StreamEventV1{Type: "turn_done", CommandID: cmdID})
 	return v, err
 }

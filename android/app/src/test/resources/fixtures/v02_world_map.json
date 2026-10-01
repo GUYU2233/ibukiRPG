@@ -1,0 +1,86 @@
+{
+  "entities": [
+    {
+      "fields": [
+        {
+          "key": "description",
+          "label": "描述",
+          "level": "known",
+          "value": "运煤驳船挤在北码头的木桩之间，吊臂吱呀作响。三号仓的铁门上刷着煤烟帮的黑手印，门缝里飘出一股煤油味。"
+        },
+        {
+          "key": "exits",
+          "label": "出口",
+          "level": "known",
+          "value": "brass:location/plaza"
+        }
+      ],
+      "here": true,
+      "id": "brass:location/north_dock",
+      "kind": "location",
+      "name": "北码头",
+      "progress": "●●"
+    },
+    {
+      "fields": [
+        {
+          "key": "description",
+          "label": "描述",
+          "level": "known",
+          "value": "一圈铸铁看台围着沙地擂台，看台上的观众挥舞着押注的票根。擂台边的告示牌上写着今天的试炼对手。"
+        },
+        {
+          "key": "exits",
+          "label": "出口",
+          "level": "known",
+          "value": "brass:location/plaza"
+        }
+      ],
+      "id": "brass:location/arena",
+      "kind": "location",
+      "name": "铁环竞技场",
+      "progress": "●●"
+    },
+    {
+      "fields": [
+        {
+          "key": "description",
+          "label": "描述",
+          "level": "known",
+          "value": "石板广场中央立着锈钟镇的钟楼，巨大的表盘停在七点零三分。小贩推着蒸汽推车叫卖，孩子们在喷泉边追逐。"
+        },
+        {
+          "key": "exits",
+          "label": "出口",
+          "level": "known",
+          "value": "brass:location/workshop、brass:location/arena、brass:location/north_dock、brass:location/sewer"
+        }
+      ],
+      "id": "brass:location/plaza",
+      "kind": "location",
+      "name": "钟楼广场",
+      "progress": "●●"
+    },
+    {
+      "fields": [
+        {
+          "key": "description",
+          "label": "描述",
+          "level": "known",
+          "value": "高高的穹顶下挂满链条和吊钩，炉火终年不熄。工作台上摊着图纸，角落里立着一台蒙着帆布的黄铜甲胄。"
+        },
+        {
+          "key": "exits",
+          "label": "出口",
+          "level": "known",
+          "value": "brass:location/plaza"
+        }
+      ],
+      "id": "brass:location/workshop",
+      "kind": "location",
+      "name": "行会工坊",
+      "progress": "●●"
+    }
+  ],
+  "tab": "map"
+}

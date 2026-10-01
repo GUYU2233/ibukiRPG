@@ -1,0 +1,803 @@
+{
+  "scene": {
+    "branch": "主干",
+    "clock": "08:16",
+    "combat": {
+      "actions": [
+        {
+          "icon": "swords",
+          "kind": "attack",
+          "label": "攻击",
+          "target": "enemy"
+        },
+        {
+          "hint": "减伤 50%",
+          "icon": "shield",
+          "kind": "defend",
+          "label": "防御",
+          "target": "none"
+        },
+        {
+          "disabled": true,
+          "hint": "15 蒸汽压",
+          "icon": "precision_manufacturing",
+          "id": "brass:mech/warden",
+          "kind": "mech",
+          "label": "启动黄铜守卫",
+          "reason": "这场战斗无法启动",
+          "target": "none"
+        },
+        {
+          "icon": "directions_run",
+          "kind": "flee",
+          "label": "逃跑",
+          "target": "none"
+        }
+      ],
+      "encounter": "brass:encounter/trial_bout1",
+      "enemies": [
+        {
+          "hp": 24,
+          "icon": "pest_control_rodent",
+          "id": "e1",
+          "level": 1,
+          "max_hp": 24,
+          "max_sp": 10,
+          "name": "发条鼠甲",
+          "parts": [
+            {
+              "id": "key",
+              "known": false,
+              "name": "发条钥匙"
+            }
+          ],
+          "ref": "brass:enemy/clock_rat",
+          "side": "enemy",
+          "size": "small",
+          "sp": 10,
+          "statuses": [],
+          "tier": "minion"
+        },
+        {
+          "hp": 24,
+          "icon": "pest_control_rodent",
+          "id": "e2",
+          "level": 1,
+          "max_hp": 24,
+          "max_sp": 10,
+          "name": "发条鼠乙",
+          "parts": [
+            {
+              "id": "key",
+              "known": false,
+              "name": "发条钥匙"
+            }
+          ],
+          "ref": "brass:enemy/clock_rat",
+          "side": "enemy",
+          "size": "small",
+          "sp": 10,
+          "statuses": [],
+          "tier": "minion"
+        }
+      ],
+      "items": [
+        {
+          "hint": "×2",
+          "icon": "healing",
+          "id": "brass:item/bandage",
+          "kind": "item",
+          "label": "干净绷带",
+          "qty": 2,
+          "target": "self"
+        },
+        {
+          "hint": "×1",
+          "icon": "propane_tank",
+          "id": "brass:item/fuel_can",
+          "kind": "item",
+          "label": "高压燃料罐",
+          "qty": 1,
+          "target": "self"
+        }
+      ],
+      "mercury": 60,
+      "mercury_max": 100,
+      "order": [
+        "你",
+        "发条鼠乙",
+        "发条鼠甲"
+      ],
+      "party": [
+        {
+          "current": true,
+          "hp": 51,
+          "icon": "person",
+          "id": "player",
+          "level": 1,
+          "max_hp": 62,
+          "max_sp": 30,
+          "name": "阿砾",
+          "ref": "player",
+          "side": "party",
+          "sp": 30,
+          "statuses": []
+        }
+      ],
+      "resource_name": "蒸汽压",
+      "round": 2,
+      "skills": [
+        {
+          "hint": "8 体力",
+          "icon": "build",
+          "id": "brass:skill/wrench_smash",
+          "kind": "skill",
+          "label": "扳手重击",
+          "target": "enemy"
+        },
+        {
+          "hint": "8 体力",
+          "icon": "healing",
+          "id": "brass:skill/patch_up",
+          "kind": "skill",
+          "label": "紧急包扎",
+          "target": "ally"
+        }
+      ],
+      "title": "试炼第一场：发条鼠",
+      "your_turn": true
+    },
+    "conditions": [],
+    "day": 1,
+    "description": "沙地擂台被铸铁看台围着，观众在押注。",
+    "exits": [
+      {
+        "id": "brass:location/plaza",
+        "label": "钟楼广场",
+        "locked": false
+      }
+    ],
+    "facts": [
+      "看台上坐满了押注的观众",
+      "托克口袋里有一张煤烟帮的传单"
+    ],
+    "gold": 10,
+    "has_rpg": true,
+    "hud": [
+      {
+        "compact": true,
+        "icon": "flag",
+        "id": "objective",
+        "label": "目标",
+        "progress": -1,
+        "value": "去铁环竞技场，赢下第一场试炼。",
+        "wide": true
+      },
+      {
+        "compact": true,
+        "icon": "place",
+        "id": "location",
+        "label": "位置",
+        "progress": -1,
+        "value": "铁环竞技场"
+      },
+      {
+        "compact": true,
+        "icon": "military_tech",
+        "id": "level",
+        "label": "等级",
+        "progress": -1,
+        "value": "Lv.1"
+      },
+      {
+        "compact": true,
+        "icon": "favorite",
+        "id": "hp",
+        "label": "生命",
+        "progress": -1,
+        "value": "51/62"
+      },
+      {
+        "compact": true,
+        "icon": "propane_tank",
+        "id": "steam",
+        "label": "蒸汽压",
+        "progress": 600,
+        "value": "60"
+      },
+      {
+        "compact": false,
+        "icon": "trending_up",
+        "id": "xp",
+        "label": "经验",
+        "progress": -1,
+        "value": "0/100"
+      },
+      {
+        "compact": false,
+        "icon": "payments",
+        "id": "gold",
+        "label": "铜币",
+        "progress": -1,
+        "value": "10"
+      }
+    ],
+    "location_id": "brass:location/arena",
+    "location_name": "铁环竞技场",
+    "pack_id": "brass_trial",
+    "pack_name": "锈钟镇·黄铜试炼",
+    "period": "上午",
+    "player_name": "阿砾",
+    "present": [
+      {
+        "attitude": "中立",
+        "id": "brass:character/tock",
+        "name": "托克",
+        "role": "去年的试炼第一名"
+      }
+    ],
+    "save_name": "阿砾的旅程",
+    "slot_id": "slot-1790872158659-4467af59",
+    "story": {
+      "hints": [
+        "去竞技场"
+      ],
+      "id": "brass:story/trial",
+      "title": "黄铜试炼"
+    },
+    "time_text": "第1天 08:16 · 上午",
+    "turn": 6,
+    "upcoming": [
+      {
+        "countdown": "进行中",
+        "id": "brass:event/trial_day",
+        "location": "铁环竞技场",
+        "status": "active",
+        "status_label": "进行中",
+        "title": "学徒试炼日"
+      },
+      {
+        "countdown": "3 天 1 时后",
+        "id": "brass:event/council_vote",
+        "location": "钟楼广场",
+        "starts_in_min": 4364,
+        "status": "scheduled",
+        "status_label": "未开始",
+        "title": "议会投票"
+      },
+      {
+        "countdown": "3 天 13 时后",
+        "id": "brass:event/clock_stop",
+        "location": "未知的地方",
+        "rumored": true,
+        "starts_in_min": 5084,
+        "status": "scheduled",
+        "status_label": "未开始",
+        "title": "钟停之时"
+      }
+    ]
+  },
+  "suggestions": [],
+  "transcript": [
+    {
+      "id": 76,
+      "kind": "intro",
+      "text": "锈钟镇的钟楼已经三天没有敲响了。\n你背着一只旧工具箱走进行会工坊，炉火把墙上的齿轮映得通红。行会长欧琳从一台拆开的甲胄后面探出头来：“学徒试炼今天开始。先去竞技场，赢了再说话。”\n——你可以直接写下想做的事，也可以点开世界面板看看你目前知道些什么（大多数东西还是“未知”）。",
+      "turn": 0
+    },
+    {
+      "command_id": "w-1",
+      "id": 77,
+      "kind": "player",
+      "text": "和欧琳聊聊",
+      "turn": 1
+    },
+    {
+      "command_id": "w-1",
+      "id": 80,
+      "kind": "narration",
+      "source": "ai",
+      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "turn": 1
+    },
+    {
+      "chips": [
+        "欧琳 信任 +2"
+      ],
+      "command_id": "w-1",
+      "id": 78,
+      "kind": "system",
+      "text": "欧琳 信任 +2",
+      "turn": 1
+    },
+    {
+      "command_id": "w-1",
+      "id": 79,
+      "kind": "story",
+      "text": "事件开始：《黄铜试炼》",
+      "turn": 1
+    },
+    {
+      "command_id": "w-1:usage",
+      "id": 81,
+      "kind": "usage",
+      "text": "",
+      "turn": 1,
+      "usage": {
+        "calls": 2,
+        "completion_tokens": 323,
+        "failed": 1,
+        "prompt_tokens": 2110,
+        "tasks": [
+          {
+            "calls": 1,
+            "completion_tokens": 0,
+            "failed": 1,
+            "latency_ms": 1,
+            "model": "custom:deepseek-chat",
+            "name": "意图解析",
+            "prompt_tokens": 0,
+            "task": "parse_action"
+          },
+          {
+            "calls": 1,
+            "completion_tokens": 323,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "叙事 + 世界更新",
+            "prompt_tokens": 2110,
+            "task": "narrate_world"
+          }
+        ],
+        "turn": 1
+      }
+    },
+    {
+      "command_id": "w-2",
+      "id": 82,
+      "kind": "player",
+      "text": "去钟楼广场",
+      "turn": 2
+    },
+    {
+      "command_id": "w-2",
+      "id": 83,
+      "kind": "narration",
+      "source": "ai",
+      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "turn": 2
+    },
+    {
+      "command_id": "w-2:usage",
+      "id": 84,
+      "kind": "usage",
+      "text": "",
+      "turn": 2,
+      "usage": {
+        "calls": 2,
+        "completion_tokens": 323,
+        "failed": 1,
+        "prompt_tokens": 2110,
+        "tasks": [
+          {
+            "calls": 1,
+            "completion_tokens": 0,
+            "failed": 1,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "意图解析",
+            "prompt_tokens": 0,
+            "task": "parse_action"
+          },
+          {
+            "calls": 1,
+            "completion_tokens": 323,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "叙事 + 世界更新",
+            "prompt_tokens": 2110,
+            "task": "narrate_world"
+          }
+        ],
+        "turn": 2
+      }
+    },
+    {
+      "command_id": "w-3",
+      "id": 85,
+      "kind": "player",
+      "text": "去竞技场",
+      "turn": 3
+    },
+    {
+      "command_id": "w-3",
+      "id": 86,
+      "kind": "narration",
+      "source": "ai",
+      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "turn": 3
+    },
+    {
+      "command_id": "w-3:usage",
+      "id": 87,
+      "kind": "usage",
+      "text": "",
+      "turn": 3,
+      "usage": {
+        "calls": 2,
+        "completion_tokens": 323,
+        "failed": 1,
+        "prompt_tokens": 2109,
+        "tasks": [
+          {
+            "calls": 1,
+            "completion_tokens": 0,
+            "failed": 1,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "意图解析",
+            "prompt_tokens": 0,
+            "task": "parse_action"
+          },
+          {
+            "calls": 1,
+            "completion_tokens": 323,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "叙事 + 世界更新",
+            "prompt_tokens": 2109,
+            "task": "narrate_world"
+          }
+        ],
+        "turn": 3
+      }
+    },
+    {
+      "command_id": "w-4",
+      "id": 88,
+      "kind": "player",
+      "text": "走过去，问托克口袋里藏的是什么",
+      "turn": 4
+    },
+    {
+      "command_id": "w-4",
+      "id": 90,
+      "kind": "narration",
+      "source": "ai",
+      "text": "托克犹豫了一下，还是把传单抖开——上面印着一只被齿轮咬住的手，下面一行小字：『明晚，钟停之时。』\n“别声张，”他压低声音，“议会那帮人要是知道我替煤烟帮跑腿，行会的门我就再也进不去了。”",
+      "turn": 4
+    },
+    {
+      "chips": [
+        "托克 信任 +2"
+      ],
+      "command_id": "w-4",
+      "id": 89,
+      "kind": "system",
+      "text": "托克 信任 +2",
+      "turn": 4
+    },
+    {
+      "command_id": "w-4:world",
+      "id": 91,
+      "kind": "world",
+      "text": "",
+      "turn": 4,
+      "world": {
+        "changes": [
+          {
+            "after": "替煤烟帮送完最后一批货，攒钱给妹妹买药",
+            "can_revert": true,
+            "id": "wc-4-1",
+            "impact": 19,
+            "op": "patch",
+            "path": "fields.goals",
+            "reason": "托克亲口承认在替煤烟帮跑腿",
+            "source": "narrate",
+            "source_label": "AI 叙事",
+            "summary": "托克：目标 → 替煤烟帮送完最后一批货，攒钱给妹妹买药",
+            "target": "brass:character/tock",
+            "target_name": "托克",
+            "time": "第1天 08:16 · 上午",
+            "turn": 4
+          }
+        ],
+        "impact": 30,
+        "reveals": [
+          {
+            "channel": "dialogue",
+            "entity": "brass:character/tock",
+            "field": "faction",
+            "field_label": "所属势力",
+            "kind": "field",
+            "level": "known",
+            "name": "托克"
+          },
+          {
+            "channel": "rumor",
+            "entity": "brass:event/clock_stop",
+            "field": "existence",
+            "field_label": "新发现",
+            "kind": "rumor",
+            "level": "rumored",
+            "name": "钟停之时"
+          },
+          {
+            "channel": "dialogue",
+            "entity": "brass:faction/soot_gang",
+            "field": "existence",
+            "field_label": "新发现",
+            "kind": "field",
+            "level": "known",
+            "name": "煤烟帮"
+          },
+          {
+            "channel": "dialogue",
+            "entity": "brass:faction/soot_gang",
+            "field": "name",
+            "field_label": "名字",
+            "kind": "field",
+            "level": "known",
+            "name": "煤烟帮"
+          }
+        ]
+      }
+    },
+    {
+      "command_id": "w-4:usage",
+      "id": 92,
+      "kind": "usage",
+      "text": "",
+      "turn": 4,
+      "usage": {
+        "calls": 2,
+        "completion_tokens": 657,
+        "failed": 1,
+        "prompt_tokens": 2120,
+        "tasks": [
+          {
+            "calls": 1,
+            "completion_tokens": 0,
+            "failed": 1,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "意图解析",
+            "prompt_tokens": 0,
+            "task": "parse_action"
+          },
+          {
+            "calls": 1,
+            "completion_tokens": 657,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "叙事 + 世界更新",
+            "prompt_tokens": 2120,
+            "task": "narrate_world"
+          }
+        ],
+        "turn": 4
+      }
+    },
+    {
+      "command_id": "w-5",
+      "id": 93,
+      "kind": "player",
+      "text": "迎战",
+      "turn": 5
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠乙",
+        "chance": 71,
+        "chips": [
+          "命中 59/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 101%",
+          "= 4 伤害"
+        ],
+        "damage": 4,
+        "hit": true,
+        "roll": 59,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "w-5",
+      "id": 94,
+      "kind": "combat",
+      "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
+      "turn": 5
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠甲",
+        "chance": 71,
+        "chips": [
+          "命中 16/71% ✓",
+          "攻 8×100%",
+          "防 7",
+          "浮动 91%",
+          "= 3 伤害"
+        ],
+        "damage": 3,
+        "hit": true,
+        "roll": 16,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "w-5",
+      "id": 95,
+      "kind": "combat",
+      "text": "发条鼠甲发动了攻击，击中了阿砾。 −3",
+      "turn": 5
+    },
+    {
+      "command_id": "w-5",
+      "id": 97,
+      "kind": "narration",
+      "source": "ai",
+      "text": "铁闸后传来齿轮咬合的声音，空气里全是机油味。",
+      "turn": 5
+    },
+    {
+      "command_id": "w-5",
+      "id": 96,
+      "kind": "story",
+      "text": "战斗开始：试炼第一场：发条鼠",
+      "turn": 5
+    },
+    {
+      "command_id": "w-5:usage",
+      "id": 98,
+      "kind": "usage",
+      "text": "",
+      "turn": 5,
+      "usage": {
+        "calls": 1,
+        "completion_tokens": 311,
+        "prompt_tokens": 2107,
+        "tasks": [
+          {
+            "calls": 1,
+            "completion_tokens": 311,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "叙事 + 世界更新",
+            "prompt_tokens": 2107,
+            "task": "narrate_world"
+          }
+        ],
+        "turn": 5
+      }
+    },
+    {
+      "command_id": "w-6",
+      "id": 99,
+      "kind": "player",
+      "text": "趁它扑过来的空档，扫腿绊倒发条鼠，再抡扳手砸它背上的发条钥匙",
+      "turn": 6
+    },
+    {
+      "adjudication": {
+        "band": "balanced",
+        "dc": 14,
+        "degree": "failure",
+        "degree_label": "失败",
+        "dice": "2d10",
+        "margin": -2,
+        "mod_total": 3,
+        "mods": [
+          "属性 +4",
+          "碰运气（部位未知） -1"
+        ],
+        "parse": "战技「绊倒」 · 发条鼠甲 · 发条钥匙 · 学徒扳手",
+        "plausibility": "ok",
+        "plausibility_label": "合理",
+        "result": "失衡（命中 −10 · 1 回合） · 被反击",
+        "rolls": [
+          8,
+          1
+        ],
+        "total": 12
+      },
+      "command_id": "w-6",
+      "id": 100,
+      "kind": "adjudication",
+      "text": "战技「绊倒」 · 发条鼠甲 · 发条钥匙 · 学徒扳手",
+      "turn": 6
+    },
+    {
+      "combat": {
+        "action": "freeform",
+        "actor": "阿砾",
+        "chips": [
+          "失败"
+        ],
+        "hit": false,
+        "side": "party",
+        "target": "发条鼠甲"
+      },
+      "command_id": "w-6",
+      "id": 101,
+      "kind": "combat",
+      "text": "阿砾发动了攻击，被发条鼠甲躲开了。",
+      "turn": 6
+    },
+    {
+      "combat": {
+        "action": "status",
+        "actor": "阿砾",
+        "chips": [
+          "失衡"
+        ],
+        "hit": true,
+        "side": "party"
+      },
+      "command_id": "w-6",
+      "id": 102,
+      "kind": "combat",
+      "text": "阿砾陷入失衡（1 回合）",
+      "turn": 6
+    },
+    {
+      "combat": {
+        "action": "attack",
+        "actor": "发条鼠甲",
+        "chance": 71,
+        "chips": [
+          "命中 34/71% ✓",
+          "攻 8×100%",
+          "防 5",
+          "浮动 101%",
+          "= 4 伤害"
+        ],
+        "damage": 4,
+        "hit": true,
+        "roll": 34,
+        "side": "enemy",
+        "target": "阿砾"
+      },
+      "command_id": "w-6",
+      "id": 103,
+      "kind": "combat",
+      "text": "发条鼠甲发动了攻击，击中了阿砾。 −4",
+      "turn": 6
+    },
+    {
+      "command_id": "w-6",
+      "id": 104,
+      "kind": "narration",
+      "source": "template",
+      "text": "你发动了攻击，被发条鼠甲躲开了。发条鼠甲发动了攻击，击中了你。",
+      "turn": 6
+    },
+    {
+      "command_id": "w-6:usage",
+      "id": 105,
+      "kind": "usage",
+      "text": "",
+      "turn": 6,
+      "usage": {
+        "calls": 1,
+        "completion_tokens": 0,
+        "failed": 1,
+        "prompt_tokens": 0,
+        "tasks": [
+          {
+            "calls": 1,
+            "completion_tokens": 0,
+            "failed": 1,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "战斗裁定",
+            "prompt_tokens": 0,
+            "task": "combat_adjudicate"
+          }
+        ],
+        "turn": 6
+      }
+    }
+  ]
+}

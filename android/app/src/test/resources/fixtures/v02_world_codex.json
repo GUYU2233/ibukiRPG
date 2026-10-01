@@ -1,0 +1,753 @@
+{
+  "codex": {
+    "categories": [
+      {
+        "entries": [
+          {
+            "description": "短发、护目镜推在额头上的女人，左手是一只黄铜义肢，说话像拧螺丝一样干脆。",
+            "icon": "engineering",
+            "id": "brass:character/orin",
+            "kind": "character",
+            "kind_name": "人物",
+            "known": true,
+            "lore": "年轻时驾驶过行会的第一台蒸汽甲胄，在一次锅炉爆炸里失去了左手。从那以后，她给每台甲胄都装上了三道泄压阀。",
+            "name": "欧琳",
+            "stats": [
+              {
+                "label": "身份",
+                "value": "工匠行会长"
+              },
+              {
+                "label": "势力",
+                "value": "锈钟镇工匠行会"
+              }
+            ]
+          },
+          {
+            "description": "肩膀宽阔的年轻人，拳套上缠着铜丝，笑起来露出一颗缺了角的门牙。",
+            "icon": "sports_mma",
+            "id": "brass:character/tock",
+            "kind": "character",
+            "kind_name": "人物",
+            "known": true,
+            "lore": "去年以一场不败的战绩通过试炼，却因为顶撞行会长被罚在竞技场当一年陪练。",
+            "name": "托克",
+            "stats": [
+              {
+                "label": "身份",
+                "value": "去年的试炼第一名"
+              },
+              {
+                "label": "势力",
+                "value": "锈钟镇工匠行会"
+              }
+            ]
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "child_care",
+            "id": "brass:character/rivet",
+            "kind": "character",
+            "kind_name": "人物",
+            "known": false,
+            "name": "？？？"
+          }
+        ],
+        "kind": "character",
+        "name": "人物",
+        "unlocked": 2
+      },
+      {
+        "entries": [
+          {
+            "description": "掌管全镇锅炉、齿轮与甲胄的行会。每年只收一名学徒。",
+            "icon": "engineering",
+            "id": "brass:codex/guild",
+            "kind": "faction",
+            "kind_name": "势力",
+            "known": true,
+            "lore": "行会大厅的门楣上刻着一句话：“先学会修，再学会打。”",
+            "name": "锈钟镇工匠行会",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "person_alert",
+            "id": "brass:codex/scavengers",
+            "kind": "faction",
+            "kind_name": "势力",
+            "known": false,
+            "name": "？？？"
+          }
+        ],
+        "kind": "faction",
+        "name": "势力",
+        "unlocked": 1
+      },
+      {
+        "entries": [
+          {
+            "description": "高高的穹顶下挂满链条和吊钩，炉火终年不熄。工作台上摊着图纸，角落里立着一台蒙着帆布的黄铜甲胄。",
+            "icon": "place",
+            "id": "brass:location/workshop",
+            "kind": "location",
+            "kind_name": "地点",
+            "known": true,
+            "lore": "炉火通红，图纸与齿轮堆满了工作台。",
+            "name": "行会工坊"
+          },
+          {
+            "description": "一圈铸铁看台围着沙地擂台，看台上的观众挥舞着押注的票根。擂台边的告示牌上写着今天的试炼对手。",
+            "icon": "place",
+            "id": "brass:location/arena",
+            "kind": "location",
+            "kind_name": "地点",
+            "known": true,
+            "lore": "沙地擂台被铸铁看台围着，观众在押注。",
+            "name": "铁环竞技场"
+          },
+          {
+            "description": "石板广场中央立着锈钟镇的钟楼，巨大的表盘停在七点零三分。小贩推着蒸汽推车叫卖，孩子们在喷泉边追逐。",
+            "icon": "place",
+            "id": "brass:location/plaza",
+            "kind": "location",
+            "kind_name": "地点",
+            "known": true,
+            "lore": "钟楼的指针停在七点零三分，广场上人来人往。",
+            "name": "钟楼广场"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "place",
+            "id": "brass:location/sewer",
+            "kind": "location",
+            "kind_name": "地点",
+            "known": false,
+            "name": "？？？"
+          },
+          {
+            "description": "运煤驳船挤在北码头的木桩之间，吊臂吱呀作响。三号仓的铁门上刷着煤烟帮的黑手印，门缝里飘出一股煤油味。",
+            "icon": "place",
+            "id": "brass:location/north_dock",
+            "kind": "location",
+            "kind_name": "地点",
+            "known": true,
+            "lore": "驳船、吊臂和煤油味——三号仓的铁门上有一只黑手印。",
+            "name": "北码头"
+          }
+        ],
+        "kind": "location",
+        "name": "地点",
+        "unlocked": 4
+      },
+      {
+        "entries": [
+          {
+            "description": "沉甸甸的铸铁扳手，既能拧螺栓，也能敲脑袋。",
+            "icon": "build",
+            "id": "brass:item/wrench",
+            "kind": "item",
+            "kind_name": "武器",
+            "known": true,
+            "lore": "每个学徒入门时都会领到一把，手柄上刻着前任主人的名字缩写。",
+            "name": "学徒扳手",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通",
+            "stats": [
+              {
+                "label": "槽位",
+                "value": "武器"
+              },
+              {
+                "label": "加成",
+                "value": "攻击 +4"
+              },
+              {
+                "label": "价格",
+                "value": "5"
+              }
+            ]
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "hardware",
+            "id": "brass:item/rivet_gun",
+            "kind": "item",
+            "kind_name": "武器",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "sports_mma",
+            "id": "brass:item/piston_gauntlet",
+            "kind": "item",
+            "kind_name": "武器",
+            "known": false,
+            "name": "？？？",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          },
+          {
+            "description": "厚皮围裙，挡得住火星，挡不太住拳头。",
+            "icon": "checkroom",
+            "id": "brass:item/work_apron",
+            "kind": "item",
+            "kind_name": "护甲",
+            "known": true,
+            "name": "皮革工装",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通",
+            "stats": [
+              {
+                "label": "槽位",
+                "value": "护甲"
+              },
+              {
+                "label": "加成",
+                "value": "防御 +2"
+              },
+              {
+                "label": "价格",
+                "value": "5"
+              }
+            ]
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "shield",
+            "id": "brass:item/brass_plate",
+            "kind": "item",
+            "kind_name": "护甲",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "settings",
+            "id": "brass:item/gear_charm",
+            "kind": "item",
+            "kind_name": "饰品",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "valve",
+            "id": "brass:item/relief_valve",
+            "kind": "item",
+            "kind_name": "机甲部件",
+            "known": false,
+            "name": "？？？",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "heat_pump",
+            "id": "brass:item/boiler_core",
+            "kind": "item",
+            "kind_name": "机甲部件",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "sports_mma",
+            "id": "brass:item/steam_fist",
+            "kind": "item",
+            "kind_name": "",
+            "known": false,
+            "name": "？？？",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "gps_fixed",
+            "id": "brass:item/rivet_cannon",
+            "kind": "item",
+            "kind_name": "",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "煮过的棉布绷带。战斗中使用恢复 25 点生命，也可以在战斗外包扎伤口。",
+            "icon": "healing",
+            "id": "brass:item/bandage",
+            "kind": "item",
+            "kind_name": "消耗品",
+            "known": true,
+            "name": "干净绷带",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通",
+            "stats": [
+              {
+                "label": "效果",
+                "value": "恢复 25 生命"
+              },
+              {
+                "label": "价格",
+                "value": "4"
+              }
+            ]
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "local_cafe",
+            "id": "brass:item/strong_tea",
+            "kind": "item",
+            "kind_name": "消耗品",
+            "known": false,
+            "name": "？？？",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通"
+          },
+          {
+            "description": "给黄铜守卫补充 40 点蒸汽压；在战斗中使用还会给机体降温 20。",
+            "icon": "propane_tank",
+            "id": "brass:item/fuel_can",
+            "kind": "item",
+            "kind_name": "消耗品",
+            "known": true,
+            "name": "高压燃料罐",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良",
+            "stats": [
+              {
+                "label": "效果",
+                "value": "补充 40 蒸汽压，降温 20"
+              },
+              {
+                "label": "价格",
+                "value": "12"
+              }
+            ]
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "cloud",
+            "id": "brass:item/smoke_bomb",
+            "kind": "item",
+            "kind_name": "消耗品",
+            "known": false,
+            "name": "？？？",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "military_tech",
+            "id": "brass:item/guild_badge",
+            "kind": "item",
+            "kind_name": "关键物品",
+            "known": false,
+            "name": "？？？",
+            "rarity": "epic",
+            "rarity_color": "#8446B0",
+            "rarity_name": "史诗"
+          }
+        ],
+        "kind": "item",
+        "name": "物品与装备",
+        "unlocked": 4
+      },
+      {
+        "entries": [
+          {
+            "description": "150% 攻击力的重击，25% 几率使目标踉跄。消耗 8 体力。",
+            "icon": "build",
+            "id": "brass:skill/wrench_smash",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": true,
+            "lore": "学徒的第一课：拧不开的螺栓，就砸开它。",
+            "name": "扳手重击",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通",
+            "stats": [
+              {
+                "label": "威力",
+                "value": "150%"
+              },
+              {
+                "label": "目标",
+                "value": "单个敌人"
+              },
+              {
+                "label": "消耗",
+                "value": "8 体力"
+              }
+            ]
+          },
+          {
+            "description": "为自己或同伴恢复 18 点生命并清除负面状态。消耗 8 体力。",
+            "icon": "healing",
+            "id": "brass:skill/patch_up",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": true,
+            "name": "紧急包扎",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通",
+            "stats": [
+              {
+                "label": "目标",
+                "value": "单个友方"
+              },
+              {
+                "label": "消耗",
+                "value": "8 体力"
+              }
+            ]
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "sports_mma",
+            "id": "brass:skill/flurry",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "shield",
+            "id": "brass:skill/guard_stance",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "hardware",
+            "id": "brass:skill/rivet_shot",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "local_fire_department",
+            "id": "brass:skill/steam_punch",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "scatter_plot",
+            "id": "brass:skill/rivet_volley",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "air",
+            "id": "brass:skill/vent_cycle",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "waves",
+            "id": "brass:skill/sweep",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "blur_on",
+            "id": "brass:skill/rust_spit",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "construction",
+            "id": "brass:skill/thrown_wrench",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "whatshot",
+            "id": "brass:skill/boiler_slam",
+            "kind": "skill",
+            "kind_name": "技能",
+            "known": false,
+            "name": "？？？",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          }
+        ],
+        "kind": "skill",
+        "name": "技能",
+        "unlocked": 2
+      },
+      {
+        "entries": [
+          {
+            "description": "上满发条就到处乱咬的机械老鼠，据说最早是用来抓真老鼠的。",
+            "icon": "pest_control_rodent",
+            "id": "brass:enemy/clock_rat",
+            "kind": "enemy",
+            "kind_name": "敌人",
+            "known": true,
+            "lore": "竞技场的饲养员每天早上给它们上一次弦，晚上再一只只捡回来。",
+            "name": "发条鼠",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通",
+            "stats": [
+              {
+                "label": "等级",
+                "value": "1 · 杂兵"
+              },
+              {
+                "label": "数值",
+                "value": "生命 24  攻击 8  防御 2  速度 11"
+              },
+              {
+                "label": "奖励",
+                "value": "经验 25 · 铜币 3"
+              }
+            ]
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "smart_toy",
+            "id": "brass:enemy/sentry",
+            "kind": "enemy",
+            "kind_name": "敌人",
+            "known": false,
+            "name": "？？？",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "person_alert",
+            "id": "brass:enemy/scavenger",
+            "kind": "enemy",
+            "kind_name": "敌人",
+            "known": false,
+            "name": "？？？",
+            "rarity": "common",
+            "rarity_color": "#8A8A8A",
+            "rarity_name": "普通"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "sports_mma",
+            "id": "brass:enemy/tock_trial",
+            "kind": "enemy",
+            "kind_name": "敌人",
+            "known": false,
+            "name": "？？？",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "precision_manufacturing",
+            "id": "brass:enemy/steam_golem",
+            "kind": "enemy",
+            "kind_name": "敌人",
+            "known": false,
+            "name": "？？？",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "pets",
+            "id": "brass:enemy/boiler_hound",
+            "kind": "enemy",
+            "kind_name": "敌人",
+            "known": false,
+            "name": "？？？",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          }
+        ],
+        "kind": "enemy",
+        "name": "敌人",
+        "unlocked": 1
+      },
+      {
+        "entries": [
+          {
+            "description": "行会的第二台蒸汽甲胄，胸口的压力表就是它的心跳。启动消耗 15 蒸汽压，每回合 6。",
+            "icon": "precision_manufacturing",
+            "id": "brass:mech/warden",
+            "kind": "mech",
+            "kind_name": "机甲",
+            "known": true,
+            "name": "黄铜守卫",
+            "rarity": "epic",
+            "rarity_color": "#8446B0",
+            "rarity_name": "史诗",
+            "stats": [
+              {
+                "label": "数值",
+                "value": "耐久 140  攻击 26  防御 20  速度 8"
+              },
+              {
+                "label": "蒸汽压",
+                "value": "启动 15 · 每回合 6"
+              },
+              {
+                "label": "热量",
+                "value": "上限 100 · 普攻 +12 · 每回合冷却 8"
+              }
+            ],
+            "tags": [
+              "mech_card"
+            ]
+          },
+          {
+            "description": "尚未解锁。",
+            "icon": "smart_toy",
+            "id": "brass:mech/golem",
+            "kind": "mech",
+            "kind_name": "机甲",
+            "known": false,
+            "name": "？？？",
+            "rarity": "rare",
+            "rarity_color": "#2F6DB5",
+            "rarity_name": "稀有"
+          }
+        ],
+        "kind": "mech",
+        "name": "机甲",
+        "unlocked": 1
+      },
+      {
+        "entries": [
+          {
+            "description": "以高压蒸汽驱动的单人甲胄。蒸汽压决定能坚持多久，热量决定能打多狠。",
+            "icon": "precision_manufacturing",
+            "id": "brass:codex/steam_armor",
+            "kind": "tech",
+            "kind_name": "科技",
+            "known": true,
+            "lore": "热量越过红线时，泄压阀会强制冷却一回合——这是保命的设计，也是战斗中最危险的破绽。",
+            "name": "蒸汽甲胄",
+            "rarity": "epic",
+            "rarity_color": "#8446B0",
+            "rarity_name": "史诗",
+            "stats": [
+              {
+                "label": "能源",
+                "value": "蒸汽压"
+              },
+              {
+                "label": "过热",
+                "value": "跳过一回合并烫伤驾驶者"
+              }
+            ]
+          }
+        ],
+        "kind": "tech",
+        "name": "科技",
+        "unlocked": 1
+      },
+      {
+        "entries": [
+          {
+            "description": "钟楼里那口钟据说是用第一台甲胄熔掉的铜铸的。",
+            "icon": "notifications",
+            "id": "brass:codex/rustbell",
+            "kind": "lore",
+            "kind_name": "传说",
+            "known": true,
+            "name": "锈钟",
+            "rarity": "uncommon",
+            "rarity_color": "#3B8B4F",
+            "rarity_name": "精良"
+          }
+        ],
+        "kind": "lore",
+        "name": "传说",
+        "unlocked": 1
+      }
+    ],
+    "total": 47,
+    "unlocked": 17
+  },
+  "tab": "codex"
+}

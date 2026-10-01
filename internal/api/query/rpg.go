@@ -8,6 +8,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/agent/narrator"
 	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
 	"github.com/GUYU2233/ibukiRPG/internal/combat"
+	"github.com/GUYU2233/ibukiRPG/internal/combat/freeform"
 	"github.com/GUYU2233/ibukiRPG/internal/core/engine"
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
@@ -323,8 +324,13 @@ func (q *Q) unitView(s *state.State, c *state.Combat, u *state.Unit) dto.CombatU
 		v.Mech, v.MechName, v.PilotHP, v.Heat, v.HeatMax = true, u.Mech.Name, u.HP, u.Mech.Heat, u.Mech.HeatMax
 	}
 	if d := p.Combat.Enemies[u.Ref]; d != nil {
-		v.Icon, v.Tier = d.Icon, d.Tier
+		v.Icon, v.Tier, v.Size = d.Icon, d.Tier, d.Size
 		v.Mech = v.Mech || d.Mech
+		for _, pt := range d.Parts {
+			cp := dto.CombatPartV1{ID: pt.ID, Name: pt.Name, Known: s.Knowledge.Knows(u.Ref, "part:"+pt.ID), Broken: slices.Contains(u.Broken, pt.ID)}
+			cp.Weak = cp.Known && pt.Weak
+			v.Parts = append(v.Parts, cp)
+		}
 	} else if ch := p.Characters[u.Ref]; ch != nil {
 		v.Icon = ch.Icon
 	} else {
@@ -781,7 +787,11 @@ func (q *Q) CombatEntries(before, after *state.State, evs []event.Event, turn in
 			if d.Target != "" && !strings.Contains(d.Target, ",") {
 				log.Target = name(d.Target)
 			}
-			if d.DC > 0 {
+			if d.Action == "freeform" {
+				// 掷骰细节已在裁定卡里，这里只给结果档位
+				log.Roll, log.Chance = 0, 0
+				log.Chips = append(log.Chips, freeform.DegreeLabel(d.Key))
+			} else if d.DC > 0 {
 				mark := "✓"
 				if !d.Success {
 					mark = "✗"

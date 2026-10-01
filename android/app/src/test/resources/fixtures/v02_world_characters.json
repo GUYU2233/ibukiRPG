@@ -1,0 +1,149 @@
+{
+  "entities": [
+    {
+      "fields": [
+        {
+          "key": "identity",
+          "label": "身份",
+          "level": "known",
+          "value": "行会学徒候选人"
+        },
+        {
+          "key": "status",
+          "label": "生死",
+          "level": "known",
+          "value": "存活"
+        }
+      ],
+      "id": "player",
+      "kind": "character",
+      "name": "阿砾"
+    },
+    {
+      "fields": [
+        {
+          "key": "appearance",
+          "label": "外貌",
+          "level": "known",
+          "value": "短发、护目镜推在额头上的女人，左手是一只黄铜义肢，说话像拧螺丝一样干脆。"
+        },
+        {
+          "key": "identity",
+          "label": "身份",
+          "level": "known",
+          "value": "工匠行会长"
+        },
+        {
+          "key": "faction",
+          "label": "所属势力",
+          "level": "unknown"
+        },
+        {
+          "key": "background",
+          "label": "背景",
+          "level": "unknown"
+        },
+        {
+          "key": "personality",
+          "label": "性格",
+          "level": "unknown"
+        },
+        {
+          "key": "location",
+          "label": "所在地",
+          "level": "known",
+          "value": "行会工坊"
+        },
+        {
+          "key": "status",
+          "label": "生死",
+          "level": "unknown"
+        }
+      ],
+      "icon": "engineering",
+      "id": "brass:character/orin",
+      "kind": "character",
+      "name": "欧琳",
+      "progress": "●●●○○○○"
+    },
+    {
+      "fields": [
+        {
+          "key": "appearance",
+          "label": "外貌",
+          "level": "known",
+          "value": "脸上总沾着机油的小姑娘，口袋里塞满了捡来的螺丝，耳朵后面夹着一支铅笔。"
+        },
+        {
+          "key": "identity",
+          "label": "身份",
+          "level": "unknown"
+        },
+        {
+          "key": "location",
+          "label": "所在地",
+          "level": "known",
+          "value": "钟楼广场"
+        },
+        {
+          "key": "status",
+          "label": "生死",
+          "level": "unknown"
+        }
+      ],
+      "icon": "child_care",
+      "id": "brass:character/rivet",
+      "kind": "character",
+      "name": "小铆钉",
+      "progress": "●●○○"
+    },
+    {
+      "fields": [
+        {
+          "key": "appearance",
+          "label": "外貌",
+          "level": "known",
+          "value": "肩膀宽阔的年轻人，拳套上缠着铜丝，笑起来露出一颗缺了角的门牙。"
+        },
+        {
+          "key": "identity",
+          "label": "身份",
+          "level": "unknown"
+        },
+        {
+          "key": "faction",
+          "label": "所属势力",
+          "level": "known",
+          "value": "未知"
+        },
+        {
+          "key": "background",
+          "label": "背景",
+          "level": "unknown"
+        },
+        {
+          "key": "goals",
+          "label": "目标",
+          "level": "unknown"
+        },
+        {
+          "key": "location",
+          "label": "所在地",
+          "level": "known",
+          "value": "铁环竞技场"
+        },
+        {
+          "key": "status",
+          "label": "生死",
+          "level": "unknown"
+        }
+      ],
+      "icon": "sports_mma",
+      "id": "brass:character/tock",
+      "kind": "character",
+      "name": "托克",
+      "progress": "●●●○○○○"
+    }
+  ],
+  "tab": "characters"
+}

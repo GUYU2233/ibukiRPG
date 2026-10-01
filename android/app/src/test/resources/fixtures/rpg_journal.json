@@ -8,91 +8,91 @@
   },
   {
     "kind": "story",
-    "seq": 8,
+    "seq": 9,
     "text": "事件开始：《黄铜试炼》",
     "time": "第1天 08:03 · 上午",
     "turn": 1
   },
   {
     "kind": "move",
-    "seq": 18,
+    "seq": 23,
     "text": "来到 钟楼广场",
     "time": "第1天 08:08 · 上午",
     "turn": 2
   },
   {
     "kind": "move",
-    "seq": 28,
+    "seq": 34,
     "text": "来到 铁环竞技场",
     "time": "第1天 08:13 · 上午",
     "turn": 3
   },
   {
     "kind": "combat",
-    "seq": 34,
+    "seq": 41,
     "text": "战斗开始：试炼第一场：发条鼠",
     "time": "第1天 08:13 · 上午",
     "turn": 4
   },
   {
     "kind": "combat",
-    "seq": 95,
+    "seq": 103,
     "text": "战斗胜利：试炼第一场：发条鼠",
     "time": "第1天 08:13 · 上午",
     "turn": 11
   },
   {
     "kind": "gold",
-    "seq": 96,
+    "seq": 104,
     "text": "铜币 +6",
     "time": "第1天 08:13 · 上午",
     "turn": 11
   },
   {
     "kind": "growth",
-    "seq": 97,
+    "seq": 105,
     "text": "经验 +50",
     "time": "第1天 08:13 · 上午",
     "turn": 11
   },
   {
     "kind": "story",
-    "seq": 98,
+    "seq": 106,
     "text": "事件进展：赢下了第一场试炼",
     "time": "第1天 08:13 · 上午",
     "turn": 11
   },
   {
     "kind": "relation",
-    "seq": 99,
+    "seq": 107,
     "text": "欧琳→阿砾 信任 +3",
     "time": "第1天 08:13 · 上午",
     "turn": 11
   },
   {
     "kind": "move",
-    "seq": 105,
+    "seq": 112,
     "text": "来到 钟楼广场",
     "time": "第1天 08:18 · 上午",
     "turn": 12
   },
   {
     "kind": "relation",
-    "seq": 113,
+    "seq": 120,
     "text": "小铆钉→阿砾 好感 +3",
     "time": "第1天 08:21 · 上午",
     "turn": 13
   },
   {
     "kind": "relation",
-    "seq": 114,
+    "seq": 121,
     "text": "小铆钉 信任 +2",
     "time": "第1天 08:21 · 上午",
     "turn": 13
   },
   {
     "kind": "card",
-    "seq": 117,
+    "seq": 124,
     "text": "新角色卡：小铆钉",
     "time": "第1天 08:21 · 上午",
     "turn": 13

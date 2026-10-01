@@ -1,5 +1,6 @@
 {
   "scene": {
+    "branch": "主干",
     "clock": "08:21",
     "conditions": [],
     "day": 1,
@@ -13,6 +14,11 @@
       {
         "id": "brass:location/arena",
         "label": "竞技场",
+        "locked": false
+      },
+      {
+        "id": "brass:location/north_dock",
+        "label": "北码头",
         "locked": false
       },
       {
@@ -35,14 +41,6 @@
         "progress": -1,
         "value": "在竞技场挑战托克，赢下第二场试炼。",
         "wide": true
-      },
-      {
-        "compact": true,
-        "icon": "route",
-        "id": "mode",
-        "label": "进程",
-        "progress": -1,
-        "value": "主线 · 第一章 · 黄铜试炼"
       },
       {
         "compact": true,
@@ -86,14 +84,6 @@
       },
       {
         "compact": false,
-        "icon": "explore",
-        "id": "adherence",
-        "label": "贴合度",
-        "progress": 1000,
-        "value": "100%"
-      },
-      {
-        "compact": false,
         "icon": "payments",
         "id": "gold",
         "label": "铜币",
@@ -103,19 +93,6 @@
     ],
     "location_id": "brass:location/plaza",
     "location_name": "钟楼广场",
-    "mainline": {
-      "adherence": 100,
-      "anchor": "第一章 · 黄铜试炼",
-      "anchor_idx": 0,
-      "anchors": 2,
-      "deviation": 0,
-      "heavy": 70,
-      "level": 0,
-      "mild": 35,
-      "mode": "main",
-      "mode_label": "主线",
-      "objective": "在铁环竞技场赢下两场试炼。"
-    },
     "pack_id": "brass_trial",
     "pack_name": "锈钟镇·黄铜试炼",
     "period": "上午",
@@ -129,7 +106,7 @@
       }
     ],
     "save_name": "阿砾的旅程",
-    "slot_id": "slot-1790801300358-f147a77b",
+    "slot_id": "slot-1790872158621-8bb282ad",
     "story": {
       "hints": [
         "去竞技场"
@@ -138,7 +115,26 @@
       "title": "黄铜试炼"
     },
     "time_text": "第1天 08:21 · 上午",
-    "turn": 13
+    "turn": 13,
+    "upcoming": [
+      {
+        "countdown": "进行中",
+        "id": "brass:event/trial_day",
+        "location": "铁环竞技场",
+        "status": "active",
+        "status_label": "进行中",
+        "title": "学徒试炼日"
+      },
+      {
+        "countdown": "3 天 1 时后",
+        "id": "brass:event/council_vote",
+        "location": "钟楼广场",
+        "starts_in_min": 4359,
+        "status": "scheduled",
+        "status_label": "未开始",
+        "title": "议会投票"
+      }
+    ]
   },
   "suggestions": [
     {
@@ -190,6 +186,15 @@
     },
     {
       "action": {
+        "destination": "brass:location/north_dock",
+        "kind": "move",
+        "label": "前往北码头"
+      },
+      "icon": "directions_walk",
+      "label": "前往北码头"
+    },
+    {
+      "action": {
         "destination": "brass:location/sewer",
         "kind": "move",
         "label": "前往下水道入口"
@@ -213,7 +218,7 @@
     {
       "id": 24,
       "kind": "intro",
-      "text": "锈钟镇的钟楼已经三天没有敲响了。\n你背着一只旧工具箱走进行会工坊，炉火把墙上的齿轮映得通红。行会长欧琳从一台拆开的甲胄后面探出头来：“学徒试炼今天开始。先去竞技场，赢了再说话。”\n——试试“和欧琳聊聊”“去竞技场”，或者点开角色面板看看你的数值与装备。",
+      "text": "锈钟镇的钟楼已经三天没有敲响了。\n你背着一只旧工具箱走进行会工坊，炉火把墙上的齿轮映得通红。行会长欧琳从一台拆开的甲胄后面探出头来：“学徒试炼今天开始。先去竞技场，赢了再说话。”\n——你可以直接写下想做的事，也可以点开世界面板看看你目前知道些什么（大多数东西还是“未知”）。",
       "turn": 0
     },
     {

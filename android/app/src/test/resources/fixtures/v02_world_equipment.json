@@ -1,0 +1,166 @@
+{
+  "inventory": {
+    "gold": 16,
+    "items": [
+      {
+        "affordable": false,
+        "card": {
+          "description": "沉甸甸的铸铁扳手，既能拧螺栓，也能敲脑袋。",
+          "icon": "build",
+          "id": "brass:item/wrench",
+          "kind": "item",
+          "kind_name": "武器",
+          "known": true,
+          "lore": "每个学徒入门时都会领到一把，手柄上刻着前任主人的名字缩写。",
+          "name": "学徒扳手",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "槽位",
+              "value": "武器"
+            },
+            {
+              "label": "加成",
+              "value": "攻击 +4"
+            },
+            {
+              "label": "价格",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "沉甸甸的铸铁扳手，既能拧螺栓，也能敲脑袋。",
+        "equip": {
+          "action": "unequip",
+          "kind": "manage",
+          "label": "卸下学徒扳手",
+          "target": "weapon"
+        },
+        "equipped": true,
+        "id": "brass:item/wrench",
+        "name": "学徒扳手",
+        "price": 5,
+        "qty": 1
+      },
+      {
+        "affordable": false,
+        "card": {
+          "description": "厚皮围裙，挡得住火星，挡不太住拳头。",
+          "icon": "checkroom",
+          "id": "brass:item/work_apron",
+          "kind": "item",
+          "kind_name": "护甲",
+          "known": true,
+          "name": "皮革工装",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "槽位",
+              "value": "护甲"
+            },
+            {
+              "label": "加成",
+              "value": "防御 +2"
+            },
+            {
+              "label": "价格",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "厚皮围裙，挡得住火星，挡不太住拳头。",
+        "equip": {
+          "action": "unequip",
+          "kind": "manage",
+          "label": "卸下皮革工装",
+          "target": "armor"
+        },
+        "equipped": true,
+        "id": "brass:item/work_apron",
+        "name": "皮革工装",
+        "price": 5,
+        "qty": 1
+      },
+      {
+        "affordable": false,
+        "card": {
+          "description": "煮过的棉布绷带。战斗中使用恢复 25 点生命，也可以在战斗外包扎伤口。",
+          "icon": "healing",
+          "id": "brass:item/bandage",
+          "kind": "item",
+          "kind_name": "消耗品",
+          "known": true,
+          "name": "干净绷带",
+          "rarity": "common",
+          "rarity_color": "#8A8A8A",
+          "rarity_name": "普通",
+          "stats": [
+            {
+              "label": "效果",
+              "value": "恢复 25 生命"
+            },
+            {
+              "label": "价格",
+              "value": "4"
+            }
+          ]
+        },
+        "description": "煮过的棉布绷带。战斗中使用恢复 25 点生命，也可以在战斗外包扎伤口。",
+        "id": "brass:item/bandage",
+        "name": "干净绷带",
+        "price": 4,
+        "qty": 2,
+        "use": {
+          "action": "use",
+          "item": "brass:item/bandage",
+          "kind": "manage",
+          "label": "使用干净绷带"
+        },
+        "use_label": "使用"
+      },
+      {
+        "affordable": false,
+        "card": {
+          "description": "给黄铜守卫补充 40 点蒸汽压；在战斗中使用还会给机体降温 20。",
+          "icon": "propane_tank",
+          "id": "brass:item/fuel_can",
+          "kind": "item",
+          "kind_name": "消耗品",
+          "known": true,
+          "name": "高压燃料罐",
+          "rarity": "uncommon",
+          "rarity_color": "#3B8B4F",
+          "rarity_name": "精良",
+          "stats": [
+            {
+              "label": "效果",
+              "value": "补充 40 蒸汽压，降温 20"
+            },
+            {
+              "label": "价格",
+              "value": "12"
+            }
+          ]
+        },
+        "description": "给黄铜守卫补充 40 点蒸汽压；在战斗中使用还会给机体降温 20。",
+        "id": "brass:item/fuel_can",
+        "name": "高压燃料罐",
+        "price": 12,
+        "qty": 1,
+        "use": {
+          "action": "use",
+          "item": "brass:item/fuel_can",
+          "kind": "manage",
+          "label": "使用高压燃料罐"
+        },
+        "use_label": "使用"
+      }
+    ],
+    "shop": []
+  },
+  "tab": "equipment"
+}

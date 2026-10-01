@@ -1,0 +1,38 @@
+{
+  "events": [
+    {
+      "id": "brass:event/trial_day",
+      "location": "铁环竞技场",
+      "status": "active",
+      "status_label": "进行中",
+      "summary": "行会在铁环竞技场举行一年一度的学徒试炼。候选人要连赢两场。",
+      "time": "第1天 08:00 · 上午",
+      "title": "学徒试炼日"
+    },
+    {
+      "countdown": "3 天后",
+      "id": "brass:event/council_vote",
+      "location": "钟楼广场",
+      "starts_in_min": 4340,
+      "status": "scheduled",
+      "status_label": "未开始",
+      "summary": "钟楼议会投票决定修缮款交给行会还是码头。",
+      "time": "第4天 09:00 · 上午",
+      "title": "议会投票"
+    },
+    {
+      "countdown": "3 天 12 时后",
+      "id": "brass:event/clock_stop",
+      "location": "北码头",
+      "pivotal": true,
+      "rumored": true,
+      "starts_in_min": 5060,
+      "status": "scheduled",
+      "status_label": "未开始",
+      "summary": "煤烟帮约定的暗号——在钟楼停摆的夜里于北码头动手。",
+      "time": "第4天 21:00 · 夜晚",
+      "title": "钟停之时"
+    }
+  ],
+  "tab": "timeline"
+}

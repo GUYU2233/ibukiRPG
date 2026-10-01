@@ -1,0 +1,44 @@
+{
+  "branch": "b-234636",
+  "branches": [
+    {
+      "fork_turn": 0,
+      "head_turn": 16,
+      "id": "main",
+      "name": "主干",
+      "status": "rolled_back"
+    },
+    {
+      "current": true,
+      "fork_turn": 15,
+      "head_turn": 17,
+      "id": "b-234636",
+      "name": "分支 A",
+      "parent": "main",
+      "status": "active"
+    }
+  ],
+  "checkpoints": [
+    {
+      "branch": "main",
+      "id": "cp-7e53ab49",
+      "kind": "auto",
+      "name": "回合 16 之前",
+      "reason": "重要角色死亡前自动保存",
+      "turn": 15
+    },
+    {
+      "branch": "main",
+      "id": "cp-799fa4d0",
+      "kind": "manual",
+      "name": "进议会之前",
+      "turn": 13
+    }
+  ],
+  "turns": [
+    {
+      "summary": "锈钟镇的钟楼已经三天没有敲响了。",
+      "turn": 0
+    }
+  ]
+}

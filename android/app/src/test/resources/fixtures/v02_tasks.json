@@ -1,0 +1,78 @@
+{
+  "status": {
+    "base_url": "http://127.0.0.1:38923/v1",
+    "has_key": true,
+    "kind": "custom",
+    "last_error": "解析降级为离线规则：HTTP 503：fixture: task not scripted",
+    "mode": "unified",
+    "model": "deepseek-chat",
+    "online": true,
+    "provider": "deepseek"
+  },
+  "tasks": [
+    {
+      "id": "narrate_world",
+      "local_fit": "not_recommended",
+      "local_why": "需要长上下文和稳定的结构化输出，小模型容易写错设定",
+      "name": "叙事 + 世界更新",
+      "output": "叙事正文 + WORLD 段",
+      "suggest": "云端主力模型"
+    },
+    {
+      "id": "parse_action",
+      "local_fit": "good",
+      "local_why": "输入短、输出小，本地模型速度快",
+      "name": "意图解析",
+      "output": "命令结构",
+      "suggest": "本地 3B 或云端快速模型"
+    },
+    {
+      "id": "combat_adjudicate",
+      "local_fit": "caution",
+      "local_why": "可以使用，但荒谬动作更容易被降级、修正标签更保守",
+      "name": "战斗裁定",
+      "output": "CombatIntent",
+      "suggest": "云端"
+    },
+    {
+      "id": "memory",
+      "local_fit": "good",
+      "local_why": "后台运行，不占关键路径",
+      "name": "检索 / 摘要 / 记忆压缩",
+      "output": "文本 / 关键词",
+      "suggest": "本地"
+    },
+    {
+      "id": "world_sim",
+      "local_fit": "caution",
+      "local_why": "本地模型只做小改动（传闻、环境描写）",
+      "name": "世界模拟",
+      "output": "WorldChange + 文本",
+      "suggest": "云端"
+    },
+    {
+      "id": "audit",
+      "local_fit": "not_recommended",
+      "local_why": "需要通读大量叙事与设定",
+      "name": "一致性审查",
+      "output": "AuditReport",
+      "suggest": "云端推理模型"
+    },
+    {
+      "id": "card_gen",
+      "local_fit": "not_recommended",
+      "local_why": "需要了解世界观与强度体系",
+      "name": "卡片生成",
+      "output": "EntityDoc 提案",
+      "suggest": "云端"
+    },
+    {
+      "id": "char_review",
+      "local_fit": "not_recommended",
+      "local_why": "需要判断设定契合度与强度",
+      "name": "角色审查",
+      "output": "CharacterReview",
+      "suggest": "云端"
+    }
+  ]
+}

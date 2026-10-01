@@ -1,0 +1,30 @@
+{
+  "entities": [
+    {
+      "fields": [
+        {
+          "key": "goals",
+          "label": "目标",
+          "level": "unknown"
+        },
+        {
+          "key": "members",
+          "label": "成员",
+          "level": "unknown"
+        },
+        {
+          "key": "territory",
+          "label": "领地",
+          "level": "known",
+          "value": "brass:location/north_dock"
+        }
+      ],
+      "icon": "local_fire_department",
+      "id": "brass:faction/soot_gang",
+      "kind": "faction",
+      "name": "煤烟帮",
+      "progress": "●○○"
+    }
+  ],
+  "tab": "factions"
+}

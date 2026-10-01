@@ -167,11 +167,12 @@ func (s *Session) requestDecision(ctx context.Context, slot, branch string, g *g
 	var lines []string
 	if log != nil {
 		for _, c := range log.Changes {
-			l := c.TargetName + " · " + c.Summary
-			if c.Before != "" && c.After != "" && !c.Hidden {
-				l = fmt.Sprintf("%s · %s：%s → %s", c.TargetName, c.Summary, c.Before, c.After)
+			// Summary 已含对象名与新值；过长时截断（详情在世界变更日志里）
+			l := []rune(c.Summary)
+			if len(l) > 48 {
+				l = append(l[:47], '…')
 			}
-			lines = append(lines, l)
+			lines = append(lines, string(l))
 		}
 		for _, r := range log.Reveals {
 			if strings.HasPrefix(r.Field, "hidden:") {

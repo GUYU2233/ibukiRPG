@@ -2,7 +2,7 @@
   "active": [
     {
       "description": "短发、护目镜推在额头上的女人，左手是一只黄铜义肢，说话像拧螺丝一样干脆。",
-      "faction": "brass:codex/guild",
+      "faction": "锈钟镇工匠行会",
       "icon": "engineering",
       "id": "brass:character/orin",
       "location": "行会工坊",

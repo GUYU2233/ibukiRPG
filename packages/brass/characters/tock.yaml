@@ -59,7 +59,7 @@ dialogue:
       text: 托克对着沙袋打了一套组合拳：“拳头要快，脚要稳。”
       memory: 聊了聊拳法
 tags: [npc]
-importance: 3
+importance: 4
 canon: minor
 knowledge:
   public: [name, appearance, location]

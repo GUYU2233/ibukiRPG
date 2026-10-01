@@ -118,6 +118,9 @@ func (q *Q) RevealChip(s *state.State, r knowledge.Reveal) []dto.KnowledgeChipV1
 		c := dto.KnowledgeChipV1{Entity: r.Entity, Name: q.KnownName(s, r.Entity), Field: f, FieldLabel: knowledge.FieldLabel(f), Level: "known", Channel: r.Channel, Kind: "field"}
 		if r.EffectiveLevel() == knowledge.Rumored {
 			c.Level, c.Kind = "rumored", "rumor"
+			if ev := s.EventDef(q.Pkg, r.Entity); ev != nil && c.Name == Unknown {
+				c.Name = ev.Title // 传闻里听到的说法
+			}
 		}
 		if strings.Contains(r.Entity, ">") {
 			a, b, _ := strings.Cut(r.Entity, ">")

@@ -1,0 +1,66 @@
+{
+  "attr_max": 15,
+  "attribute_names": {
+    "agility": "敏捷",
+    "charisma": "魅力",
+    "intelligence": "智力",
+    "resolve": "意志",
+    "strength": "力量"
+  },
+  "attribute_points": 6,
+  "backgrounds": [
+    {
+      "attributes": {
+        "intelligence": 1
+      },
+      "description": "在工坊长大，扳手比筷子用得熟。开局认识欧琳。",
+      "gold": 10,
+      "id": "apprentice",
+      "name": "行会学徒候选人"
+    },
+    {
+      "attributes": {
+        "agility": 1
+      },
+      "description": "熟悉下水道的每一个岔口，手脚麻利，和行会关系微妙。",
+      "gold": 4,
+      "id": "scavenger",
+      "name": "管道里长大的孩子"
+    },
+    {
+      "attributes": {
+        "strength": 1
+      },
+      "description": "坐运煤车来到锈钟镇，想靠拳头在竞技场挣一口饭。",
+      "gold": 20,
+      "id": "outsider",
+      "name": "外乡来的拳手"
+    }
+  ],
+  "base_attributes": {
+    "agility": 11,
+    "charisma": 10,
+    "intelligence": 12,
+    "resolve": 10,
+    "strength": 11
+  },
+  "max_power": 115,
+  "pack_id": "brass_trial",
+  "presets": [
+    {
+      "attributes": {
+        "agility": 11,
+        "charisma": 10,
+        "intelligence": 12,
+        "resolve": 10,
+        "strength": 11
+      },
+      "id": "player",
+      "name": "阿砾"
+    }
+  ],
+  "rules": [
+    "自建角色属于这座小镇：可以是学徒、拾荒者、外乡人，但不能是传奇甲胄驾驶员。",
+    "不能自带甲胄、魔法或超出“学徒 / 拳手”档位的能力。"
+  ]
+}

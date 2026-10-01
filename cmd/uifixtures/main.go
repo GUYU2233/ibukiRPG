@@ -222,6 +222,9 @@ func main() {
 	call("new_game", "", ng)
 	runScript(script, "rpg", files)
 	exportRPG("rpg_", files)
+	if *packID == "" && *packZip == "" {
+		runWorld(*seed, files)
+	}
 	if err := os.MkdirAll(*out, 0o750); err != nil {
 		panic(err)
 	}

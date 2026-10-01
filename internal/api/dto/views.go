@@ -178,6 +178,18 @@ type CombatUnitV1 struct {
 	Tier      string         `json:"tier,omitempty"`
 	// Portrait 为 true 表示故事包提供了立绘（通过 get_portrait 取图），否则 UI 显示占位头像。
 	Portrait bool `json:"portrait,omitempty"`
+	// Parts 是自由战斗的部位（0.2.0）：未知部位只显示名字，弱点要先发现。
+	Parts []CombatPartV1 `json:"parts,omitempty"`
+	Size  string         `json:"size,omitempty"`
+}
+
+// CombatPartV1 是敌人的一个部位。
+type CombatPartV1 struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Known  bool   `json:"known"`
+	Weak   bool   `json:"weak,omitempty"` // 仅 Known 时填写
+	Broken bool   `json:"broken,omitempty"`
 }
 
 // CombatActionV1 是战斗面板上的一个行动按钮。

@@ -18,7 +18,7 @@
             },
             {
               "label": "势力",
-              "value": "brass:codex/guild"
+              "value": "锈钟镇工匠行会"
             }
           ]
         },
@@ -116,6 +116,15 @@
           "description": "尚未解锁。",
           "icon": "place",
           "id": "brass:location/sewer",
+          "kind": "location",
+          "kind_name": "地点",
+          "known": false,
+          "name": "？？？"
+        },
+        {
+          "description": "尚未解锁。",
+          "icon": "place",
+          "id": "brass:location/north_dock",
           "kind": "location",
           "kind_name": "地点",
           "known": false,
@@ -614,6 +623,18 @@
           "rarity": "rare",
           "rarity_color": "#2F6DB5",
           "rarity_name": "稀有"
+        },
+        {
+          "description": "尚未解锁。",
+          "icon": "pets",
+          "id": "brass:enemy/boiler_hound",
+          "kind": "enemy",
+          "kind_name": "敌人",
+          "known": false,
+          "name": "？？？",
+          "rarity": "rare",
+          "rarity_color": "#2F6DB5",
+          "rarity_name": "稀有"
         }
       ],
       "kind": "enemy",
@@ -718,6 +739,6 @@
       "unlocked": 1
     }
   ],
-  "total": 45,
+  "total": 47,
   "unlocked": 16
 }
