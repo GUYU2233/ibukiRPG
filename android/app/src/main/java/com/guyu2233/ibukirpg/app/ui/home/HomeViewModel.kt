@@ -22,6 +22,8 @@ data class HomeState(
     val ai: AIStatusV1 = AIStatusV1(),
     val error: String? = null,
     val version: String = "",
+    /** 数据目录里还有 0.1.x 的旧存档（0.2.0 无法读取）：显示说明与删除按钮。 */
+    val legacyNotice: String? = null,
 )
 
 /** 本地崩溃记录的读写（IO 线程调用）；测试里可替换。 */
@@ -61,9 +63,10 @@ class HomeViewModel(
                 // 等待启动时恢复的 AI 配置，并刷新引擎状态与存档。
                 val ai = engine.aiStatus()
                 val saves = engine.listSaves()
-                Triple(ai, saves, engine.version)
-            }.onSuccess { (ai, saves, v) ->
-                _state.update { it.copy(loading = false, latest = saves.firstOrNull(), saveCount = saves.size, ai = ai, version = v, error = null) }
+                val legacy = runCatching { engine.legacyNotice() }.getOrNull()
+                Triple(ai, saves, legacy)
+            }.onSuccess { (ai, saves, legacy) ->
+                _state.update { it.copy(loading = false, latest = saves.firstOrNull(), saveCount = saves.size, ai = ai, version = engine.version, error = null, legacyNotice = legacy) }
             }.onFailure { e ->
                 _state.update { it.copy(loading = false, error = e.message) }
             }
@@ -82,6 +85,14 @@ class HomeViewModel(
             runCatching { block() }
                 .onSuccess { _state.update { it.copy(working = false) }; onReady() }
                 .onFailure { e -> _state.update { it.copy(working = false, error = e.message) } }
+        }
+    }
+
+    fun deleteLegacySaves() {
+        viewModelScope.launch {
+            runCatching { engine.deleteLegacySaves() }
+                .onSuccess { _state.update { it.copy(legacyNotice = null) } }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
         }
     }
 

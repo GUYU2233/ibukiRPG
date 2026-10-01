@@ -77,6 +77,44 @@ class SettingsViewModel(
 
     val engineVersion: String get() = engine.version
 
+    // ---------- 0.2.0：多服务商 / 生成设置 / 提示灵敏度 ----------
+    private val _tasks = MutableStateFlow<List<com.guyu2233.ibukirpg.app.data.TaskInfoV1>>(emptyList())
+    val ai: StateFlow<AiSettingsState> = kotlinx.coroutines.flow.combine(store.providers, store.providerKeys, store.genSettings, _tasks) { p, k, g, t ->
+        AiSettingsState(providers = p, keys = k, gen = g, tasks = t)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, AiSettingsState())
+    val prompts: StateFlow<com.guyu2233.ibukirpg.app.data.PromptSettingsV1> =
+        store.promptSettings.stateIn(viewModelScope, SharingStarted.Eagerly, com.guyu2233.ibukirpg.app.data.PromptSettingsV1())
+
+    /** 把当前全部服务商与生成设置下发给引擎（本地服务商需要先启动适配器）。 */
+    private suspend fun applyV2(localCfg: AIConfig? = null) {
+        val s = store.settings.first()
+        val providers = store.providers.first()
+        val local = localCfg ?: if (providers.any { it.kind == LlamaLocalAI.KIND } && s.localModelPath.isNotBlank()) {
+            runCatching { localAI.configure(s.localConfig(), load = false) }.getOrNull()
+        } else null
+        engine.configureProviders(store.aiConfigV2(local))
+    }
+
+    fun saveProvider(p: com.guyu2233.ibukirpg.app.data.ProviderV1, key: String?) {
+        viewModelScope.launch { runCatching { store.saveProvider(p, key); applyV2() } }
+    }
+
+    fun deleteProvider(id: String) {
+        viewModelScope.launch { runCatching { store.deleteProvider(id); applyV2() } }
+    }
+
+    fun setGen(g: com.guyu2233.ibukirpg.app.data.GenSettingsV1) {
+        viewModelScope.launch { runCatching { store.saveGen(g); applyV2() } }
+    }
+
+    fun savePrompts(p: com.guyu2233.ibukirpg.app.data.PromptSettingsV1) {
+        viewModelScope.launch { runCatching { store.savePrompts(p); engine.setPromptSettings(p) } }
+    }
+
+    fun loadTasks() {
+        viewModelScope.launch { _tasks.value = runCatching { engine.tasks().tasks }.getOrDefault(emptyList()) }
+    }
+
     init {
         viewModelScope.launch {
             val s = store.settings.first()
@@ -153,8 +191,27 @@ class SettingsViewModel(
                 store.saveAI(f.kind, f.baseUrl, f.model, f.key.trim().ifEmpty { null })
                 store.saveLocalModelOptions(f.localConfig())
                 val cfg = effectiveConfig()
-                if (f.kind != LlamaLocalAI.KIND) localAI.deactivate()
-                engine.configureAI(cfg)
+                if (f.kind != LlamaLocalAI.KIND && store.providers.first().none { it.kind == LlamaLocalAI.KIND }) localAI.deactivate()
+                // 0.2.0：快速设置保存为一个服务商（同类型覆盖），统一模式下设为当前模型。
+                val gen = store.genSettings.first()
+                if (f.kind == "offline") {
+                    store.saveGen(gen.copy(mode = "unified", unified = com.guyu2233.ibukirpg.app.data.RouteV1(provider = "offline")))
+                } else {
+                    val id = if (f.kind == LlamaLocalAI.KIND) "local" else f.kind
+                    val sizeB = Regex("""(\d+(?:\.\d+)?)[bB]""").find(f.localModelName)?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+                    store.saveProvider(
+                        com.guyu2233.ibukirpg.app.data.ProviderV1(
+                            id = id, kind = f.kind, label = com.guyu2233.ibukirpg.app.data.providerLabel(f.kind),
+                            baseUrl = if (f.kind == LlamaLocalAI.KIND) "" else f.baseUrl.trim(),
+                            model = if (f.kind == LlamaLocalAI.KIND) f.localModelName else f.model.trim(),
+                            sizeB = if (f.kind == LlamaLocalAI.KIND) sizeB else 0.0,
+                        ),
+                        if (f.kind == LlamaLocalAI.KIND) null else f.key.trim().ifEmpty { null },
+                    )
+                    val g2 = store.genSettings.first()
+                    if (g2.mode == "unified") store.saveGen(g2.copy(unified = com.guyu2233.ibukirpg.app.data.RouteV1(provider = id)))
+                }
+                applyV2(if (f.kind == LlamaLocalAI.KIND) cfg else null)
             }
             result.onSuccess {
                 _form.update { it.copy(saving = false, key = "", hasSavedKey = it.hasSavedKey || f.key.isNotBlank(), dirty = false, test = TestState.Idle, modelError = null) }
@@ -207,7 +264,11 @@ class SettingsViewModel(
             val f = _form.value
             store.saveAI(f.kind, f.baseUrl, f.model, "")
             _form.update { it.copy(key = "", hasSavedKey = false, test = TestState.Idle) }
-            runCatching { engine.configureAI(AIConfig(kind = f.kind, baseUrl = f.baseUrl, model = f.model, apiKey = "")) }
+            val id = if (f.kind == LlamaLocalAI.KIND) "local" else f.kind
+            runCatching {
+                store.providers.first().firstOrNull { it.id == id }?.let { store.saveProvider(it, "") }
+                applyV2()
+            }
         }
     }
 

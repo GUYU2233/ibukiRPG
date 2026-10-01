@@ -2,6 +2,37 @@ package com.guyu2233.ibukirpg.app
 
 import android.app.Application
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.guyu2233.ibukirpg.app.data.GenSettingsV1
+import com.guyu2233.ibukirpg.app.data.PromptSettingsV1
+import com.guyu2233.ibukirpg.app.data.ProviderV1
+import com.guyu2233.ibukirpg.app.data.RouteV1
+import com.guyu2233.ibukirpg.app.data.SensitivityV1
+import com.guyu2233.ibukirpg.app.data.TasksV1
+import com.guyu2233.ibukirpg.app.data.TimelineV1
+import com.guyu2233.ibukirpg.app.data.WorldPanelV1
+import com.guyu2233.ibukirpg.app.ui.game.DecisionContent
+import com.guyu2233.ibukirpg.app.ui.game.SensitivityContent
+import com.guyu2233.ibukirpg.app.ui.game.TimelineActions
+import com.guyu2233.ibukirpg.app.ui.game.TimelineContent
+import com.guyu2233.ibukirpg.app.ui.game.WorldPanelContent
+import com.guyu2233.ibukirpg.app.ui.game.WorldState
+import com.guyu2233.ibukirpg.app.ui.game.WorldTab
+import com.guyu2233.ibukirpg.app.ui.settings.AiSettingsState
+import com.guyu2233.ibukirpg.app.ui.settings.GenerationSettingsContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -36,7 +67,6 @@ import com.guyu2233.ibukirpg.app.ui.settings.TestState
 import com.guyu2233.ibukirpg.app.ui.theme.IbukiTheme
 import com.guyu2233.ibukirpg.app.data.CardsV1
 import com.guyu2233.ibukirpg.app.data.CodexV1
-import com.guyu2233.ibukirpg.app.data.MainlineV1
 import com.guyu2233.ibukirpg.app.data.MechCardV1
 import com.guyu2233.ibukirpg.app.data.MechsV1
 import com.guyu2233.ibukirpg.app.data.PortraitV1
@@ -163,7 +193,7 @@ class ScreenshotTest {
     }
 
     @Test fun rpgGrowth() = shoot("18-rpg-character.png") {
-        PanelsContent(rpgPanels, busy = false, onAction = { _, _ -> }, initialTab = 0, mainline = rpgGame("rpg_game.json").scene.mainline)
+        PanelsContent(rpgPanels, busy = false, onAction = { _, _ -> }, initialTab = 0)
     }
 
     @Test fun rpgInventory() = shoot("19-rpg-inventory.png") {
@@ -195,12 +225,6 @@ class ScreenshotTest {
         CardDialog(c, onDismiss = {})
     }
 
-    @Test fun rpgDeviation() = shoot("26-rpg-deviation.png") {
-        val g = rpgGame("rpg_game.json")
-        val ml = (g.scene.mainline ?: MainlineV1()).copy(pending = true, deviation = 74, level = 2, freeOnline = false)
-        GameContent(g.copy(scene = g.scene.copy(mainline = ml)), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {})
-    }
-
     /** 内置故事包 + 一个模拟的“已导入”故事包 + 一个不兼容的导入包（展示错误状态）。 */
     private val packs: PacksState get() {
         val builtin: List<PackV1> = fixture("packs.json")
@@ -212,14 +236,14 @@ class ScreenshotTest {
         val broken = PackV1(
             id = "future_pack", name = "星海远航", version = "2.0.0", type = "story", author = "某作者",
             tagline = "需要更新的引擎版本。", builtin = false, playable = false,
-            error = "需要引擎版本 >=0.3.0，当前是 0.1.2-rc2。请先更新 App。", accent = "#37474F",
+            error = "需要引擎版本 >=0.3.0，当前是 0.2.0-alpha1。请先更新 App。", accent = "#37474F",
         )
         return PacksState(loading = false, packs = builtin + imported + broken)
     }
 
     private val home: HomeState get() {
         val s = slots
-        return HomeState(loading = false, latest = s.firstOrNull(), saveCount = s.size, ai = AIStatusV1(kind = "offline"), version = "0.1.2-rc2")
+        return HomeState(loading = false, latest = s.firstOrNull(), saveCount = s.size, ai = AIStatusV1(kind = "offline"), version = "0.2.0-alpha1")
     }
 
     @Test fun home() = shoot("01-home.png") {
@@ -279,7 +303,7 @@ class ScreenshotTest {
             settings = AppSettings(aiKind = "deepseek"),
             form = AIForm(kind = "deepseek", baseUrl = "https://api.deepseek.com", model = "deepseek-chat", hasSavedKey = true, test = TestState.Idle),
             saved = false,
-            engineVersion = "0.1.2-rc2",
+            engineVersion = "0.2.0-alpha1",
             actions = SettingsActions(),
         )
     }
@@ -289,8 +313,124 @@ class ScreenshotTest {
             settings = AppSettings(),
             form = AIForm(kind = "offline"),
             saved = false,
-            engineVersion = "0.1.2-rc2",
+            engineVersion = "0.2.0-alpha1",
             actions = SettingsActions(),
         )
+    }
+
+    // ---------- 0.2.0 开放世界（假 AI 驱动真实引擎导出的夹具：cmd/uifixtures/world.go） ----------
+
+    private val worldTabs: WorldState get() = WorldState(
+        tabs = WorldTab.entries.associate { it.id to fixture<WorldPanelV1>("v02_world_${it.id}.json") },
+    )
+
+    /** 截图里的“弹出层”：在界面上叠一层遮罩 + 底部圆角面板（Robolectric 截不到真正的弹窗窗口）。 */
+    @Composable
+    private fun SheetOver(background: @Composable () -> Unit, heightFraction: Float = 0f, sheet: @Composable () -> Unit) {
+        Box(Modifier.fillMaxSize()) {
+            background()
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f)))
+            Surface(
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().let { if (heightFraction > 0f) it.fillMaxHeight(heightFraction) else it },
+            ) {
+                Column {
+                    Box(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(width = 32.dp, height = 4.dp).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(2.dp)))
+                    }
+                    sheet()
+                }
+            }
+        }
+    }
+
+    @Test fun v02Game() = shoot("30-v02-game.png") {
+        GameContent(rpgGame("v02_game.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {})
+    }
+
+    @Test fun v02GameDark() = shoot("31-v02-game-dark.png", dark = true) {
+        GameContent(rpgGame("v02_game.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {})
+    }
+
+    @Test fun v02Combat() = shoot("32-v02-combat.png") {
+        GameContent(rpgGame("v02_combat.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {})
+    }
+
+    @Test fun v02Decision() = shoot("33-v02-decision.png") {
+        val g = rpgGame("v02_decision.json")
+        SheetOver({ GameContent(g, "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false) }) {
+            DecisionContent(g.scene.decision!!, busy = false, onAccept = {}, onRollback = {}, onSensitivity = {})
+        }
+    }
+
+    @Test fun v02Timeline() = shoot("34-v02-timeline.png") {
+        val g = rpgGame("v02_after.json")
+        TimelineContent(fixture<TimelineV1>("v02_timeline.json"), g.scene.saveName.ifBlank { "阿砾" }, g.scene.packName, TimelineActions(), initialSelected = 14)
+    }
+
+    @Test fun v02WorldCharacters() = worldShot("35-v02-world-characters.png", 0)
+    @Test fun v02WorldRelations() = worldShot("36-v02-world-relations.png", 1)
+    @Test fun v02WorldFactions() = worldShot("37-v02-world-factions.png", 5)
+    @Test fun v02WorldTimeline() = worldShot("38-v02-world-timeline.png", 6)
+    @Test fun v02WorldLog() = worldShot("39-v02-world-log.png", 7)
+
+    private fun worldShot(name: String, tab: Int) = shoot(name) {
+        val g = rpgGame("v02_after.json")
+        SheetOver({ GameContent(g, "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false) }, heightFraction = 0.9f) {
+            WorldPanelContent(worldTabs, busy = false, onTab = {}, onAction = { _, _ -> }, onRevert = {}, initialTab = tab)
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp-xhdpi")
+    fun v02Tablet() = shoot("40-v02-tablet.png") {
+        GameContent(rpgGame("v02_after.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, world = worldTabs, initialWorld = true, showDecisionSheet = false)
+    }
+
+    private val aiState: AiSettingsState get() = AiSettingsState(
+        providers = listOf(
+            ProviderV1(id = "deepseek", kind = "deepseek", label = "DeepSeek", model = "deepseek-chat"),
+            ProviderV1(id = "qwen", kind = "qwen", label = "通义千问", model = "qwen-plus"),
+            ProviderV1(id = "local", kind = "llamacpp", label = "本地", model = "Qwen2.5-3B Q4_K_M", sizeB = 3.0),
+        ),
+        keys = setOf("deepseek", "qwen"),
+        gen = GenSettingsV1(
+            mode = "per_task", unified = RouteV1("deepseek"),
+            tasks = mapOf(
+                "narrate_world" to RouteV1("deepseek"), "parse_action" to RouteV1("local"),
+                "combat_adjudicate" to RouteV1("qwen"), "memory" to RouteV1("local"), "audit" to RouteV1("deepseek", "deepseek-reasoner"),
+            ),
+        ),
+        tasks = fixture<TasksV1>("v02_tasks.json").tasks,
+    )
+
+    @Test fun v02Generation() = shoot("41-v02-generation.png") {
+        GenerationSettingsContent(aiState, onGen = {}, onClose = {})
+    }
+
+    @Test fun v02GenerationLocalFit() = shoot("42-v02-generation-local-fit.png") {
+        GenerationSettingsContent(aiState, onGen = {}, onClose = {}, initialFitSheet = true, inlineFitSheet = true)
+    }
+
+    @Test fun v02Settings() = shoot("43-v02-settings.png") {
+        SettingsContent(
+            settings = AppSettings(aiKind = "deepseek"),
+            form = AIForm(kind = "deepseek", baseUrl = "https://api.deepseek.com", model = "deepseek-chat", hasSavedKey = true, test = TestState.Idle),
+            saved = false,
+            engineVersion = "0.2.0-alpha1",
+            actions = SettingsActions(),
+            ai = aiState,
+        )
+    }
+
+    @Test fun v02Sensitivity() = shoot("44-v02-sensitivity.png") {
+        Surface(Modifier.padding(16.dp), shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+            Column(Modifier.padding(24.dp)) {
+                Text("提示灵敏度", style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.height(16.dp))
+                SensitivityContent(PromptSettingsV1(majorDeath = SensitivityV1("high", "modal"), storyImpact = SensitivityV1("low", "notify"))) {}
+            }
+        }
     }
 }

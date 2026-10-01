@@ -47,6 +47,18 @@ data class CombatUnitV1(
     val icon: String? = null,
     val tier: String? = null,
     val portrait: Boolean = false,
+    /** 0.2.0：可瞄准的部位（未识破时 known=false，弱点只在识破后给出）与体型。 */
+    val parts: List<CombatPartV1> = emptyList(),
+    val size: String? = null,
+)
+
+@Immutable @Serializable
+data class CombatPartV1(
+    val id: String = "",
+    val name: String = "",
+    val known: Boolean = false,
+    val weak: Boolean = false,
+    val broken: Boolean = false,
 )
 
 @Immutable @Serializable
@@ -88,24 +100,6 @@ data class NodeV1(
     val source: String = "",
     val reward: String? = null,
     val location: String? = null,
-)
-
-@Immutable @Serializable
-data class MainlineV1(
-    val mode: String = "main",
-    val modeLabel: String = "",
-    val deviation: Int = 0,
-    val adherence: Int = 100,
-    val mild: Int = 35,
-    val heavy: Int = 70,
-    val level: Int = 0,
-    val pending: Boolean = false,
-    val anchor: String? = null,
-    val objective: String? = null,
-    val node: NodeV1? = null,
-    val freeOnline: Boolean = false,
-    val anchors: Int = 0,
-    val anchorIdx: Int = 0,
 )
 
 @Immutable @Serializable

@@ -48,6 +48,10 @@ data class EntryV1(
     val source: String? = null,
     /** 战斗记录（kind=combat）：掷骰与伤害分解。 */
     val combat: CombatLogV1? = null,
+    /** 0.2.0：世界更新（kind=world：知识解锁 / 世界变更 chip）、行动裁定卡（kind=adjudication）、本回合 token 用量。 */
+    val world: WorldLogV1? = null,
+    val adjudication: AdjudicationV1? = null,
+    val usage: UsageV1? = null,
 )
 
 @Immutable @Serializable
@@ -91,10 +95,16 @@ data class SceneV1(
     val hud: List<HudFieldV1> = emptyList(),
     val packId: String = "",
     val packName: String = "",
-    /** 数值 RPG：当前战斗（null 表示不在战斗中）、主线状态、是否带数值系统。 */
+    /** 数值 RPG：当前战斗（null 表示不在战斗中）、是否带数值系统。 */
     val combat: CombatV1? = null,
-    val mainline: MainlineV1? = null,
     val hasRpg: Boolean = false,
+    /** 0.2.0：待决 / 仅通知的偏离提示（待决时输入禁用）、状态条上的世界事件倒计时、当前分支、
+     *  已选择“回到这里”的回合（>0：继续行动将创建新分支；-1 表示回合 0）、AI 建议。 */
+    val decision: DecisionV1? = null,
+    val upcoming: List<WorldEventChipV1> = emptyList(),
+    val branch: String = "",
+    val pendingTurn: Int = 0,
+    val aiSuggestions: List<String> = emptyList(),
 )
 
 /** HUD 字段。progress 为 0-1000 的千分比，-1 表示不是进度条；tone：normal / success / warning / danger。 */
@@ -145,6 +155,7 @@ data class TurnV1(
     val suggestions: List<SuggestionV1> = emptyList(),
     val resolver: String? = null,
     val notices: List<NoticeV1> = emptyList(),
+    val usage: UsageV1? = null,
 )
 
 @Immutable @Serializable
@@ -251,6 +262,9 @@ data class AIStatusV1(
     val hasKey: Boolean = false,
     val online: Boolean = false,
     val lastError: String? = null,
+    val provider: String? = null,
+    val mode: String? = null,
+    val localWarnings: List<String> = emptyList(),
 )
 
 @Immutable @Serializable

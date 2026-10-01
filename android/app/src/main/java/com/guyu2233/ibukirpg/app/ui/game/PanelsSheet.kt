@@ -63,7 +63,6 @@ import com.guyu2233.ibukirpg.app.data.InventoryV1
 import com.guyu2233.ibukirpg.app.data.JournalEntryV1
 import com.guyu2233.ibukirpg.app.data.NPCV1
 import com.guyu2233.ibukirpg.app.data.QuickActionV1
-import com.guyu2233.ibukirpg.app.data.MainlineV1
 import com.guyu2233.ibukirpg.app.data.StatV1
 import com.guyu2233.ibukirpg.app.ui.rpg.MechLinkButton
 import com.guyu2233.ibukirpg.app.ui.rpg.Portrait
@@ -84,12 +83,11 @@ fun PanelsSheet(
     busy: Boolean,
     onDismiss: () -> Unit,
     onAction: (QuickActionV1, String) -> Unit,
-    mainline: MainlineV1? = null,
     refreshKey: Any? = null,
 ) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
-        PanelsContent(panels, busy, onAction, Modifier.fillMaxHeight(0.88f), mainline = mainline, refreshKey = refreshKey)
+        PanelsContent(panels, busy, onAction, Modifier.fillMaxHeight(0.88f), refreshKey = refreshKey)
     }
 }
 
@@ -110,7 +108,6 @@ fun PanelsContent(
     onAction: (QuickActionV1, String) -> Unit,
     modifier: Modifier = Modifier,
     initialTab: Int = 0,
-    mainline: MainlineV1? = null,
     dialogs: RpgDialogState = rememberRpgDialogState(),
     refreshKey: Any? = null,
     initialFocus: String? = null,
@@ -147,7 +144,7 @@ fun PanelsContent(
             modifier = Modifier.fillMaxWidth(),
         ) {
             when (current) {
-                PanelTab.Character -> panels.character?.let { characterTab(it, mainline, busy, onAction, dialogs) }
+                PanelTab.Character -> panels.character?.let { characterTab(it, busy, onAction, dialogs) }
                 PanelTab.Inventory -> panels.inventory?.let { inventoryTab(it, busy, onAction, dialogs) }
                 PanelTab.People -> {
                     panels.cards?.let { c -> cardsTab(c, dialogs) { p -> focus = p.id; tab = tabs.indexOf(PanelTab.Relations) } }
@@ -169,7 +166,7 @@ private fun LazyListScope.sectionTitle(text: @Composable () -> String) {
     item { Text(text(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 4.dp)) }
 }
 
-private fun LazyListScope.characterTab(c: CharacterV1, mainline: MainlineV1?, busy: Boolean, onAction: (QuickActionV1, String) -> Unit, dialogs: RpgDialogState) {
+private fun LazyListScope.characterTab(c: CharacterV1, busy: Boolean, onAction: (QuickActionV1, String) -> Unit, dialogs: RpgDialogState) {
     item {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (c.growth != null) {
@@ -182,7 +179,7 @@ private fun LazyListScope.characterTab(c: CharacterV1, mainline: MainlineV1?, bu
             }
         }
     }
-    c.growth?.let { g -> growthSection(g, mainline, busy, onAction, dialogs) }
+    c.growth?.let { g -> growthSection(g, busy, onAction, dialogs) }
     sectionTitle { stringResource(R.string.panel_attributes) }
     item { StatGrid(c.attributes, showValue = true) }
     sectionTitle { stringResource(R.string.panel_skills) }
@@ -223,7 +220,7 @@ private fun StatGrid(stats: List<StatV1>, showValue: Boolean) {
     }
 }
 
-private fun LazyListScope.inventoryTab(inv: InventoryV1, busy: Boolean, onAction: (QuickActionV1, String) -> Unit, dialogs: RpgDialogState) {
+internal fun LazyListScope.inventoryTab(inv: InventoryV1, busy: Boolean, onAction: (QuickActionV1, String) -> Unit, dialogs: RpgDialogState) {
     sectionTitle { stringResource(R.string.panel_items) }
     if (inv.items.isEmpty()) {
         item { Text(stringResource(R.string.panel_no_items), color = MaterialTheme.colorScheme.onSurfaceVariant) }

@@ -95,7 +95,22 @@ fun SettingsScreen(vm: SettingsViewModel, onBack: () -> Unit) {
         ) notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
     }
     val saved by vm.saved.collectAsStateWithLifecycle()
+    val ai by vm.ai.collectAsStateWithLifecycle()
+    val prompts by vm.prompts.collectAsStateWithLifecycle()
+    var showGen by rememberSaveable { mutableStateOf(false) }
+    var showSens by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) { vm.loadTasks() }
+    if (showGen) GenerationSettingsDialog(ai, onGen = vm::setGen, onClose = { showGen = false }, onImportLocal = { showGen = false; vm.selectKind("llamacpp") })
+    if (showSens) com.guyu2233.ibukirpg.app.ui.game.SensitivityDialog(prompts, onDismiss = { showSens = false }, onSave = { showSens = false; vm.savePrompts(it) })
     SettingsContent(
+        ai = ai,
+        aiActions = AiActions(
+            onSaveProvider = vm::saveProvider,
+            onDeleteProvider = vm::deleteProvider,
+            onGen = vm::setGen,
+            onOpenGeneration = { showGen = true },
+            onOpenSensitivity = { showSens = true },
+        ),
         settings = settings,
         form = form,
         saved = saved,
@@ -162,6 +177,8 @@ fun SettingsContent(
     saved: Boolean,
     engineVersion: String,
     actions: SettingsActions,
+    ai: AiSettingsState = AiSettingsState(),
+    aiActions: AiActions = AiActions(),
 ) {
     val vm = actions
     val onBack = actions.onBack
@@ -223,6 +240,13 @@ fun SettingsContent(
                 }
             }
             TestResult(form.test)
+
+            Section("API 设置")
+            Text(
+                "可以同时配置多个服务商（DeepSeek、通义千问、自定义 OpenAI 兼容、本地模型），在“生成设置”里为不同任务分配模型。",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ApiProvidersSection(ai, aiActions)
 
             Section(stringResource(R.string.settings_display))
             TextSizeSetting(settings.textScale, vm.setTextScale)

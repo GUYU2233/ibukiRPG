@@ -65,7 +65,7 @@ fun AppNavHost(app: IbukiApp) {
             )
         }
         composable(Routes.SAVES) {
-            val vm = viewModel { SavesViewModel(app.engine) }
+            val vm = viewModel { SavesViewModel(app.engine, app) }
             SavesScreen(vm = vm, onBack = { nav.popBackStack() }, onGameReady = toGame)
         }
         composable(Routes.PACKS) {
@@ -73,7 +73,7 @@ fun AppNavHost(app: IbukiApp) {
             PacksScreen(vm = vm, onBack = { nav.popBackStack() }, onGameReady = toGame)
         }
         composable(Routes.GAME) {
-            val vm = viewModel { GameViewModel(app.engine, createSavedStateHandle()) }
+            val vm = viewModel { GameViewModel(app.engine, createSavedStateHandle()).also { g -> g.onPromptsSaved = { p -> app.settings.savePrompts(p) } } }
             GameScreen(vm = vm, onBack = { nav.popBackStack(Routes.HOME, inclusive = false) })
         }
         composable(Routes.SETTINGS) {

@@ -79,6 +79,7 @@ fun HomeScreen(vm: HomeViewModel, onGameReady: () -> Unit, onNewGame: () -> Unit
         onSaves = onSaves,
         onSettings = onSettings,
         onErrorShown = vm::dismissError,
+        onDeleteLegacy = vm::deleteLegacySaves,
     )
 }
 
@@ -91,6 +92,7 @@ fun HomeContent(
     onSaves: () -> Unit,
     onSettings: () -> Unit,
     onErrorShown: () -> Unit,
+    onDeleteLegacy: () -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(s.error) {
@@ -126,6 +128,18 @@ fun HomeContent(
                 ModeChip(online = s.ai.online, model = s.ai.model, localModel = s.ai.kind == "llamacpp", onClick = onSettings)
                 Spacer(Modifier.height(28.dp))
 
+                s.legacyNotice?.let { msg ->
+                    androidx.compose.material3.Card(
+                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("旧版存档", style = MaterialTheme.typography.titleSmall)
+                            Text(msg, style = MaterialTheme.typography.bodySmall)
+                            androidx.compose.material3.TextButton(onClick = onDeleteLegacy) { Text("删除旧存档") }
+                        }
+                    }
+                }
                 if (s.loading) {
                     CircularProgressIndicator()
                     Text(stringResource(R.string.home_loading), Modifier.padding(top = 8.dp))

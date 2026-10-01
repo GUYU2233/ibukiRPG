@@ -34,13 +34,16 @@ class IbukiApp : Application() {
             try {
                 runCatching { settings.migrateFromMediaPipe() }
                 val saved = settings.settings.first()
-                val cfg = if (saved.aiKind == LlamaLocalAI.KIND) {
+                // 0.2.0：多服务商。导入过本地模型且被某个服务商引用时，先启动仅监听回环地址的适配器（懒加载模型）。
+                val providers = settings.providers.first()
+                val local = if (providers.any { it.kind == LlamaLocalAI.KIND } && saved.localModelPath.isNotBlank()) {
                     runCatching { localAI.configure(saved.localConfig(), load = false) }.getOrElse { error ->
-                        android.util.Log.w("ibukiRPG", "无法恢复本地模型，退回规则离线模式", error)
-                        AIConfig(kind = "offline")
+                        android.util.Log.w("ibukiRPG", "无法恢复本地模型，本地服务商暂不可用", error)
+                        null
                     }
-                } else settings.aiConfig()
-                runCatching { engine.configureAI(cfg) }
+                } else null
+                runCatching { engine.configureProviders(settings.aiConfigV2(local)) }
+                    .onFailure { runCatching { engine.configureAI(AIConfig(kind = "offline")) } }
             } finally {
                 aiStartupReady.complete(Unit)
             }

@@ -28,6 +28,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,7 +62,18 @@ import com.guyu2233.ibukirpg.app.ui.common.formatTime
 @Composable
 fun SavesScreen(vm: SavesViewModel, onBack: () -> Unit, onGameReady: () -> Unit) {
     val s by vm.state.collectAsStateWithLifecycle()
+    var exporting by remember { mutableStateOf<java.io.File?>(null) }
+    val createDoc = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        val f = exporting
+        exporting = null
+        if (uri != null && f != null) vm.writeExport(f, uri) else f?.delete()
+    }
+    val openDoc = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(vm::import)
+    }
     SavesContent(
+        onExport = { slot -> vm.export(slot) { file, name -> exporting = file; createDoc.launch(name) } },
+        onImport = { openDoc.launch(arrayOf("*/*")) },
         s = s,
         onBack = onBack,
         onOpen = { vm.load(it, onGameReady) },
@@ -83,6 +95,8 @@ fun SavesContent(
     onRename: (SlotV1, String) -> Unit,
     onDelete: (SlotV1, String) -> Unit,
     onMessageShown: () -> Unit,
+    onExport: (SlotV1) -> Unit = {},
+    onImport: () -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     var confirmDelete by remember { mutableStateOf<SlotV1?>(null) }
@@ -101,6 +115,9 @@ fun SavesContent(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
+                },
+                actions = {
+                    androidx.compose.material3.TextButton(onClick = onImport, enabled = !s.working) { Text("导入存档") }
                 },
                 scrollBehavior = scroll,
             )
@@ -128,6 +145,7 @@ fun SavesContent(
                             onCopy = { onCopy(slot, copiedMsg) },
                             onRename = { renaming = slot },
                             onDelete = { confirmDelete = slot },
+                            onExport = { onExport(slot) },
                         )
                     }
                 }
@@ -174,6 +192,7 @@ private fun SlotCard(
     onCopy: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
+    onExport: () -> Unit = {},
 ) {
     var menu by remember { mutableStateOf(false) }
     Card(onClick = onOpen, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
@@ -230,6 +249,11 @@ private fun SlotCard(
                         text = { Text(stringResource(R.string.saves_rename)) },
                         leadingIcon = { Icon(Icons.Outlined.DriveFileRenameOutline, contentDescription = null) },
                         onClick = { menu = false; onRename() },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("导出（.ibksave）") },
+                        leadingIcon = { Icon(Icons.Outlined.IosShare, contentDescription = null) },
+                        onClick = { menu = false; onExport() },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.saves_delete), color = MaterialTheme.colorScheme.error) },

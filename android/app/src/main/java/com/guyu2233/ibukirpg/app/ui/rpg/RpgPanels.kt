@@ -66,7 +66,6 @@ import com.guyu2233.ibukirpg.app.data.CardsV1
 import com.guyu2233.ibukirpg.app.data.CharacterCardV1
 import com.guyu2233.ibukirpg.app.data.CodexV1
 import com.guyu2233.ibukirpg.app.data.GrowthV1
-import com.guyu2233.ibukirpg.app.data.MainlineV1
 import com.guyu2233.ibukirpg.app.data.MechCardV1
 import com.guyu2233.ibukirpg.app.data.MechsV1
 import com.guyu2233.ibukirpg.app.data.QuickActionV1
@@ -83,7 +82,6 @@ private fun LazyListScope.title(text: String) {
 
 fun LazyListScope.growthSection(
     g: GrowthV1,
-    mainline: MainlineV1?,
     busy: Boolean,
     onAction: (QuickActionV1, String) -> Unit,
     dialogs: RpgDialogState,
@@ -164,33 +162,6 @@ fun LazyListScope.growthSection(
                 },
                 modifier = Modifier.clickable { dialogs.openCard(s.card) },
             )
-        }
-    }
-    if (mainline != null) {
-        title("主线敏感度")
-        item {
-            val cur = when {
-                mainline.mild >= 45 -> "relaxed"
-                mainline.mild <= 25 -> "strict"
-                else -> "standard"
-            }
-            val opts = listOf("relaxed" to "宽松", "standard" to "标准", "strict" to "严格")
-            Column {
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    opts.forEachIndexed { i, (id, label) ->
-                        SegmentedButton(
-                            selected = cur == id,
-                            onClick = { onAction(QuickActionV1(kind = "manage", action = "thresholds", target = id, label = "敏感度：$label"), "敏感度：$label") },
-                            enabled = !busy,
-                            shape = SegmentedButtonDefaults.itemShape(i, opts.size),
-                        ) { Text(label) }
-                    }
-                }
-                Text(
-                    "偏离 ${mainline.deviation} · 轻度 ${mainline.mild} / 重度 ${mainline.heavy}",
-                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp),
-                )
-            }
         }
     }
 }

@@ -47,6 +47,10 @@ import androidx.compose.ui.unit.dp
 import com.guyu2233.ibukirpg.app.R
 import com.guyu2233.ibukirpg.app.data.HudFieldV1
 import com.guyu2233.ibukirpg.app.data.StoryBriefV1
+import com.guyu2233.ibukirpg.app.data.WorldEventChipV1
+import androidx.compose.material.icons.outlined.Campaign
+import androidx.compose.material.icons.outlined.Event
+import androidx.compose.material.icons.outlined.Healing
 import com.guyu2233.ibukirpg.app.ui.common.symbolFor
 
 /** HUD 字段的色调 → (容器色, 内容色)。 */
@@ -85,8 +89,10 @@ fun HudBar(
     story: StoryBriefV1?,
     modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = false,
+    upcoming: List<WorldEventChipV1> = emptyList(),
+    conditions: List<String> = emptyList(),
 ) {
-    if (hud.isEmpty() && story == null) return
+    if (hud.isEmpty() && story == null && upcoming.isEmpty()) return
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val wide = hud.filter { it.wide && it.compact }
     val chips = hud.filter { !it.wide && it.compact && it.id != "location" }
@@ -116,13 +122,15 @@ fun HudBar(
                     modifier = Modifier.padding(start = 4.dp).size(20.dp),
                 )
             }
-            if (!expanded && chips.isNotEmpty()) {
+            if (!expanded && (chips.isNotEmpty() || upcoming.isNotEmpty() || conditions.isNotEmpty())) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.padding(top = 6.dp),
                 ) {
                     items(chips, key = { it.id }) { HudChip(it) }
+                    items(conditions, key = { "c:$it" }) { ConditionChip(it) }
+                    items(upcoming, key = { "e:" + it.id }) { EventChip(it) }
                 }
             }
             AnimatedVisibility(expanded, enter = expandVertically(), exit = shrinkVertically()) {
@@ -208,6 +216,39 @@ private fun HudTile(f: HudFieldV1, modifier: Modifier = Modifier) {
                     trackColor = fg.copy(alpha = 0.16f),
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 )
+            }
+        }
+    }
+}
+
+/** 状态（擦伤、中毒…）：errorContainer。 */
+@Composable
+private fun ConditionChip(text: String) {
+    val c = MaterialTheme.colorScheme
+    Surface(color = c.errorContainer, contentColor = c.onErrorContainer, shape = MaterialTheme.shapes.small, modifier = Modifier.heightIn(min = 32.dp)) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Healing, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        }
+    }
+}
+
+/** 世界事件倒计时：tertiaryContainer；只听过传闻的事件用喇叭图标。 */
+@Composable
+private fun EventChip(e: WorldEventChipV1) {
+    val c = MaterialTheme.colorScheme
+    Surface(
+        color = c.tertiaryContainer, contentColor = c.onTertiaryContainer, shape = MaterialTheme.shapes.small,
+        modifier = Modifier.heightIn(min = 32.dp).clearAndSetSemantics { contentDescription = "世界事件 ${e.title}：${e.countdown ?: e.statusLabel}" },
+    ) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(if (e.rumored) Icons.Outlined.Campaign else Icons.Outlined.Event, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(e.title, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            (e.countdown ?: e.statusLabel).takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.width(4.dp))
+                Text("· $it", style = MaterialTheme.typography.labelMedium, color = c.onTertiaryContainer.copy(alpha = 0.8f), maxLines = 1)
             }
         }
     }

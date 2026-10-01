@@ -17,7 +17,7 @@ data class SavesState(
     val message: String? = null,
 )
 
-class SavesViewModel(private val engine: Engine) : ViewModel() {
+class SavesViewModel(private val engine: Engine, private val app: android.app.Application? = null) : ViewModel() {
     private val _state = MutableStateFlow(SavesState())
     val state: StateFlow<SavesState> = _state.asStateFlow()
 
@@ -44,6 +44,45 @@ class SavesViewModel(private val engine: Engine) : ViewModel() {
                     if (onReady != null) onReady() else refresh()
                 }
                 .onFailure { e -> _state.update { it.copy(working = false, message = e.message) } }
+        }
+    }
+
+    /** 导出到应用缓存目录（.ibksave，不含 API 密钥），返回文件供界面通过 SAF 保存到玩家选择的位置。 */
+    fun export(slot: SlotV1, onFile: (java.io.File, String) -> Unit) {
+        val ctx = app ?: return
+        act(null) {
+            val dir = java.io.File(ctx.cacheDir, "exports").apply { mkdirs() }
+            val r = engine.exportSave(slot.id, dir.absolutePath)
+            onFile(java.io.File(r.path), r.name)
+        }
+    }
+
+    /** 把导出文件写到 SAF 目标 URI。 */
+    fun writeExport(file: java.io.File, uri: android.net.Uri) {
+        val ctx = app ?: return
+        act("存档已导出（不含 API 密钥）") {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                ctx.contentResolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("无法写入所选位置")
+                file.delete()
+            }
+        }
+    }
+
+    /** 从 SAF 选择的 .ibksave 导入：先复制到缓存，引擎检查引擎 / 故事包版本后导入为新存档。 */
+    fun import(uri: android.net.Uri) {
+        val ctx = app ?: return
+        act("存档已导入") {
+            val tmp = java.io.File(ctx.cacheDir, "import.ibksave")
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                ctx.contentResolver.openInputStream(uri)?.use { input -> tmp.outputStream().use { input.copyTo(it) } } ?: error("无法读取所选文件")
+            }
+            try {
+                val check = engine.inspectSave(tmp.absolutePath)
+                if (!check.ok) error(check.problems.joinToString("\n").ifBlank { "这个存档无法导入" })
+                engine.importSave(tmp.absolutePath)
+            } finally {
+                tmp.delete()
+            }
         }
     }
 

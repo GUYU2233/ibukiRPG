@@ -21,6 +21,11 @@ import com.guyu2233.ibukirpg.app.data.QuickActionV1
 import com.guyu2233.ibukirpg.app.data.SceneV1
 import com.guyu2233.ibukirpg.app.data.SuggestionV1
 import com.guyu2233.ibukirpg.app.data.TurnV1
+import com.guyu2233.ibukirpg.app.data.BranchV1
+import com.guyu2233.ibukirpg.app.data.CheckpointV1
+import com.guyu2233.ibukirpg.app.data.PromptSettingsV1
+import com.guyu2233.ibukirpg.app.data.TimelineV1
+import com.guyu2233.ibukirpg.app.data.WorldChangeV1
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -99,6 +104,14 @@ class GameViewModel(
 
     private val _panels = MutableStateFlow(PanelsState())
     val panels: StateFlow<PanelsState> = _panels.asStateFlow()
+
+    /** 0.2.0：世界面板（按标签页加载）、时间线（非 null 时显示全屏时间线）、提示灵敏度（非 null 时显示设置对话框）。 */
+    private val _world = MutableStateFlow(WorldState())
+    val world: StateFlow<WorldState> = _world.asStateFlow()
+    private val _timeline = MutableStateFlow<TimelineV1?>(null)
+    val timeline: StateFlow<TimelineV1?> = _timeline.asStateFlow()
+    private val _prompts = MutableStateFlow<PromptSettingsV1?>(null)
+    val prompts: StateFlow<PromptSettingsV1?> = _prompts.asStateFlow()
 
     /** 输入框内容放在 SavedStateHandle 中：旋转屏幕、出错、进程被回收都不会丢。 */
     val input: StateFlow<String> = saved.getStateFlow(KEY_INPUT, "")
@@ -242,6 +255,94 @@ class GameViewModel(
             )
         }
         if (_panels.value.character != null) refreshPanels()
+        refreshWorld()
+    }
+
+    // ---------- 0.2.0：世界面板 / 偏离提示 / 回溯与分支 / 检查点 ----------
+
+    fun loadWorldTab(tab: String, force: Boolean = false) {
+        if (!force && _world.value.tabs.containsKey(tab)) return
+        _world.update { it.copy(loading = tab) }
+        viewModelScope.launch {
+            runCatching { engine.worldPanel(tab) }
+                .onSuccess { p -> _world.update { it.copy(tabs = it.tabs + (tab to p), loading = null) } }
+                .onFailure { e -> _world.update { it.copy(loading = null) }; _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    /** 回合推进后：已经打开过的标签页重新加载。 */
+    private fun refreshWorld() {
+        val open = _world.value.tabs.keys.toList()
+        _world.value = WorldState()
+        open.forEach { loadWorldTab(it) }
+    }
+
+    fun revertChange(c: WorldChangeV1) = bundleOp { engine.revertChange(c.id); engine.bundle() }
+
+    fun resolveDecision(accept: Boolean, notifyOnly: Boolean) {
+        val d = _state.value.scene.decision ?: return
+        bundleOp { engine.resolveDecision(d.id, if (accept) "accept" else "rollback", notifyOnly) }
+    }
+
+    fun openTimeline() {
+        viewModelScope.launch {
+            runCatching { engine.timeline() }
+                .onSuccess { _timeline.value = it }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun closeTimeline() { _timeline.value = null }
+
+    fun rollbackTo(turn: Int) = bundleOp(closeTimeline = true) { engine.rollbackTo(turn) }
+    fun cancelRollback() = bundleOp { engine.cancelRollback() }
+    fun switchBranch(b: BranchV1) = bundleOp(closeTimeline = true) { engine.switchBranch(b.id) }
+    fun restoreCheckpoint(c: CheckpointV1) = bundleOp(closeTimeline = true) { engine.restoreCheckpoint(c.id) }
+
+    fun createCheckpoint(name: String, turn: Int = 0) {
+        viewModelScope.launch {
+            runCatching { engine.createCheckpoint(name, turn); engine.timeline() }
+                .onSuccess { t -> if (_timeline.value != null) _timeline.value = t; _state.update { it.copy(notices = it.notices + NoticeV1(text = "已创建检查点「$name」")) } }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun wait(target: String, label: String) {
+        if (_state.value.pending != null) return
+        run(Pending(UUID.randomUUID().toString(), label, null, QuickActionV1(kind = "wait", target = target, label = label)))
+    }
+
+    fun openPrompts() {
+        viewModelScope.launch { _prompts.value = runCatching { engine.promptSettings() }.getOrDefault(PromptSettingsV1()) }
+    }
+
+    fun savePrompts(p: PromptSettingsV1?) {
+        _prompts.value = null
+        if (p == null) return
+        viewModelScope.launch {
+            runCatching { engine.setPromptSettings(p); onPromptsSaved(p) }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    /** 由宿主设置：把提示灵敏度持久化到 SettingsStore（下次启动时随 configure_ai 一起下发）。 */
+    var onPromptsSaved: suspend (PromptSettingsV1) -> Unit = {}
+
+    /** 返回整包数据的操作（回溯 / 切换分支 / 偏离提示…）：整体替换界面状态。 */
+    private fun bundleOp(closeTimeline: Boolean = false, op: suspend () -> GameBundle) {
+        if (_state.value.pending != null) return
+        _state.update { it.copy(pending = Pending(UUID.randomUUID().toString(), "", null, null)) }
+        viewModelScope.launch {
+            runCatching { op() }
+                .onSuccess { b ->
+                    if (closeTimeline) _timeline.value = null
+                    apply(b)
+                    _state.update { it.copy(pending = null, version = it.version + 1) }
+                    refreshWorld()
+                    if (_timeline.value != null) openTimeline()
+                }
+                .onFailure { e -> _state.update { it.copy(pending = null, error = e.message) } }
+        }
     }
 
     fun consumeError() = _state.update { it.copy(error = null) }

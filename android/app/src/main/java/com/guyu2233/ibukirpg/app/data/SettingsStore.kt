@@ -68,6 +68,10 @@ class SettingsStore(private val context: Context) {
         val localGpuLayers = intPreferencesKey("local_gpu_layers")
         val localMaxTokens = intPreferencesKey("local_max_tokens")
         val migrationNotice = stringPreferencesKey("migration_notice")
+        // 0.2.0：多服务商（不含密钥的 JSON）+ 生成设置 + 提示灵敏度；每个服务商的密钥单独加密保存（ai_key_enc_<id>）。
+        val providers = stringPreferencesKey("ai_providers_v2")
+        val gen = stringPreferencesKey("ai_gen_v2")
+        val prompts = stringPreferencesKey("ai_prompts_v2")
         // v0.1.1 ~ v0.1.2rc1（MediaPipe）的旧键，仅用于迁移
         val oldPath = stringPreferencesKey("mediapipe_model_path")
         val oldName = stringPreferencesKey("mediapipe_model_name")
@@ -227,7 +231,112 @@ class SettingsStore(private val context: Context) {
         it[K.localMaxTokens] = n.maxTokens
     }
 
+    // ---------- 0.2.0：多服务商 / 生成设置 / 提示灵敏度 ----------
+
+    private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
+    private fun keyFor(id: String) = stringPreferencesKey("ai_key_enc_$id")
+
+    /** 已保存的服务商（apiKey 字段为空；hasKey 由 [providerHasKey] 查询）。旧版单一配置自动迁移为一个服务商。 */
+    val providers: Flow<List<ProviderV1>> = context.dataStore.data.map { p -> p.providersOrLegacy() }
+
+    val genSettings: Flow<GenSettingsV1> = context.dataStore.data.map { p ->
+        p[K.gen]?.let { runCatching { json.decodeFromString<GenSettingsV1>(it) }.getOrNull() } ?: legacyGen(p)
+    }
+
+    val promptSettings: Flow<PromptSettingsV1> = context.dataStore.data.map { p ->
+        p[K.prompts]?.let { runCatching { json.decodeFromString<PromptSettingsV1>(it) }.getOrNull() } ?: PromptSettingsV1()
+    }
+
+    val providerKeys: Flow<Set<String>> = context.dataStore.data.map { p ->
+        p.providersOrLegacy().filter { pr -> !p[keyFor(pr.id)].isNullOrEmpty() || (pr.id == legacyId(p) && !p[K.keyEnc].isNullOrEmpty()) }.map { it.id }.toSet()
+    }
+
+    private fun legacyId(p: Preferences): String = when (val k = p[K.kind] ?: "offline") {
+        "llamacpp" -> "local"
+        else -> k
+    }
+
+    private fun Preferences.providersOrLegacy(): List<ProviderV1> {
+        this[K.providers]?.let { raw -> return runCatching { json.decodeFromString<List<ProviderV1>>(raw) }.getOrDefault(emptyList()) }
+        val kind = this[K.kind] ?: "offline"
+        if (kind == "offline") return emptyList()
+        return listOf(
+            ProviderV1(
+                id = legacyId(this), kind = kind, label = providerLabel(kind),
+                baseUrl = this[K.baseUrl].orEmpty(), model = if (kind == "llamacpp") this[K.localModelName].orEmpty() else this[K.model].orEmpty(),
+            ),
+        )
+    }
+
+    private fun legacyGen(p: Preferences): GenSettingsV1 {
+        val ps = p.providersOrLegacy()
+        return GenSettingsV1(mode = "unified", unified = RouteV1(provider = ps.firstOrNull()?.id.orEmpty()))
+    }
+
+    /** 新增或修改服务商。newKey：null = 保持原密钥，空字符串 = 清除。 */
+    suspend fun saveProvider(pv: ProviderV1, newKey: String?) {
+        context.dataStore.edit { p ->
+            val list = p.providersOrLegacy().filter { it.id != pv.id } + pv.copy(apiKey = "")
+            p[K.providers] = json.encodeToString(list)
+            // 旧版密钥迁移到按服务商保存
+            if (p[keyFor(legacyId(p))] == null) p[K.keyEnc]?.let { old -> p[keyFor(legacyId(p))] = old }
+            when {
+                newKey == null -> Unit
+                newKey.isBlank() -> p.remove(keyFor(pv.id))
+                else -> p[keyFor(pv.id)] = KeyCipher.encrypt(newKey.trim())
+            }
+            if (p[K.gen] == null) {
+                p[K.gen] = json.encodeToString(GenSettingsV1(unified = RouteV1(provider = list.first().id)))
+            }
+        }
+    }
+
+    suspend fun deleteProvider(id: String) {
+        context.dataStore.edit { p ->
+            val list = p.providersOrLegacy().filter { it.id != id }
+            p[K.providers] = json.encodeToString(list)
+            p.remove(keyFor(id))
+            if (legacyId(p) == id) p.remove(K.keyEnc)
+            val g = p[K.gen]?.let { runCatching { json.decodeFromString<GenSettingsV1>(it) }.getOrNull() } ?: GenSettingsV1()
+            val fixed = g.copy(
+                unified = if (g.unified.provider == id) RouteV1(provider = list.firstOrNull()?.id.orEmpty()) else g.unified,
+                tasks = g.tasks.filterValues { it.provider != id },
+            )
+            p[K.gen] = json.encodeToString(fixed)
+        }
+    }
+
+    suspend fun saveGen(g: GenSettingsV1) = context.dataStore.edit { it[K.gen] = json.encodeToString(g) }
+    suspend fun savePrompts(v: PromptSettingsV1) = context.dataStore.edit { it[K.prompts] = json.encodeToString(v) }
+
+    /**
+     * 发给引擎的完整 AI 配置（含解密后的密钥，只在内存里）。local：本地 llama.cpp 适配器的地址与令牌；
+     * 为 null 时去掉本地服务商（未导入模型或加载失败）。
+     */
+    suspend fun aiConfigV2(local: AIConfig?): AIConfigV2 {
+        val p = context.dataStore.data.first()
+        val list = p.providersOrLegacy().mapNotNull { pv ->
+            if (pv.kind == "llamacpp") {
+                local?.let { pv.copy(baseUrl = it.baseUrl, apiKey = it.apiKey, model = pv.model.ifBlank { it.model }) }
+            } else {
+                val enc = p[keyFor(pv.id)] ?: if (pv.id == legacyId(p)) p[K.keyEnc] else null
+                pv.copy(apiKey = enc?.let { KeyCipher.decrypt(it) }.orEmpty())
+            }
+        }
+        return AIConfigV2(providers = list, settings = genSettings.first(), prompts = promptSettings.first())
+    }
+
     suspend fun setTextScale(v: Float) = context.dataStore.edit { it[K.textScale] = v }
     suspend fun setTheme(v: ThemeMode) = context.dataStore.edit { it[K.theme] = v.name }
     suspend fun setDynamic(v: Boolean) = context.dataStore.edit { it[K.dynamic] = v }
+}
+
+/** 服务商类型的显示名。 */
+fun providerLabel(kind: String): String = when (kind) {
+    "deepseek" -> "DeepSeek"
+    "qwen" -> "通义千问"
+    "llamacpp" -> "本地模型"
+    "custom" -> "自定义（OpenAI 兼容）"
+    else -> kind
 }

@@ -32,7 +32,17 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.outlined.PersonOutline
-import androidx.compose.material.icons.outlined.AltRoute
+import androidx.compose.material.icons.outlined.AccountTree
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.OutlinedButton
@@ -78,7 +88,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.guyu2233.ibukirpg.app.R
-import com.guyu2233.ibukirpg.app.data.MainlineV1
+import com.guyu2233.ibukirpg.app.data.PromptSettingsV1
+import com.guyu2233.ibukirpg.app.data.TimelineV1
+import com.guyu2233.ibukirpg.app.ui.rpg.CombatHeader
 import com.guyu2233.ibukirpg.app.data.QuickActionV1
 import com.guyu2233.ibukirpg.app.data.SceneV1
 import com.guyu2233.ibukirpg.app.ui.rpg.CombatPanel
@@ -97,6 +109,9 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
     val s by vm.state.collectAsStateWithLifecycle()
     val input by vm.input.collectAsStateWithLifecycle()
     val panels by vm.panels.collectAsStateWithLifecycle()
+    val world by vm.world.collectAsStateWithLifecycle()
+    val timeline by vm.timeline.collectAsStateWithLifecycle()
+    val prompts by vm.prompts.collectAsStateWithLifecycle()
     val rpgData = remember(vm) { RpgData(portrait = vm::portrait, card = vm::card, mech = vm::mech) }
     CompositionLocalProvider(LocalRpgData provides rpgData) { GameContent(
         s = s,
@@ -111,8 +126,44 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
         onErrorShown = vm::consumeError,
         onNoticesShown = vm::consumeNotices,
         onLoadEarlier = vm::loadEarlier,
+        world = world,
+        timeline = timeline,
+        prompts = prompts,
+        actions = WorldActions(
+            onWorldTab = { vm.loadWorldTab(it) },
+            onRevert = vm::revertChange,
+            onDecision = vm::resolveDecision,
+            onSensitivity = vm::openPrompts,
+            onSavePrompts = vm::savePrompts,
+            onOpenTimeline = vm::openTimeline,
+            onRollbackTurn = vm::rollbackTo,
+            onCancelRollback = vm::cancelRollback,
+            onWait = vm::wait,
+            timeline = TimelineActions(
+                onClose = vm::closeTimeline,
+                onRollback = vm::rollbackTo,
+                onCheckpointAt = { t -> vm.createCheckpoint("回合 $t", t) },
+                onRestore = vm::restoreCheckpoint,
+                onSwitch = vm::switchBranch,
+                onNewCheckpoint = { vm.createCheckpoint("手动 · 回合 ${s.scene.turn}") },
+            ),
+        ),
     ) }
 }
+
+/** 0.2.0 开放世界相关的回调。 */
+data class WorldActions(
+    val onWorldTab: (String) -> Unit = {},
+    val onRevert: (com.guyu2233.ibukirpg.app.data.WorldChangeV1) -> Unit = {},
+    val onDecision: (accept: Boolean, notifyOnly: Boolean) -> Unit = { _, _ -> },
+    val onSensitivity: () -> Unit = {},
+    val onSavePrompts: (com.guyu2233.ibukirpg.app.data.PromptSettingsV1?) -> Unit = {},
+    val onOpenTimeline: () -> Unit = {},
+    val onRollbackTurn: (Int) -> Unit = {},
+    val onCancelRollback: () -> Unit = {},
+    val onWait: (target: String, label: String) -> Unit = { _, _ -> },
+    val timeline: TimelineActions = TimelineActions(),
+)
 
 /** 无状态的游戏界面（便于截图测试与预览）。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,11 +184,19 @@ fun GameContent(
     onNoticesShown: () -> Unit = {},
     dialogs: RpgDialogState = rememberRpgDialogState(),
     onLoadEarlier: () -> Unit = {},
+    world: WorldState = WorldState(),
+    timeline: TimelineV1? = null,
+    prompts: PromptSettingsV1? = null,
+    actions: WorldActions = WorldActions(),
+    initialWorld: Boolean = false,
+    /** 截图测试：不弹出偏离提示抽屉（改为直接渲染 DecisionContent）。 */
+    showDecisionSheet: Boolean = true,
 ) {
     val snackbar = remember { SnackbarHostState() }
     val combat = s.scene.combat
-    val mainline = s.scene.mainline
-    var deviationDismissedAt by rememberSaveable { mutableIntStateOf(-1) }
+    val decision = s.scene.decision
+    val wide = LocalConfiguration.current.screenWidthDp >= 840
+    var showWorld by rememberSaveable { mutableStateOf(initialWorld) }
 
     LaunchedEffect(s.notices) {
         if (s.notices.isEmpty()) return@LaunchedEffect
@@ -192,13 +251,21 @@ fun GameContent(
                         }
                     },
                     actions = {
+                        IconButton(onClick = actions.onOpenTimeline) {
+                            Icon(Icons.Outlined.AccountTree, contentDescription = "时间线与检查点")
+                        }
+                        IconButton(onClick = { showWorld = !showWorld }) {
+                            BadgedBox(badge = { if (s.entries.lastOrNull { it.kind == "world" }?.turn == s.scene.turn && s.scene.turn > 0) Badge() }) {
+                                Icon(Icons.Outlined.Public, contentDescription = "世界面板")
+                            }
+                        }
                         IconButton(onClick = { showPanels = true; onOpenPanels() }) {
                             Icon(Icons.Outlined.PersonOutline, contentDescription = stringResource(R.string.game_panels))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                 )
-                if (!s.loading) HudBar(s.scene.hud, s.scene.story, initiallyExpanded = initialHudExpanded)
+                if (!s.loading && combat == null) HudBar(s.scene.hud, s.scene.story, initiallyExpanded = initialHudExpanded, upcoming = s.scene.upcoming, conditions = s.scene.conditions)
                 if (s.pending != null) LinearProgressIndicator(Modifier.fillMaxWidth()) else HorizontalDivider()
             }
         },
@@ -214,8 +281,14 @@ fun GameContent(
                 onInput = onInput,
                 onSend = onSend,
                 suggestions = s.suggestions,
-                busy = s.pending != null || s.loading,
+                busy = s.pending != null || s.loading || (decision != null && !decision.notify),
                 onSuggestion = { onQuick(it.action, it.label) },
+                aiSuggestions = s.scene.aiSuggestions,
+                onAiSuggestion = { onQuick(QuickActionV1(kind = "text", text = it, label = it), it) },
+                inCombat = combat != null,
+                pendingTurn = s.scene.pendingTurn,
+                onCancelRollback = actions.onCancelRollback,
+                onWait = if (combat == null) actions.onWait else null,
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
@@ -227,7 +300,12 @@ fun GameContent(
             }
         },
     ) { pad ->
-        Box(Modifier.fillMaxSize().padding(pad), contentAlignment = Alignment.TopCenter) {
+      Row(Modifier.fillMaxSize().padding(pad)) {
+        Column(Modifier.weight(1f).fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (combat != null && !s.loading) {
+            CombatHeader(combat, Modifier.widthIn(max = 720.dp).padding(start = 12.dp, end = 12.dp, top = 8.dp))
+        }
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             when {
                 s.loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 s.fatal != null -> Column(Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -261,12 +339,13 @@ fun GameContent(
                             onOption = { onQuick(it.action, it.label) },
                             enabled = s.pending == null,
                             onCard = { dialogs.cardId = it },
+                            onRollback = actions.onRollbackTurn,
                         )
                     }
                     s.pending?.let { p ->
                         item(key = "pending") {
                             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                PlayerBubble(p.label, sending = true)
+                                if (p.label.isNotBlank()) PlayerBubble(p.label, sending = true)
                                 if (s.streaming.isNotEmpty()) {
                                     StreamingNarration(s.streaming)
                                 } else {
@@ -288,7 +367,35 @@ fun GameContent(
                 }
             }
         }
+        }
+        if (wide && showWorld) {
+            WorldPanelPane(
+                world, busy = s.pending != null, onClose = { showWorld = false }, onTab = actions.onWorldTab, onAction = onQuick,
+                onRevert = actions.onRevert, modifier = Modifier.width(400.dp),
+            )
+        }
+      }
     }
+
+    if (showWorld && !wide) {
+        WorldPanelSheet(world, busy = s.pending != null, onDismiss = { showWorld = false }, onTab = actions.onWorldTab, onAction = { qa, label ->
+            if (qa.kind != "manage") showWorld = false
+            onQuick(qa, label)
+        }, onRevert = actions.onRevert)
+    }
+
+    if (decision != null && showDecisionSheet && s.pending == null) {
+        DecisionSheet(
+            decision, busy = s.pending != null,
+            onAccept = { n -> actions.onDecision(true, n) },
+            onRollback = { n -> actions.onDecision(false, n) },
+            onSensitivity = actions.onSensitivity,
+        )
+    }
+
+    timeline?.let { t -> TimelineDialog(t, s.scene.saveName.ifBlank { s.scene.playerName }, s.scene.packName, actions.timeline) }
+
+    prompts?.let { p -> SensitivityDialog(p, onDismiss = { actions.onSavePrompts(null) }, onSave = { actions.onSavePrompts(it) }) }
 
     if (showPanels) {
         PanelsSheet(
@@ -300,52 +407,33 @@ fun GameContent(
                 if (qa.kind != "manage") showPanels = false
                 onQuick(qa, label)
             },
-            mainline = mainline,
             refreshKey = s.version,
         )
     }
 
     RpgDialogHost(dialogs, onQuick, refreshKey = s.version)
 
-    if (mainline != null && mainline.pending && s.pending == null && combat == null && deviationDismissedAt != s.scene.turn) {
-        DeviationDialog(
-            mainline = mainline,
-            onReturn = { onQuick(QuickActionV1(kind = "mainline", action = "return", label = "回到主线"), "回到主线") },
-            onFree = { onQuick(QuickActionV1(kind = "mainline", action = "free", label = "进入自由推演"), if (mainline.freeOnline) "进入自由推演" else "进入沙盒模式") },
-            onLater = { deviationDismissedAt = s.scene.turn },
-        )
-    }
 }
 
-@Composable
-private fun DeviationDialog(mainline: MainlineV1, onReturn: () -> Unit, onFree: () -> Unit, onLater: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onLater,
-        icon = { Icon(Icons.Outlined.AltRoute, contentDescription = null) },
-        title = { Text(stringResource(R.string.mainline_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.mainline_body, mainline.deviation))
-                mainline.anchor?.let { Text("当前锚点：$it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                if (!mainline.freeOnline) Text(stringResource(R.string.mainline_offline_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
-            }
-        },
-        confirmButton = { Button(onClick = onReturn) { Text(stringResource(R.string.mainline_return)) } },
-        dismissButton = {
-            OutlinedButton(onClick = onFree) {
-                Text(stringResource(if (mainline.freeOnline) R.string.mainline_free else R.string.mainline_sandbox))
-            }
-        },
-    )
-}
+private fun combat0(scene: SceneV1) = scene.combat != null
 
 @Composable
 private fun SceneTitle(scene: SceneV1) {
     Column {
-        Text(scene.locationName, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        val combat = scene.combat
+        Text(
+            if (combat != null) "战斗 · 第 ${combat.round} 轮" else scene.locationName,
+            style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            color = if (combat != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+        )
         val sub = buildString {
-            if (scene.packName.isNotBlank()) append("《").append(scene.packName).append("》 · ")
-            append(stringResource(R.string.saves_turn, scene.turn))
+            if (combat0(scene)) {
+                append(scene.locationName)
+            } else if (scene.packName.isNotBlank()) {
+                append(scene.packName).append(" · ")
+            }
+            if (scene.timeText.isNotBlank()) append(if (combat0(scene)) " · " else "").append(scene.timeText) else append(stringResource(R.string.saves_turn, scene.turn))
+            if (scene.branch.isNotBlank() && scene.branch != "主干") append(" · ").append(scene.branch)
         }
         Text(
             sub,
@@ -366,17 +454,45 @@ private fun InputArea(
     suggestions: List<SuggestionV1>,
     busy: Boolean,
     onSuggestion: (SuggestionV1) -> Unit,
+    aiSuggestions: List<String> = emptyList(),
+    onAiSuggestion: (String) -> Unit = {},
+    inCombat: Boolean = false,
+    pendingTurn: Int = 0,
+    onCancelRollback: () -> Unit = {},
+    onWait: ((String, String) -> Unit)? = null,
 ) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 0.dp) {
         Column(Modifier.windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))) {
+            if (pendingTurn != 0) {
+                Row(
+                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "已回到回合 ${maxOf(pendingTurn, 0)}：下一次行动会开出新分支，原来的进展会保留。",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary, modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = onCancelRollback, enabled = !busy) { Text("取消") }
+                }
+            }
             combat()
-            if (suggestions.isNotEmpty()) {
-                val label = stringResource(R.string.game_suggestions)
+            val label = stringResource(R.string.game_suggestions)
+            var waitMenu by remember { mutableStateOf(false) }
+            if (suggestions.isNotEmpty() || aiSuggestions.isNotEmpty() || onWait != null) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(top = 8.dp).semantics { contentDescription = label },
                 ) {
+                    items(aiSuggestions, key = { "ai:$it" }) { text ->
+                        AssistChip(
+                            onClick = { onAiSuggestion(text) },
+                            enabled = !busy,
+                            label = { Text(text) },
+                            leadingIcon = { Icon(Icons.Outlined.AutoAwesome, contentDescription = "AI 建议", modifier = Modifier.size(AssistChipDefaults.IconSize)) },
+                            border = AssistChipDefaults.assistChipBorder(enabled = !busy, borderColor = MaterialTheme.colorScheme.primary),
+                        )
+                    }
                     items(suggestions, key = { it.label + it.action.kind + (it.action.action ?: "") + (it.action.target ?: "") + (it.action.destination ?: "") }) { sg ->
                         AssistChip(
                             onClick = { onSuggestion(sg) },
@@ -387,6 +503,23 @@ private fun InputArea(
                             },
                         )
                     }
+                    if (onWait != null) {
+                        item(key = "wait") {
+                            Box {
+                                AssistChip(
+                                    onClick = { waitMenu = true },
+                                    enabled = !busy,
+                                    label = { Text("等待…") },
+                                    leadingIcon = { Icon(Icons.Outlined.Schedule, contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize)) },
+                                )
+                                DropdownMenu(expanded = waitMenu, onDismissRequest = { waitMenu = false }) {
+                                    listOf("10m" to "等 10 分钟", "1h" to "等 1 小时", "dawn" to "等到天亮").forEach { (t, l) ->
+                                        DropdownMenuItem(text = { Text(l) }, onClick = { waitMenu = false; onWait(t, l) })
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             Row(
@@ -396,7 +529,7 @@ private fun InputArea(
                 OutlinedTextField(
                     value = input,
                     onValueChange = { if (it.length <= 200) onInput(it) },
-                    placeholder = { Text(stringResource(R.string.game_input_hint)) },
+                    placeholder = { Text(if (inCombat) "描述你的行动……" else stringResource(R.string.game_input_hint)) },
                     modifier = Modifier.weight(1f).heightIn(min = 52.dp),
                     maxLines = 4,
                     shape = MaterialTheme.shapes.extraLarge,

@@ -58,8 +58,12 @@ fun EntryItem(
     onOption: (OptionV1) -> Unit,
     enabled: Boolean,
     onCard: (String) -> Unit = {},
+    onRollback: ((Int) -> Unit)? = null,
 ) {
     when (entry.kind) {
+        "world" -> entry.world?.let { WorldEntry(it) }
+        "adjudication" -> entry.adjudication?.let { AdjudicationCard(it) }
+        "usage" -> entry.usage?.let { UsageLine(it, onRollback) }
         "combat" -> CombatEntry(entry, onCard)
         "player" -> PlayerBubble(entry.text)
         "narration", "intro" -> Narration(entry, animate, onAnimated)
