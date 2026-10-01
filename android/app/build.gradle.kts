@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-val appVersionName = "0.1.3-rc1"
+val appVersionName = "0.2.0-alpha1"
 
 // llama.cpp 原生库的 ABI：默认 arm64-v8a + x86_64（模拟器）；CI 可用 -Pibuki.llama.abis=arm64-v8a 缩短构建时间
 val llamaAbis: List<String> = ((project.findProperty("ibuki.llama.abis") as String?) ?: "arm64-v8a,x86_64")
@@ -40,7 +40,7 @@ android {
         applicationId = "com.guyu2233.ibukirpg"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
+        versionCode = 6
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -134,7 +134,7 @@ kotlin {
     }
 }
 
-// 输出文件名：ibukiRPG-v0.1.3-rc1.apk
+// 输出文件名：ibukiRPG-v0.2.0-alpha1.apk
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
