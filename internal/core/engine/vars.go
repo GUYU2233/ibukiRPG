@@ -113,8 +113,8 @@ func Vars(p *loader.Package, s *state.State, target, item string) expression.Var
 	return expression.Vars{"actor": actor, "target": tgt, "item": itm, "scene": scene, "world": world, "npcs": npcs, "stories": Stories(p, s), "known": known, "gone": gone}
 }
 
-// rpgVars 加入成长 / 战斗 / 主线变量：actor.level/xp/hp/max_hp/mercury/in_combat/equipment/combat_skills，
-// world.combats（遭遇短名 → {result, wins}）、world.mode、world.deviation、world.anchor。
+// rpgVars 加入成长 / 战斗变量：actor.level/xp/hp/max_hp/mercury/in_combat/equipment/combat_skills，
+// world.combats（遭遇短名 → {result, wins}）。
 func rpgVars(p *loader.Package, s *state.State, actor, world map[string]any) {
 	hp, mx := PlayerHP(p, s)
 	actor["level"] = int64(s.PlayerLevel(p))

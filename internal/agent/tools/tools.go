@@ -89,7 +89,7 @@ func All() []Tool {
 		{Name: "memory.search", Description: "检索记忆：NPC 的交谈 / 情节 / 观察记忆、事件日志与对话摘要。上下文被压缩后，用它找回早先的细节。",
 			Params: obj(map[string]any{"query": strProp("关键词"), "who": strProp("可选：只看某个 NPC 的记忆"), "limit": map[string]any{"type": "integer", "minimum": 1, "maximum": MaxResults}}, "query"),
 			Scopes: []ScopeKind{ScopeNPC, ScopePlayer, ScopeDirector}, run: memorySearch},
-		{Name: "story.get_state", Description: "当前剧情状态：主线模式与锚点、当前目标、进行中的事件、自由推演节点。",
+		{Name: "story.get_state", Description: "当前剧情状态：回合、所在地、当前目标、进行中的剧情事件。",
 			Params: obj(map[string]any{}), Scopes: []ScopeKind{ScopePlayer, ScopeDirector}, run: storyState},
 		{Name: "world.get_location", Description: "读取地点：描述、场景事实、出口、在场人物。省略 id 表示玩家当前位置。",
 			Params: obj(map[string]any{"id": strProp("可选：地点 ID 或名字")}), run: location},

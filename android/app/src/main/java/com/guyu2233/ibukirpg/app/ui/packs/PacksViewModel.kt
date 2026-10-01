@@ -4,6 +4,9 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.guyu2233.ibukirpg.app.data.CreationOptionsV1
+import com.guyu2233.ibukirpg.app.data.CreationReviewV1
+import com.guyu2233.ibukirpg.app.data.CreationV1
 import com.guyu2233.ibukirpg.app.data.Engine
 import com.guyu2233.ibukirpg.app.data.EngineException
 import com.guyu2233.ibukirpg.app.data.ImportResultV1
@@ -27,6 +30,18 @@ data class PacksState(
     /** 导入失败的详细原因（对话框，可能较长）。 */
     val importError: String? = null,
     val imported: ImportResultV1? = null,
+    /** 角色创建：正在为哪个故事包创建角色（null = 未打开）。 */
+    val creation: CreationState? = null,
+)
+
+/** 角色创建界面状态。 */
+data class CreationState(
+    val pack: PackV1,
+    val options: CreationOptionsV1? = null,
+    val loading: Boolean = true,
+    val reviewing: Boolean = false,
+    val review: CreationReviewV1? = null,
+    val error: String? = null,
 )
 
 /** 与 Go 端 registry.MaxTotalBytes 一致：超过这个大小的文件不必复制。 */
@@ -44,15 +59,46 @@ class PacksViewModel(private val engine: Engine, private val context: Context) :
             .onFailure { e -> _state.update { it.copy(loading = false, message = e.message) } }
     }
 
-    fun newGame(pack: PackV1, name: String, onReady: () -> Unit) {
+    fun newGame(pack: PackV1, name: String, creation: CreationV1? = null, onReady: () -> Unit) {
         if (_state.value.working) return
         _state.update { it.copy(working = true) }
         viewModelScope.launch {
-            runCatching { engine.newGame(name.trim(), pack.id) }
-                .onSuccess { _state.update { it.copy(working = false) }; onReady() }
-                .onFailure { e -> _state.update { it.copy(working = false, message = e.message) } }
+            runCatching { engine.newGame(name.trim(), pack.id, creation?.copy(name = name.trim())) }
+                .onSuccess { _state.update { it.copy(working = false, creation = null) }; onReady() }
+                .onFailure { e ->
+                    _state.update {
+                        if (it.creation != null) it.copy(working = false, creation = it.creation.copy(error = e.message))
+                        else it.copy(working = false, message = e.message)
+                    }
+                }
         }
     }
+
+    /** 打开角色创建：读取故事包的预设主角 / 出身 / 属性点。 */
+    fun openCreation(pack: PackV1) {
+        _state.update { it.copy(creation = CreationState(pack)) }
+        viewModelScope.launch {
+            runCatching { engine.getCreation(pack.id) }
+                .onSuccess { o -> _state.update { s -> s.copy(creation = s.creation?.copy(options = o, loading = false)) } }
+                .onFailure { e -> _state.update { s -> s.copy(creation = s.creation?.copy(loading = false, error = e.message)) } }
+        }
+    }
+
+    fun closeCreation() = _state.update { it.copy(creation = null) }
+
+    /** 规则检查 + 审查 Agent（联网模型可用时）：设定契合度、强度、冲突、建议与推荐角色卡。 */
+    fun reviewCreation(c: CreationV1) {
+        val cs = _state.value.creation ?: return
+        if (cs.reviewing) return
+        _state.update { s -> s.copy(creation = s.creation?.copy(reviewing = true, error = null)) }
+        viewModelScope.launch {
+            runCatching { engine.reviewCreation(cs.pack.id, c) }
+                .onSuccess { r -> _state.update { s -> s.copy(creation = s.creation?.copy(reviewing = false, review = r)) } }
+                .onFailure { e -> _state.update { s -> s.copy(creation = s.creation?.copy(reviewing = false, error = e.message)) } }
+        }
+    }
+
+    fun clearReview() = _state.update { s -> s.copy(creation = s.creation?.copy(review = null)) }
 
     /** SAF 选中的 .zip：先复制到缓存目录（引擎只读本地文件），导入完成后删除临时文件。 */
     fun import(uri: Uri) {

@@ -94,7 +94,9 @@ type client struct {
 	sugg  []dto.SuggestionV1
 	opts  []dto.OptionV1
 	saves []dto.SlotV1
-	packs []dto.PackV1
+	// pendingEdit 是 /edit 预览得到、等待 /confirm 的令牌。
+	pendingEdit string
+	packs       []dto.PackV1
 	// streamed 表示本回合叙事已经流式打印过。
 	streamed bool
 }

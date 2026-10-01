@@ -17,7 +17,9 @@ const worldHelp = `
   /timeline  回合与分支        /rollback <回合>  回到某回合（继续行动将创建新分支）
   /cancel    取消回溯          /branch <分支ID>  切换分支
   /cp [名称] 创建检查点        /restore <检查点ID>  恢复检查点
-  /export [目录]  导出存档 .ibksave（不含 API Key）  /importsave <路径>  导入存档`
+  /export [目录]  导出存档 .ibksave（不含 API Key）  /importsave <路径>  导入存档
+  /audit     立即运行一致性检查（需要联网模型）  /suggest apply|ignore <建议ID>  处理审查建议
+  /edit <实体ID> <要求>  让 AI 修改卡片（/edit new <描述> 新建），预览后 /confirm 提交`
 
 var tabAlias = map[string]string{"角色": "characters", "关系网": "relations", "关系": "relations", "图鉴": "codex", "装备": "equipment",
 	"地图": "map", "势力": "factions", "时间线": "timeline", "日志": "log"}
@@ -79,6 +81,78 @@ func (c *client) worldCommand(cmd, arg string) bool {
 		c.printf("已撤销 %d 项变更。\n", len(log.Changes))
 	case "/decision":
 		c.resolveDecision(first, len(args) > 1 && args[1] == "notify")
+	case "/audit":
+		var a dto.AuditV1
+		if err := c.call("run_audit", "", nil, &a); err != nil {
+			c.printf("一致性检查失败：%v\n", err)
+			return true
+		}
+		if len(a.Findings) == 0 {
+			c.printf("一致性检查没有发现问题。\n")
+			return true
+		}
+		for _, f := range a.Findings {
+			c.printf("  · [%s] %s\n", f.Kind, f.Text)
+		}
+		if a.Fixed != nil {
+			for _, ch := range a.Fixed.Changes {
+				c.printf("  已修复 [%s] %s\n", ch.ID, ch.Summary)
+			}
+		}
+		for _, sg := range a.Suggestions {
+			c.printf("  建议 [%s] %s（/suggest apply|ignore %s）\n", sg.ID, sg.Summary, sg.ID)
+		}
+	case "/suggest":
+		if len(args) < 2 {
+			c.printf("用法：/suggest apply|ignore <建议ID>\n")
+			return true
+		}
+		var log dto.WorldLogV1
+		if err := c.call("resolve_audit_suggestion", "", map[string]string{"id": args[1], "action": first}, &log); err != nil {
+			c.printf("%v\n", err)
+			return true
+		}
+		c.printf("已处理建议 %s。\n", args[1])
+	case "/edit":
+		if len(args) < 2 {
+			c.printf("用法：/edit <实体ID|new> <要求>\n")
+			return true
+		}
+		target := first
+		if target == "new" {
+			target = ""
+		}
+		var pv dto.ChangePreviewV1
+		if err := c.call("request_edit", "", map[string]string{"target": target, "instruction": strings.Join(args[1:], " ")}, &pv); err != nil {
+			c.printf("%v\n", err)
+			return true
+		}
+		for _, ch := range pv.Changes {
+			c.printf("  %s\n", ch.Summary)
+		}
+		if pv.HiddenCount > 0 {
+			c.printf("  另有 %d 个你还不知道的字段会被修改\n", pv.HiddenCount)
+		}
+		for _, r := range pv.Rejected {
+			c.printf("  未通过校验：%s\n", r.Reason)
+		}
+		c.pendingEdit = pv.Token
+		if pv.Token != "" {
+			c.printf("输入 /confirm 提交修改（不确认则不会生效）。\n")
+		}
+	case "/confirm":
+		if c.pendingEdit == "" {
+			c.printf("没有待确认的修改。\n")
+			return true
+		}
+		var log dto.WorldLogV1
+		err := c.call("apply_preview", "", map[string]string{"preview_token": c.pendingEdit}, &log)
+		c.pendingEdit = ""
+		if err != nil {
+			c.printf("%v\n", err)
+			return true
+		}
+		c.printf("已修改 %d 项设定（/changes 查看，/revert 撤销）。\n", len(log.Changes))
 	case "/timeline", "/tl":
 		c.showTimeline()
 	case "/rollback":

@@ -99,9 +99,18 @@ class Engine(private val dataDir: String) {
     // ---------- 便捷方法 ----------
 
     suspend fun listSaves(): List<SlotV1> = call("list_saves", decode = decoder())
-    suspend fun newGame(playerName: String, packId: String = ""): GameBundle = call(
-        "new_game", buildJsonObject { put("player_name", playerName); put("save_name", ""); put("pack_id", packId) }, decode = decoder(),
+    suspend fun newGame(playerName: String, packId: String = "", creation: CreationV1? = null): GameBundle = call(
+        "new_game",
+        buildJsonObject {
+            put("player_name", playerName); put("save_name", ""); put("pack_id", packId)
+            if (creation != null) put("creation", payload(creation))
+        },
+        decode = decoder(),
     )
+    suspend fun getCreation(packId: String): CreationOptionsV1 =
+        call("get_creation", buildJsonObject { put("pack_id", packId) }, decode = decoder())
+    suspend fun reviewCreation(packId: String, creation: CreationV1): CreationReviewV1 =
+        call("review_creation", buildJsonObject { put("pack_id", packId); put("creation", payload(creation)) }, decode = decoder())
     suspend fun listPacks(): List<PackV1> = call("list_packs", decode = decoder())
     /** 导入故事包 .zip（path 为应用可读的本地文件）；校验失败时抛出带中文原因的 [EngineException]。 */
     suspend fun importPack(path: String): ImportResultV1 =

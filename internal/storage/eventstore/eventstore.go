@@ -26,7 +26,7 @@ const schemaVersion = 2
 const MainBranch = "main"
 
 // LegacyMessage 是 0.1.x 存档被拒绝时给玩家看的说明（架构 V0.3 第 10.7 节）。
-const LegacyMessage = "这些存档来自 v0.1.x。0.2.0 改成了开放世界，存档结构完全不同，无法继续。如需继续旧存档，请安装 v0.1.2；也可以删除它们释放空间。"
+const LegacyMessage = "这些存档来自 v0.1.x。0.2.0 改成了开放世界，存档结构完全不同，无法继续。如需继续旧存档，请安装 v0.1.3-rc1；也可以删除它们释放空间。"
 
 // ErrLegacyDatabase 表示打开的是 0.1.x 的存档数据库（schema v1）。
 var ErrLegacyDatabase = errors.New(LegacyMessage)

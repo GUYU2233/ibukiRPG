@@ -56,6 +56,9 @@ import com.guyu2233.ibukirpg.app.data.GameBundle
 import com.guyu2233.ibukirpg.app.data.InventoryV1
 import com.guyu2233.ibukirpg.app.data.JournalEntryV1
 import com.guyu2233.ibukirpg.app.data.NPCV1
+import com.guyu2233.ibukirpg.app.data.CreationOptionsV1
+import com.guyu2233.ibukirpg.app.data.CreationReviewV1
+import com.guyu2233.ibukirpg.app.data.CreationV1
 import com.guyu2233.ibukirpg.app.data.PackV1
 import com.guyu2233.ibukirpg.app.data.SlotV1
 import com.guyu2233.ibukirpg.app.data.ThemeMode
@@ -65,6 +68,8 @@ import com.guyu2233.ibukirpg.app.ui.game.PanelsContent
 import com.guyu2233.ibukirpg.app.ui.game.PanelsState
 import com.guyu2233.ibukirpg.app.ui.home.HomeContent
 import com.guyu2233.ibukirpg.app.ui.home.HomeState
+import com.guyu2233.ibukirpg.app.ui.packs.CreationContent
+import com.guyu2233.ibukirpg.app.ui.packs.CreationState
 import com.guyu2233.ibukirpg.app.ui.packs.PacksContent
 import com.guyu2233.ibukirpg.app.ui.packs.PacksState
 import com.guyu2233.ibukirpg.app.ui.saves.SavesContent
@@ -284,11 +289,11 @@ class ScreenshotTest {
     }
 
     @Test fun packPicker() = shoot("10-packs.png") {
-        PacksContent(packs, {}, {}, { _, _ -> }, {}, {}, {})
+        PacksContent(packs, {}, {}, {}, {}, {}, {})
     }
 
     @Test fun packPickerDark() = shoot("11-packs-dark.png", dark = true) {
-        PacksContent(packs.copy(packs = packs.packs.drop(1)), {}, {}, { _, _ -> }, {}, {}, {})
+        PacksContent(packs.copy(packs = packs.packs.drop(1)), {}, {}, {}, {}, {}, {})
     }
 
     @Test fun gameHudExpanded() = shoot("12-game-hud-expanded.png") {
@@ -487,5 +492,28 @@ class ScreenshotTest {
                 extras = WorldExtras(onEdit = {}, onNewCard = {}, onRunAudit = {}),
             )
         }
+    }
+
+    private val creationPack get() = packs.packs.firstOrNull { it.id == "brass_trial" } ?: packs.packs.first()
+
+    @Test fun v02CreationPreset() = shoot("48-v02-creation.png") {
+        CreationContent(
+            CreationState(creationPack, options = fixture<CreationOptionsV1>("v02_creation.json"), loading = false),
+            working = false, defaultName = "阿澈", onDismiss = {}, onReview = {}, onClearReview = {}, onStart = { _, _ -> },
+        )
+    }
+
+    @Test fun v02CreationReview() = shoot("49-v02-creation-review.png") {
+        CreationContent(
+            CreationState(
+                creationPack, options = fixture<CreationOptionsV1>("v02_creation.json"), loading = false,
+                review = fixture<CreationReviewV1>("v02_creation_review.json"),
+            ),
+            working = false, defaultName = "阿澈", onDismiss = {}, onReview = {}, onClearReview = {}, onStart = { _, _ -> },
+            initial = CreationV1(
+                name = "白鸦", custom = true, background = "scavenger", personality = "嘴硬心软，记仇也记恩",
+                story = "在下水道长大，据说会一点魔法，能让齿轮自己转起来。", attributes = mapOf("agility" to 4, "strength" to 3, "resolve" to 1),
+            ),
+        )
     }
 }

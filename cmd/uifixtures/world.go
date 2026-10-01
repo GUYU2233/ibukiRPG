@@ -187,5 +187,10 @@ func runWorld(seed uint64, files map[string]json.RawMessage) {
 	}
 	files["v02_tasks.json"] = call("get_tasks", "", nil)
 	files["v02_creation.json"] = call("get_creation", "", map[string]string{"pack_id": "brass_trial"})
+	files["v02_creation_review.json"] = call("review_creation", "", map[string]any{"pack_id": "brass_trial", "creation": map[string]any{
+		"name": "白鸦", "custom": true, "background": "scavenger", "personality": "嘴硬心软，记仇也记恩",
+		"story":      "在下水道长大，据说会一点魔法，能让齿轮自己转起来。",
+		"attributes": map[string]int{"agility": 4, "strength": 3, "resolve": 1},
+	}})
 	call("configure_ai", "", map[string]any{"kind": "offline"})
 }

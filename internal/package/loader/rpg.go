@@ -91,7 +91,7 @@ type combatFile struct {
 	Tags       []freeform.Tag      `yaml:"tags"`
 }
 
-// loadRPG 读取 combat / codex / relations / mainline 内容。
+// loadRPG 读取 combat / codex / relations 内容。
 func (p *Package) loadRPG(fsys fs.FS, m *manifest.Manifest) error {
 	c := combat.NewContent()
 	for _, f := range m.Content["combat"] {

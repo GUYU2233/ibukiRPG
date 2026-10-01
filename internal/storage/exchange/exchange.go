@@ -62,7 +62,7 @@ type Options struct {
 // 错误。
 var (
 	ErrNotSave    = errors.New("这不是 ibukiRPG 存档文件（.ibksave）")
-	ErrLegacy     = errors.New("这个存档来自 v0.1.x。0.2.0 改成了开放世界，存档结构完全不同，无法导入。如需继续旧存档，请安装 v0.1.2")
+	ErrLegacy     = errors.New("这个存档来自 v0.1.x。0.2.0 改成了开放世界，存档结构完全不同，无法导入。如需继续旧存档，请安装 v0.1.3-rc1")
 	ErrTooNew     = errors.New("这个存档来自更新版本的 ibukiRPG，请先升级 App")
 	ErrSecret     = errors.New("存档文件里疑似包含 API Key，已拒绝导入（导出功能从不写入密钥，这个文件可能被改动过）")
 	secretRe      = regexp.MustCompile(`(?i)("api_?key"\s*:\s*"[^"]+")|(\bsk-[A-Za-z0-9]{16,})|(Bearer\s+[A-Za-z0-9._-]{16,})`)

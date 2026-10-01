@@ -258,7 +258,7 @@ func validTone(t string) bool {
 func validBind(b string) bool {
 	switch b {
 	case "location", "time", "clock", "day", "period", "gold", "turn", "story", "objective", "conditions",
-		"level", "xp", "hp", "sp", "mercury", "deviation", "mode", "anchor", "combat":
+		"level", "xp", "hp", "sp", "mercury", "combat":
 		return true
 	}
 	return strings.HasPrefix(b, "var:") || strings.HasPrefix(b, "flag:")

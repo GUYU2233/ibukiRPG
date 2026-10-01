@@ -1,0 +1,24 @@
+{
+  "lore_fit": "ok",
+  "max_power": 115,
+  "ok": false,
+  "power": 117,
+  "problems": [
+    "属性点超出：8 / 6",
+    "设定里不能出现“魔法”",
+    "强度 117 超过开局上限 115"
+  ],
+  "recommended": {
+    "attributes": {
+      "agility": 4,
+      "resolve": 1,
+      "strength": 1
+    },
+    "background": "scavenger",
+    "custom": true,
+    "name": "白鸦",
+    "personality": "嘴硬心软，记仇也记恩",
+    "story": "在下水道长大，据说会一点，能让齿轮自己转起来。"
+  },
+  "source": "rules"
+}

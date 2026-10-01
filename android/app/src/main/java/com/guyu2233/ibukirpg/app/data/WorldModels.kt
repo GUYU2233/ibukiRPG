@@ -310,3 +310,65 @@ data class AuditFindingV1(val kind: String = "", val turn: Int = 0, val text: St
 
 @Immutable @Serializable
 data class AuditSuggestionV1(val id: String = "", val summary: String = "", val reason: String = "", val status: String = "pending")
+
+// ---------- 角色创建（预设主角 / 自建角色 + 审查） ----------
+
+@Immutable @Serializable
+data class CreationPresetV1(
+    val id: String = "",
+    val name: String = "",
+    val description: String = "",
+    val attributes: Map<String, Int> = emptyMap(),
+)
+
+@Immutable @Serializable
+data class CreationBackgroundV1(
+    val id: String = "",
+    val name: String = "",
+    val description: String = "",
+    val attributes: Map<String, Int> = emptyMap(),
+    val gold: Int = 0,
+)
+
+@Immutable @Serializable
+data class CreationOptionsV1(
+    val packId: String = "",
+    val presets: List<CreationPresetV1> = emptyList(),
+    val backgrounds: List<CreationBackgroundV1> = emptyList(),
+    val attributeNames: Map<String, String> = emptyMap(),
+    val baseAttributes: Map<String, Int> = emptyMap(),
+    val attributePoints: Int = 0,
+    val attrMax: Int = 0,
+    val rules: List<String> = emptyList(),
+    val maxPower: Int = 0,
+) {
+    /** 故事包没有可选项时退回只填名字。 */
+    val simple: Boolean get() = presets.size <= 1 && backgrounds.isEmpty() && attributePoints == 0
+}
+
+/** 与 Go 端 engine.Creation 对应；attributes 为自建角色的属性点分配（增量）。 */
+@Immutable @Serializable
+data class CreationV1(
+    val name: String = "",
+    val preset: String = "",
+    val custom: Boolean = false,
+    val background: String = "",
+    val appearance: String = "",
+    val personality: String = "",
+    val story: String = "",
+    val attributes: Map<String, Int> = emptyMap(),
+)
+
+@Immutable @Serializable
+data class CreationReviewV1(
+    val ok: Boolean = false,
+    /** rules | ai */
+    val source: String = "rules",
+    val problems: List<String> = emptyList(),
+    val loreFit: String = "",
+    val power: Int = 0,
+    val maxPower: Int = 0,
+    val conflicts: List<String> = emptyList(),
+    val suggestions: List<String> = emptyList(),
+    val recommended: CreationV1? = null,
+)

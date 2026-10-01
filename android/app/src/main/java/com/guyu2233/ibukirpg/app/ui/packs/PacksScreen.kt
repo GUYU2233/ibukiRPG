@@ -75,7 +75,6 @@ import com.guyu2233.ibukirpg.app.R
 import com.guyu2233.ibukirpg.app.data.PackV1
 import com.guyu2233.ibukirpg.app.ui.common.parseAccent
 import com.guyu2233.ibukirpg.app.ui.common.symbolFor
-import com.guyu2233.ibukirpg.app.ui.home.NewGameDialog
 
 /** SAF 文件选择器的类型：部分文件管理器把 .zip 报成 octet-stream。 */
 private val ZIP_TYPES = arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")
@@ -91,11 +90,18 @@ fun PacksScreen(vm: PacksViewModel, onBack: () -> Unit, onGameReady: () -> Unit)
         s = s,
         onBack = onBack,
         onImport = { picker.launch(ZIP_TYPES) },
-        onStart = { pack, name -> vm.newGame(pack, name, onGameReady) },
+        onStart = vm::openCreation,
         onDelete = { vm.delete(it, deletedMsg) },
         onMessageShown = vm::consumeMessage,
         onDismissImportError = vm::dismissImportError,
     )
+    s.creation?.let { cs ->
+        CreationDialog(
+            state = cs, working = s.working, defaultName = stringResource(R.string.new_game_name_default),
+            onDismiss = vm::closeCreation, onReview = vm::reviewCreation, onClearReview = vm::clearReview,
+            onStart = { name, c -> vm.newGame(cs.pack, name, c, onGameReady) },
+        )
+    }
 }
 
 /** 无状态的故事包选择界面（便于截图测试）。 */
@@ -105,13 +111,12 @@ fun PacksContent(
     s: PacksState,
     onBack: () -> Unit,
     onImport: () -> Unit,
-    onStart: (PackV1, String) -> Unit,
+    onStart: (PackV1) -> Unit,
     onDelete: (PackV1) -> Unit,
     onMessageShown: () -> Unit,
     onDismissImportError: () -> Unit,
 ) {
     val snackbar = remember { SnackbarHostState() }
-    var starting by remember { mutableStateOf<PackV1?>(null) }
     var deleting by remember { mutableStateOf<PackV1?>(null) }
     val importedMsg = s.imported?.let { r ->
         if (r.replaced) stringResource(R.string.packs_updated, r.pack.name, r.previousVersion ?: "?", r.pack.version)
@@ -176,7 +181,7 @@ fun PacksContent(
                         PackCard(
                             pack = p,
                             enabled = !s.working,
-                            onStart = { starting = p },
+                            onStart = { onStart(p) },
                             onDelete = { deleting = p },
                         )
                     }
@@ -186,13 +191,6 @@ fun PacksContent(
         }
     }
 
-    starting?.let { p ->
-        NewGameDialog(
-            packName = p.name,
-            onDismiss = { starting = null },
-            onStart = { name -> starting = null; onStart(p, name) },
-        )
-    }
     deleting?.let { p ->
         AlertDialog(
             onDismissRequest = { deleting = null },
