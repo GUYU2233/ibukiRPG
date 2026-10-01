@@ -16,7 +16,7 @@
           "key": "territory",
           "label": "领地",
           "level": "known",
-          "value": "brass:location/north_dock"
+          "value": "北码头"
         }
       ],
       "icon": "local_fire_department",

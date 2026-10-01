@@ -1,6 +1,39 @@
 {
   "changes": [
     {
+      "after": "3",
+      "can_revert": true,
+      "id": "wc-17-3",
+      "impact": 10,
+      "op": "patch",
+      "path": "dims.trust",
+      "reason": "小铆钉照顾了受伤的托克",
+      "source": "narrate",
+      "source_label": "AI 叙事",
+      "summary": "小铆钉→托克 信任 +3",
+      "target": "brass:character/rivet\u003ebrass:character/tock",
+      "target_name": "brass:character/rivet\u003ebrass:character/tock",
+      "time": "第1天 08:40 · 上午",
+      "turn": 17
+    },
+    {
+      "after": "三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
+      "before": "运煤驳船挤在北码头的木桩之间，吊臂吱呀作响。三号仓的铁门上刷着煤烟帮的黑手印，门缝里飘出一股煤油味。",
+      "can_revert": true,
+      "id": "wc-16-2",
+      "impact": 25,
+      "op": "patch",
+      "path": "fields.description",
+      "reason": "仓库失火，托克被救出",
+      "source": "narrate",
+      "source_label": "AI 叙事",
+      "summary": "北码头：描述 → 三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
+      "target": "brass:location/north_dock",
+      "target_name": "北码头",
+      "time": "第1天 08:38 · 上午",
+      "turn": 16
+    },
+    {
       "after": "替煤烟帮送完最后一批货，攒钱给妹妹买药",
       "can_revert": true,
       "id": "wc-4-1",

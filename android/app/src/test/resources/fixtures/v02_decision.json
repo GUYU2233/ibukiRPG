@@ -103,7 +103,7 @@
     "player_name": "阿砾",
     "present": [],
     "save_name": "阿砾的旅程",
-    "slot_id": "slot-1790872158659-4467af59",
+    "slot_id": "slot-1790872465589-3ba5b2a8",
     "story": {
       "hints": [
         "去竞技场"
@@ -269,7 +269,7 @@
       "id": 83,
       "kind": "narration",
       "source": "ai",
-      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "text": "街角的煤气灯一盏接一盏亮了起来，齿轮在头顶的管道里咔哒作响。",
       "turn": 2
     },
     {
@@ -280,7 +280,7 @@
       "turn": 2,
       "usage": {
         "calls": 2,
-        "completion_tokens": 323,
+        "completion_tokens": 330,
         "failed": 1,
         "prompt_tokens": 2110,
         "tasks": [
@@ -296,7 +296,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 323,
+            "completion_tokens": 330,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
@@ -319,7 +319,7 @@
       "id": 86,
       "kind": "narration",
       "source": "ai",
-      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "text": "一队搬运工扛着木箱从你身边挤过去，嘴里骂着议会又涨了码头税。",
       "turn": 3
     },
     {
@@ -330,7 +330,7 @@
       "turn": 3,
       "usage": {
         "calls": 2,
-        "completion_tokens": 323,
+        "completion_tokens": 330,
         "failed": 1,
         "prompt_tokens": 2109,
         "tasks": [
@@ -346,7 +346,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 323,
+            "completion_tokens": 330,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
@@ -1276,7 +1276,7 @@
       "id": 144,
       "kind": "narration",
       "source": "ai",
-      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "text": "远处传来汽笛声，运煤驳船正慢吞吞地靠岸。",
       "turn": 14
     },
     {
@@ -1287,7 +1287,7 @@
       "turn": 14,
       "usage": {
         "calls": 2,
-        "completion_tokens": 323,
+        "completion_tokens": 325,
         "failed": 1,
         "prompt_tokens": 2110,
         "tasks": [
@@ -1303,7 +1303,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 323,
+            "completion_tokens": 325,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
@@ -1456,7 +1456,7 @@
       "turn": 16,
       "usage": {
         "calls": 2,
-        "completion_tokens": 490,
+        "completion_tokens": 491,
         "failed": 1,
         "prompt_tokens": 2124,
         "tasks": [
@@ -1472,7 +1472,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 490,
+            "completion_tokens": 491,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",

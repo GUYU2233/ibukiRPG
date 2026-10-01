@@ -15,6 +15,7 @@ import (
 type fakeAI struct {
 	mu      sync.Mutex
 	replies []fakeReply
+	n       int
 }
 
 type fakeReply struct {
@@ -23,7 +24,12 @@ type fakeReply struct {
 	used bool
 }
 
-const defaultReply = "风从钟楼那边吹过来，带着煤烟味。\n<<<WORLD>>>\n{\"v\":1}\n<<<END>>>"
+var defaultLines = []string{
+	"风从钟楼那边吹过来，带着煤烟味。",
+	"街角的煤气灯一盏接一盏亮了起来，齿轮在头顶的管道里咔哒作响。",
+	"一队搬运工扛着木箱从你身边挤过去，嘴里骂着议会又涨了码头税。",
+	"远处传来汽笛声，运煤驳船正慢吞吞地靠岸。",
+}
 
 func (f *fakeAI) reply(user string) string {
 	f.mu.Lock()
@@ -35,7 +41,8 @@ func (f *fakeAI) reply(user string) string {
 			return r.text
 		}
 	}
-	return defaultReply
+	f.n++
+	return world(defaultLines[(f.n-1)%len(defaultLines)], `{"v":1}`)
 }
 
 func (f *fakeAI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -110,12 +117,15 @@ var worldReplies = []fakeReply{
 			`"scene_facts":["托克口袋里有一张煤烟帮的传单"],"impact":{"level":"minor"},"suggestions":["追问“钟停之时”","把传单交给议会"]}`)},
 	{key: "仓库", text: world(
 		"火舌顺着油迹一路舔上了木梁。浓烟里有人在喊你的名字——是托克。你冲进去的时候，横梁已经塌了下来……",
-		`{"v":1,"changes":[{"op":"retire","target":"brass:character/tock","value":{"reason":"dead","text":"死于北码头三号仓的大火"},"reason":"横梁塌落，托克没能逃出来"},`+
+		`{"v":1,"changes":[{"op":"retire","target":"brass:character/tock","value":{"reason":"death","text":"死于北码头三号仓的大火"},"reason":"横梁塌落，托克没能逃出来"},`+
 			`{"op":"patch","target":"brass:location/north_dock","path":"fields.description","value":"三号仓只剩下焦黑的木桩，煤油味混着焦糊味。","reason":"仓库被烧毁"}],`+
 			`"impact":{"level":"major","why":"重要人物死亡"}}`)},
+	{key: "小铆钉", text: world(
+		"小铆钉二话不说，把托克架到了工坊后屋，翻出一卷干净绷带。“欠我一顿肉包子，”她冲托克眨眨眼。",
+		`{"v":1,"changes":[{"op":"patch","target":"brass:character/rivet>brass:character/tock","path":"dims.trust","value":3,"reason":"小铆钉照顾了受伤的托克"}],"impact":{"level":"minor"},"suggestions":["问托克“钟停之时”到底是什么","去北码头看看火场"]}`)},
 	{key: "拖出来", text: world(
 		"你扯下帆布裹住托克，在横梁塌下来之前把他拖出了仓库。他咳得直不起腰，却死死攥着那张传单。",
-		`{"v":1,"reveals":[{"entity":"brass:character/tock","fields":["background"],"channel":"witness","source":"brass:character/tock"}],"scene_facts":["托克被救了出来"],"impact":{"level":"minor"}}`)},
+		`{"v":1,"changes":[{"op":"patch","target":"brass:location/north_dock","path":"fields.description","value":"三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。","reason":"仓库失火，托克被救出"}],"scene_facts":["托克被救了出来"],"impact":{"level":"minor"}}`)},
 }
 
 // runWorld 用本地假 AI 跑一段 0.2.0 开放世界试玩，导出 v02_*.json（主界面 / 战斗裁定 / 偏离提示 / 时间线 / 世界面板 / 生成设置）。

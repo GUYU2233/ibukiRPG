@@ -1,5 +1,5 @@
 {
-  "branch": "b-234636",
+  "branch": "b-14f099",
   "branches": [
     {
       "fork_turn": 0,
@@ -12,7 +12,7 @@
       "current": true,
       "fork_turn": 15,
       "head_turn": 17,
-      "id": "b-234636",
+      "id": "b-14f099",
       "name": "分支 A",
       "parent": "main",
       "status": "active"
@@ -21,7 +21,7 @@
   "checkpoints": [
     {
       "branch": "main",
-      "id": "cp-7e53ab49",
+      "id": "cp-68d20109",
       "kind": "auto",
       "name": "回合 16 之前",
       "reason": "重要角色死亡前自动保存",
@@ -29,13 +29,84 @@
     },
     {
       "branch": "main",
-      "id": "cp-799fa4d0",
+      "id": "cp-56b3ea3f",
       "kind": "manual",
       "name": "进议会之前",
       "turn": 13
     }
   ],
   "turns": [
+    {
+      "current": true,
+      "summary": "你：把托克交给小铆钉照顾",
+      "time": "第1天 08:40 · 上午",
+      "turn": 17
+    },
+    {
+      "summary": "你：冲进火场，把托克拖出来",
+      "turn": 16
+    },
+    {
+      "fork": true,
+      "summary": "你：去北码头",
+      "turn": 15
+    },
+    {
+      "summary": "你：去钟楼广场",
+      "turn": 14
+    },
+    {
+      "summary": "你：攻击",
+      "turn": 13
+    },
+    {
+      "summary": "你：攻击",
+      "turn": 12
+    },
+    {
+      "summary": "你：攻击",
+      "turn": 11
+    },
+    {
+      "summary": "你：攻击",
+      "turn": 10
+    },
+    {
+      "summary": "你：攻击",
+      "turn": 9
+    },
+    {
+      "summary": "你：攻击",
+      "turn": 8
+    },
+    {
+      "summary": "你：攻击",
+      "turn": 7
+    },
+    {
+      "summary": "你：趁它扑过来的空档，扫腿绊倒发条鼠，再抡扳手砸它背上的发条钥匙",
+      "turn": 6
+    },
+    {
+      "summary": "你：迎战",
+      "turn": 5
+    },
+    {
+      "summary": "你：走过去，问托克口袋里藏的是什么",
+      "turn": 4
+    },
+    {
+      "summary": "你：去竞技场",
+      "turn": 3
+    },
+    {
+      "summary": "你：去钟楼广场",
+      "turn": 2
+    },
+    {
+      "summary": "你：和欧琳聊聊",
+      "turn": 1
+    },
     {
       "summary": "锈钟镇的钟楼已经三天没有敲响了。",
       "turn": 0

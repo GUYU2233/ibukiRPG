@@ -48,12 +48,8 @@ func (q *Q) EntityView(s *state.State, id string) (dto.EntityViewV1, bool) {
 			if !player && lv < knowledge.Known && d.Retired == nil {
 				fv.Value = ""
 			}
-		case f == "location" || f == "leader" || f == "faction" || f == "controller":
-			if lv >= knowledge.Rumored {
-				fv.Value = q.KnownName(s, val)
-			}
 		case lv >= knowledge.Rumored:
-			fv.Value = val
+			fv.Value = q.namesIn(s, val, lv >= knowledge.Known)
 		}
 		if fv.Value == "" {
 			fv.Level = "unknown"
@@ -163,6 +159,13 @@ func (q *Q) TimelineEvents(s *state.State) []dto.WorldEventChipV1 {
 		st := s.Timeline.Status(id)
 		c := dto.WorldEventChipV1{ID: id, Title: ev.Title, Status: st, StatusLabel: timeline.StatusLabel(st), Location: q.KnownName(s, ev.Location),
 			Rumored: !ev.Known && !s.Knowledge.Knows(id, "existence"), Summary: ev.Summary, Pivotal: ev.Pivotal}
+		if c.Rumored {
+			// 只听过传闻：不给出真实摘要与地点，只给传闻原文
+			c.Summary, c.Location = "", Unknown
+			if len(ev.Rumor) > 0 {
+				c.Summary = "传闻：" + ev.Rumor[0].Text
+			}
+		}
 		if m := ev.StartMinute(); m >= 0 {
 			c.Time = worldtime.Format(m)
 			if st != timeline.Resolved && st != timeline.Cancelled && st != timeline.Active {
@@ -210,4 +213,26 @@ func (q *Q) icon(id string) string {
 		return f.Icon
 	}
 	return ""
+}
+
+// namesIn 把字段值里的实体 ID（单个或逗号 / 顿号分隔的列表）换成玩家知道的名字。
+// known=true 时，被引用实体的名字随字段一起得知（知道“托克属于工匠行会”就知道了行会的名字）。
+func (q *Q) namesIn(s *state.State, val string, known bool) string {
+	if !strings.Contains(val, ":") || !strings.Contains(val, "/") {
+		return val
+	}
+	parts := strings.FieldsFunc(val, func(r rune) bool { return r == ',' || r == '，' || r == '、' })
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if strings.Contains(p, ":") && strings.Contains(p, "/") && !strings.ContainsAny(p, " 　") {
+			n := q.KnownName(s, p)
+			if d := s.Doc(q.Pkg, p); known && n == Unknown && d != nil && d.Name() != "" {
+				n = d.Name()
+			}
+			p = n
+		}
+		out = append(out, p)
+	}
+	return strings.Join(out, "、")
 }

@@ -466,11 +466,11 @@ func (s *Session) Timeline(ctx context.Context) (dto.TimelineV1, error) {
 	forks := map[int]bool{}
 	for _, b := range bs {
 		v.Branches = append(v.Branches, dto.BranchV1{ID: b.ID, Name: branchName(b), Parent: b.Parent, ForkTurn: b.ForkTurn, HeadTurn: b.HeadTurn, Status: b.Status, Current: b.ID == sl.Branch})
-		if b.Parent == sl.Branch {
+		if b.Parent == sl.Branch || (b.ID == sl.Branch && b.Parent != "") {
 			forks[b.ForkTurn] = true
 		}
 	}
-	tr, err := s.store.BranchTranscript(ctx, sl.ID, sl.Branch, 0, 2000, 0)
+	tr, err := s.store.BranchTranscript(ctx, sl.ID, sl.Branch, -1, 2000, 0)
 	if err != nil {
 		return v, err
 	}
@@ -484,7 +484,11 @@ func (s *Session) Timeline(ctx context.Context) (dto.TimelineV1, error) {
 			order = append(order, e.Turn)
 			byTurn[e.Turn] = ""
 		}
-		if byTurn[e.Turn] == "" || e.Kind == "narration" {
+		// 优先用玩家的行动做摘要（“你：……”），更容易认出是哪一回合；没有时用叙事首句。
+		switch {
+		case e.Kind == "player":
+			byTurn[e.Turn] = "你：" + firstSentence(e.Text)
+		case byTurn[e.Turn] == "":
 			byTurn[e.Turn] = firstSentence(e.Text)
 		}
 	}

@@ -1,5 +1,9 @@
 {
   "scene": {
+    "ai_suggestions": [
+      "问托克“钟停之时”到底是什么",
+      "去北码头看看火场"
+    ],
     "branch": "分支 A",
     "clock": "08:40",
     "conditions": [],
@@ -87,7 +91,7 @@
     "player_name": "阿砾",
     "present": [],
     "save_name": "阿砾的旅程",
-    "slot_id": "slot-1790872158659-4467af59",
+    "slot_id": "slot-1790872465589-3ba5b2a8",
     "story": {
       "hints": [
         "去竞技场"
@@ -253,7 +257,7 @@
       "id": 162,
       "kind": "narration",
       "source": "ai",
-      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "text": "街角的煤气灯一盏接一盏亮了起来，齿轮在头顶的管道里咔哒作响。",
       "turn": 2
     },
     {
@@ -264,7 +268,7 @@
       "turn": 2,
       "usage": {
         "calls": 2,
-        "completion_tokens": 323,
+        "completion_tokens": 330,
         "failed": 1,
         "prompt_tokens": 2110,
         "tasks": [
@@ -280,7 +284,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 323,
+            "completion_tokens": 330,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
@@ -303,7 +307,7 @@
       "id": 165,
       "kind": "narration",
       "source": "ai",
-      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "text": "一队搬运工扛着木箱从你身边挤过去，嘴里骂着议会又涨了码头税。",
       "turn": 3
     },
     {
@@ -314,7 +318,7 @@
       "turn": 3,
       "usage": {
         "calls": 2,
-        "completion_tokens": 323,
+        "completion_tokens": 330,
         "failed": 1,
         "prompt_tokens": 2109,
         "tasks": [
@@ -330,7 +334,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 323,
+            "completion_tokens": 330,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
@@ -1260,7 +1264,7 @@
       "id": 223,
       "kind": "narration",
       "source": "ai",
-      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "text": "远处传来汽笛声，运煤驳船正慢吞吞地靠岸。",
       "turn": 14
     },
     {
@@ -1271,7 +1275,7 @@
       "turn": 14,
       "usage": {
         "calls": 2,
-        "completion_tokens": 323,
+        "completion_tokens": 325,
         "failed": 1,
         "prompt_tokens": 2110,
         "tasks": [
@@ -1287,7 +1291,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 323,
+            "completion_tokens": 325,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
@@ -1387,8 +1391,26 @@
       "text": "",
       "turn": 16,
       "world": {
-        "failed": "validator_all_rejected",
-        "rejected": 1
+        "changes": [
+          {
+            "after": "三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
+            "before": "运煤驳船挤在北码头的木桩之间，吊臂吱呀作响。三号仓的铁门上刷着煤烟帮的黑手印，门缝里飘出一股煤油味。",
+            "can_revert": true,
+            "id": "wc-16-2",
+            "impact": 25,
+            "op": "patch",
+            "path": "fields.description",
+            "reason": "仓库失火，托克被救出",
+            "source": "narrate",
+            "source_label": "AI 叙事",
+            "summary": "北码头：描述 → 三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
+            "target": "brass:location/north_dock",
+            "target_name": "北码头",
+            "time": "第1天 08:38 · 上午",
+            "turn": 16
+          }
+        ],
+        "impact": 30
       }
     },
     {
@@ -1399,7 +1421,7 @@
       "turn": 16,
       "usage": {
         "calls": 2,
-        "completion_tokens": 424,
+        "completion_tokens": 437,
         "failed": 1,
         "prompt_tokens": 2116,
         "tasks": [
@@ -1415,7 +1437,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 424,
+            "completion_tokens": 437,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
@@ -1438,18 +1460,46 @@
       "id": 235,
       "kind": "narration",
       "source": "ai",
-      "text": "风从钟楼那边吹过来，带着煤烟味。",
+      "text": "小铆钉二话不说，把托克架到了工坊后屋，翻出一卷干净绷带。“欠我一顿肉包子，”她冲托克眨眨眼。",
       "turn": 17
     },
     {
-      "command_id": "w-18:usage",
+      "command_id": "w-18:world",
       "id": 236,
+      "kind": "world",
+      "text": "",
+      "turn": 17,
+      "world": {
+        "changes": [
+          {
+            "after": "3",
+            "can_revert": true,
+            "id": "wc-17-3",
+            "impact": 10,
+            "op": "patch",
+            "path": "dims.trust",
+            "reason": "小铆钉照顾了受伤的托克",
+            "source": "narrate",
+            "source_label": "AI 叙事",
+            "summary": "小铆钉→托克 信任 +3",
+            "target": "brass:character/rivet\u003ebrass:character/tock",
+            "target_name": "brass:character/rivet\u003ebrass:character/tock",
+            "time": "第1天 08:40 · 上午",
+            "turn": 17
+          }
+        ],
+        "impact": 30
+      }
+    },
+    {
+      "command_id": "w-18:usage",
+      "id": 237,
       "kind": "usage",
       "text": "",
       "turn": 17,
       "usage": {
         "calls": 2,
-        "completion_tokens": 323,
+        "completion_tokens": 440,
         "failed": 1,
         "prompt_tokens": 2115,
         "tasks": [
@@ -1465,7 +1515,7 @@
           },
           {
             "calls": 1,
-            "completion_tokens": 323,
+            "completion_tokens": 440,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",

@@ -23,13 +23,13 @@
     {
       "countdown": "3 天 12 时后",
       "id": "brass:event/clock_stop",
-      "location": "北码头",
+      "location": "未知",
       "pivotal": true,
       "rumored": true,
       "starts_in_min": 5060,
       "status": "scheduled",
       "status_label": "未开始",
-      "summary": "煤烟帮约定的暗号——在钟楼停摆的夜里于北码头动手。",
+      "summary": "传闻：有人在广场散发传单：一只被齿轮咬住的手，“明晚，钟停之时”。",
       "time": "第4天 21:00 · 夜晚",
       "title": "钟停之时"
     }

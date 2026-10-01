@@ -6,13 +6,13 @@
           "key": "description",
           "label": "描述",
           "level": "known",
-          "value": "运煤驳船挤在北码头的木桩之间，吊臂吱呀作响。三号仓的铁门上刷着煤烟帮的黑手印，门缝里飘出一股煤油味。"
+          "value": "三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。"
         },
         {
           "key": "exits",
           "label": "出口",
           "level": "known",
-          "value": "brass:location/plaza"
+          "value": "钟楼广场"
         }
       ],
       "here": true,
@@ -33,7 +33,7 @@
           "key": "exits",
           "label": "出口",
           "level": "known",
-          "value": "brass:location/plaza"
+          "value": "钟楼广场"
         }
       ],
       "id": "brass:location/arena",
@@ -53,7 +53,7 @@
           "key": "exits",
           "label": "出口",
           "level": "known",
-          "value": "brass:location/workshop、brass:location/arena、brass:location/north_dock、brass:location/sewer"
+          "value": "行会工坊、铁环竞技场、北码头、未知的地方"
         }
       ],
       "id": "brass:location/plaza",
@@ -73,7 +73,7 @@
           "key": "exits",
           "label": "出口",
           "level": "known",
-          "value": "brass:location/plaza"
+          "value": "钟楼广场"
         }
       ],
       "id": "brass:location/workshop",
