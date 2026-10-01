@@ -482,7 +482,7 @@ func KindRank(kind string) int {
 		return 0
 	case "player":
 		return 1
-	case "check", "combat":
+	case "check", "combat", "adjudication":
 		return 2
 	case "narration":
 		return 3

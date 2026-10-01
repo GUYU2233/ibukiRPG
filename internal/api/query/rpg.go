@@ -762,6 +762,17 @@ func (q *Q) CombatEntries(before, after *state.State, evs []event.Event, turn in
 	for _, e := range evs {
 		d := e.Data
 		switch e.Type {
+		case event.ActionAdjudicated:
+			if d.Adjudication == nil {
+				continue
+			}
+			tn := ""
+			if d.Target != "" {
+				tn = name(d.Target)
+			}
+			if v := AdjudicationView(d.Adjudication, tn); v != nil {
+				out = append(out, dto.EntryV1{Kind: "adjudication", Turn: turn, Text: v.Parse, Adjudication: v})
+			}
 		case event.CombatActed:
 			if d.Action == "mech" {
 				continue

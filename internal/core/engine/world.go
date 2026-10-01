@@ -81,11 +81,12 @@ func CheckCreation(p *loader.Package, c Creation) []string {
 	return out
 }
 
-// PowerScore 返回角色的强度分（审查与卡片生成的上限比较）：属性 ×6 + 技能 ×4 + 装备加成。
+// PowerScore 返回角色的强度分（审查与卡片生成的上限比较）：属性超出 8 的部分 ×3 + 技能 ×4 + 装备加成。
+// 例：锈钟镇默认主角（属性 10~12、两项技能）约 60 分，落在“学徒”档 [40, 90)。
 func PowerScore(p *loader.Package, attrs map[string]int, skills map[string]int, items map[string]int) int {
 	v := 0
 	for _, x := range attrs {
-		v += x * 6
+		v += max(x-8, 0) * 3
 	}
 	for _, x := range skills {
 		v += x * 4

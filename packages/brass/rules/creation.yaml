@@ -1,12 +1,12 @@
 # 角色创建（第 12 节）：选择预设主角，或自建角色（背景 + 属性点）。
 attribute_points: 6
 attr_min: 8
-attr_max: 5
-max_power: 90
+attr_max: 15
+max_power: 115  # 默认主角约 93 分；6 个属性点全加满约 111 分
 rules:
   - 自建角色属于这座小镇：可以是学徒、拾荒者、外乡人，但不能是传奇甲胄驾驶员。
   - 不能自带甲胄、魔法或超出“学徒 / 拳手”档位的能力。
-forbidden: [魔法, 神, 不死, 无敌, 龙, 天之炽]
+forbidden: [魔法, 神, 不死, 无敌, 龙]
 backgrounds:
   - id: apprentice
     name: 行会学徒候选人

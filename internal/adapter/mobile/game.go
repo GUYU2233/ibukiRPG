@@ -14,6 +14,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/agent/orchestrator"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
 	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
+	"github.com/GUYU2233/ibukiRPG/internal/core/engine"
 	"github.com/GUYU2233/ibukiRPG/packages"
 )
 
@@ -90,7 +91,11 @@ func initSession(ctx context.Context, dataDir string) (any, error) {
 	sessMu.Lock()
 	defer sessMu.Unlock()
 	if sess != nil && sessPath == path {
-		return map[string]any{"db": path, "reused": true}, nil
+		out := map[string]any{"db": path, "reused": true}
+		for k, v := range legacyInfo(dataDir) {
+			out[k] = v
+		}
+		return out, nil
 	}
 	if sess != nil {
 		_ = sess.Close()
@@ -101,7 +106,11 @@ func initSession(ctx context.Context, dataDir string) (any, error) {
 		return nil, err
 	}
 	sess, sessPath = s, path
-	return map[string]any{"db": path, "reused": false, "package": s.Package().Manifest.Name, "package_version": s.Package().Manifest.Version}, nil
+	out := map[string]any{"db": path, "reused": false, "package": s.Package().Manifest.Name, "package_version": s.Package().Manifest.Version}
+	for k, v := range legacyInfo(dataDir) {
+		out[k] = v
+	}
+	return out, nil
 }
 
 // gameBundle 是进入游戏界面所需的全部数据（新建 / 读档 / 恢复后调用）。
@@ -153,6 +162,26 @@ func gameDispatch(ctx context.Context, req dto.RequestV1) (any, bool, error) {
 	if req.Type == "presets" {
 		return provider.Presets(), true, nil
 	}
+	if req.Type == "delete_legacy_saves" {
+		p, err := decode[struct {
+			DataDir string `json:"data_dir"`
+		}](req.Payload)
+		if err != nil {
+			return nil, true, err
+		}
+		if p.DataDir == "" {
+			return nil, true, errors.New("data_dir is required")
+		}
+		return map[string]bool{"deleted": true}, true, deleteLegacy(p.DataDir)
+	}
+	if worldTypes[req.Type] {
+		s, err := current()
+		if err != nil {
+			return nil, true, err
+		}
+		v, err := worldRequest(ctx, s, req)
+		return v, true, err
+	}
 	handled := map[string]bool{
 		"configure_ai": true, "ai_status": true, "test_ai": true, "list_saves": true, "new_game": true, "load_game": true,
 		"delete_save": true, "copy_save": true, "rename_save": true, "submit_text": true, "quick_action": true,
@@ -181,11 +210,7 @@ type slotPayload struct {
 func gameRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV1) (any, error) {
 	switch req.Type {
 	case "configure_ai":
-		cfg, err := decode[provider.Config](req.Payload)
-		if err != nil {
-			return nil, err
-		}
-		return s.ConfigureAI(cfg), nil
+		return configureAI(s, req.Payload)
 	case "ai_status":
 		return s.AIStatus(), nil
 	case "test_ai":
@@ -207,11 +232,20 @@ func gameRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV1
 			SaveName   string `json:"save_name"`
 			PlayerName string `json:"player_name"`
 			Seed       uint64 `json:"seed"`
+			// Creation：角色创建（预设主角或自建角色）；省略时用故事包玩家模板。
+			Creation *engine.Creation `json:"creation"`
 		}](req.Payload)
 		if err != nil {
 			return nil, err
 		}
-		if _, err := s.NewGameIn(ctx, p.PackID, p.SaveName, p.PlayerName, p.Seed); err != nil {
+		cr := engine.Creation{Name: p.PlayerName}
+		if p.Creation != nil {
+			cr = *p.Creation
+			if cr.Name == "" {
+				cr.Name = p.PlayerName
+			}
+		}
+		if _, err := s.NewGameWith(ctx, p.PackID, p.SaveName, p.Seed, cr); err != nil {
 			return nil, err
 		}
 		return bundle(ctx, s)

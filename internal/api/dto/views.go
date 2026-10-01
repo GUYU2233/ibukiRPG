@@ -18,7 +18,7 @@ type CheckV1 struct {
 
 // QuickActionV1 是快速通道请求（第 9 节）：明确的 UI 操作不经过 Resolver。
 type QuickActionV1 struct {
-	Kind        string `json:"kind"` // action / move / text / combat / manage / mainline
+	Kind        string `json:"kind"` // action / move / text / combat / manage / wait
 	Action      string `json:"action,omitempty"`
 	Target      string `json:"target,omitempty"`
 	Item        string `json:"item,omitempty"`

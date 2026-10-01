@@ -1,5 +1,7 @@
 package dto
 
+import "encoding/json"
+
 // ---------- 0.2.0：开放世界 DTO（架构 V0.3 第 16 节）----------
 
 // WorldLogV1 是叙事流中一回合的世界更新（知识解锁 chip + 世界变更 chip + 失败提示）。
@@ -154,4 +156,91 @@ type WorldEventChipV1 struct {
 	Countdown   string `json:"countdown,omitempty"`
 	StartsIn    int64  `json:"starts_in_min,omitempty"`
 	Rumored     bool   `json:"rumored,omitempty"`
+	// 以下仅世界面板“时间线”页填写。
+	Summary string `json:"summary,omitempty"`
+	Outcome string `json:"outcome,omitempty"`
+	Time    string `json:"time,omitempty"`
+	Pivotal bool   `json:"pivotal,omitempty"`
 }
+
+// CreationPresetV1 是可选的预设主角。
+type CreationPresetV1 struct {
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Attributes  map[string]int `json:"attributes,omitempty"`
+}
+
+// CreationBackgroundV1 是自建角色可选的出身。
+type CreationBackgroundV1 struct {
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Attributes  map[string]int `json:"attributes,omitempty"`
+	Gold        int            `json:"gold,omitempty"`
+}
+
+// CreationOptionsV1 是角色创建界面需要的选项（第 13 节）。
+type CreationOptionsV1 struct {
+	PackID          string                 `json:"pack_id"`
+	Presets         []CreationPresetV1     `json:"presets"`
+	Backgrounds     []CreationBackgroundV1 `json:"backgrounds,omitempty"`
+	AttributeNames  map[string]string      `json:"attribute_names,omitempty"`
+	BaseAttributes  map[string]int         `json:"base_attributes,omitempty"`
+	AttributePoints int                    `json:"attribute_points"`
+	AttrMax         int                    `json:"attr_max"`
+	Rules           []string               `json:"rules,omitempty"`
+	MaxPower        int                    `json:"max_power,omitempty"`
+}
+
+// CreationReviewV1 是角色审查结果（规则层 + 审查 Agent）。
+type CreationReviewV1 struct {
+	OK          bool            `json:"ok"`
+	Source      string          `json:"source"` // rules | ai
+	Problems    []string        `json:"problems,omitempty"`
+	LoreFit     string          `json:"lore_fit,omitempty"`
+	Power       int             `json:"power"`
+	MaxPower    int             `json:"max_power,omitempty"`
+	Conflicts   []string        `json:"conflicts,omitempty"`
+	Suggestions []string        `json:"suggestions,omitempty"`
+	Recommended json.RawMessage `json:"recommended,omitempty"` // 推荐的角色卡（engine.Creation 结构）
+}
+
+// EntityFieldV1 是实体卡片上的一个字段（按玩家认知等级展示，第 8 节）。
+type EntityFieldV1 struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
+	Value string `json:"value,omitempty"` // unknown 时为空
+	Level string `json:"level"`           // known | rumored | unknown
+	// Changed：该字段被世界变更改写过。
+	Changed bool `json:"changed,omitempty"`
+}
+
+// EntityViewV1 是知识层过滤后的实体视图（世界面板各页通用）。
+type EntityViewV1 struct {
+	ID       string          `json:"id"`
+	Kind     string          `json:"kind"`
+	Name     string          `json:"name"`
+	Icon     string          `json:"icon,omitempty"`
+	Fields   []EntityFieldV1 `json:"fields"`
+	Secrets  []string        `json:"secrets,omitempty"` // 已揭示的隐藏真相
+	Retired  string          `json:"retired,omitempty"` // 退场原因（死亡 / 遗失…）
+	Here     bool            `json:"here,omitempty"`    // 当前所在地 / 在场
+	Progress string          `json:"progress,omitempty"`
+}
+
+// WorldPanelV1 是世界面板一页的数据：角色 / 关系网 / 图鉴 / 装备 / 地图 / 势力 / 时间线 / 日志。
+// characters / map / factions 用 Entities；timeline 用 Events；log 用 Changes；
+// relations / codex / equipment 分别复用 RelationsV1 / CodexV1 / InventoryV1。
+type WorldPanelV1 struct {
+	Tab       string             `json:"tab"`
+	Entities  []EntityViewV1     `json:"entities,omitempty"`
+	Events    []WorldEventChipV1 `json:"events,omitempty"`
+	Changes   []WorldChangeV1    `json:"changes,omitempty"`
+	Relations *RelationsV1       `json:"relations,omitempty"`
+	Codex     *CodexV1           `json:"codex,omitempty"`
+	Inventory *InventoryV1       `json:"inventory,omitempty"`
+}
+
+// WorldTabs 是世界面板的 8 个页签（顺序即 UI 顺序）。
+var WorldTabs = []string{"characters", "relations", "codex", "equipment", "map", "factions", "timeline", "log"}

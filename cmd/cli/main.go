@@ -245,7 +245,7 @@ func (c *client) handle(line string) bool {
 	case "/quit", "/exit", "/q":
 		return true
 	case "/help", "/h":
-		c.printf("%s\n%s\n", help, rpgHelp)
+		c.printf("%s\n%s\n%s\n", help, rpgHelp, worldHelp)
 	case "/version":
 		c.printf("%s\n", buildinfo.String())
 	case "/s", "/suggest":
@@ -331,7 +331,7 @@ func (c *client) handle(line string) bool {
 			c.printf("连接失败：%v\n", r["error"])
 		}
 	default:
-		if !c.rpgCommand(f[0], arg) {
+		if !c.rpgCommand(f[0], arg) && !c.worldCommand(f[0], arg) {
 			c.printf("未知命令，输入 /help 查看帮助。\n")
 		}
 	}
@@ -400,6 +400,8 @@ func (c *client) showTurn(v dto.TurnV1) {
 			c.opts = append(c.opts, e.Options...)
 		case "story":
 			c.printf("\n  【%s】\n", e.Text)
+		case "adjudication", "world":
+			c.showWorldEntry(e)
 		case "combat":
 			chips := e.Chips
 			if e.Combat != nil && len(e.Combat.Chips) > 0 {
@@ -411,6 +413,10 @@ func (c *client) showTurn(v dto.TurnV1) {
 		}
 	}
 	c.showRPG(v)
+	if v.Usage != nil {
+		c.printf("%s\n", usageLine(v.Usage))
+	}
+	c.showDecision(v.Scene.Decision)
 	if v.Duplicate {
 		c.printf("  （该命令已执行过，未重复执行）\n")
 	}

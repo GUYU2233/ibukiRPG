@@ -20,9 +20,7 @@ const rpgHelp = `
   /mechs  机械甲胄卡列表         /mechcard <ID或名称>  查看机甲卡
   /install <部件> [槽位]  安装改装件 / 挂载武器   /uninstall <槽位>  卸下
   /codex [关键词]  图鉴          /card <ID或名称>  查看介绍卡
-  /rel [人物]  关系网            /cards  角色卡
-  /main   主线状态              /mode return|free  回到主线 / 进入自由推演
-  /sens relaxed|standard|strict  主线敏感度`
+  /rel [人物]  关系网            /cards  角色卡`
 
 // rpgCommand 处理数值 RPG 相关命令；返回 false 表示不是这类命令。
 func (c *client) rpgCommand(cmd, arg string) bool {

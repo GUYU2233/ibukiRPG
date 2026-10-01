@@ -47,6 +47,12 @@ func (s *Session) Quick(ctx context.Context, cmdID string, qa dto.QuickActionV1)
 		c = command.Command{Kind: command.KindMove, Destination: qa.Destination}
 	case command.KindCombat, command.KindManage:
 		c = command.Command{Kind: qa.Kind, Action: qa.Action, Target: qa.Target, Item: qa.Item, Skill: qa.Skill}
+	case command.KindWait:
+		// 时间跳跃：Target = 10m / 1h / dawn / event:<id>
+		c = command.Command{Kind: command.KindWait, Target: qa.Target}
+		if qa.Label == "" {
+			qa.Label = waitLabel(qa.Target)
+		}
 	default:
 		return dto.TurnV1{}, errors.New("未知的快捷动作")
 	}
@@ -346,4 +352,16 @@ func (s *Session) aiSuggestions(slot string) []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.aiSugg[slot]
+}
+
+func waitLabel(t string) string {
+	switch {
+	case t == "dawn":
+		return "等到天亮"
+	case strings.HasPrefix(t, "event:"):
+		return "等待事件发生"
+	case t == "":
+		return "稍等片刻"
+	}
+	return "等待 " + t
 }

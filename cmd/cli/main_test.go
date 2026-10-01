@@ -38,3 +38,21 @@ func TestPlaythroughAndResume(t *testing.T) {
 		t.Fatalf("resume failed:\n%s", out.String())
 	}
 }
+
+// 开放世界命令：世界面板 / 等待 / 检查点 / 回溯 / 时间线 / 导出导入。
+func TestWorldCommands(t *testing.T) {
+	dir := t.TempDir()
+	t.Cleanup(func() { _ = adapter.Close() })
+	o := options{dataDir: dir, provider: "offline", newGame: true, player: "阿澈", seed: 7}
+	var out bytes.Buffer
+	script := "/world 角色\n/world 时间线\n/wait 1h\n环顾四周\n/cp 测试\n/timeline\n/rollback 1\n/cancel\n/changes\n/usage\n/export " + dir + "\n/quit\n"
+	if err := run(strings.NewReader(script), &out, o); err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{"阿澈", "已创建检查点", "分支：", "已回到第 1 回合", "已取消回溯", "已导出"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("output missing %q\n%s", want, s)
+		}
+	}
+}
