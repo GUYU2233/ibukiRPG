@@ -69,6 +69,8 @@ type Command struct {
 	Reveals   []knowledge.Reveal `json:"reveals,omitempty"`
 	SelfLevel string             `json:"self_level,omitempty"`
 	Tier      string             `json:"tier,omitempty"`
+	// Facts 是 WORLD 段的新场景事实（KindWorldChange）。
+	Facts []string `json:"facts,omitempty"`
 	// Decision 是偏离提示（KindDecision，Action = request）。
 	Decision *change.Decision `json:"decision,omitempty"`
 	// Intent 是自由战斗意图（KindCombat，Action = freeform）。

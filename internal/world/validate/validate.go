@@ -592,8 +592,13 @@ func (e *Env) checkRetire(c *change.Change) error {
 			r.Reason = reason
 		}
 	}
-	if r.Reason == "" {
+	switch r.Reason {
+	case "":
 		r.Reason = "retired"
+	case "dead", "died", "killed":
+		r.Reason = "death"
+	case "missing", "gone":
+		r.Reason = "lost"
 	}
 	if !slices.Contains(retireReasons, r.Reason) {
 		return fmt.Errorf("退场原因只能是 %s", strings.Join(retireReasons, " / "))

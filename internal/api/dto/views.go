@@ -48,6 +48,12 @@ type EntryV1 struct {
 	Source    string     `json:"source,omitempty"`
 	// Combat 是战斗记录（kind=combat）：一次攻击 / 技能的掷骰与伤害分解。
 	Combat *CombatLogV1 `json:"combat,omitempty"`
+	// World 是世界更新（kind=world）：知识解锁 chip、世界变更 chip、失败提示。
+	World *WorldLogV1 `json:"world,omitempty"`
+	// Adjudication 是行动裁定卡（kind=adjudication）。
+	Adjudication *AdjudicationV1 `json:"adjudication,omitempty"`
+	// Usage 是本回合 token 用量（kind=usage）。
+	Usage *UsageV1 `json:"usage,omitempty"`
 }
 
 // CombatLogV1 是一条战斗记录。
@@ -127,6 +133,15 @@ type SceneV1 struct {
 	Combat *CombatV1 `json:"combat,omitempty"`
 	// HasRPG 表示故事包带数值 RPG 内容（显示图鉴 / 关系网 / 成长入口）。
 	HasRPG bool `json:"has_rpg,omitempty"`
+	// Decision 是待决（或仅通知）的偏离提示；待决时输入被禁用。
+	Decision *DecisionV1 `json:"decision,omitempty"`
+	// Upcoming 是已知的世界事件倒计时（状态条）。
+	Upcoming []WorldEventChipV1 `json:"upcoming,omitempty"`
+	// Branch 是当前分支名；PendingTurn > 0 表示已“回到回合 N”，继续行动将创建新分支。
+	Branch      string `json:"branch,omitempty"`
+	PendingTurn int    `json:"pending_turn,omitempty"`
+	// AISuggestions 是 AI 给出的行动建议（✨，来自 WORLD 段）。
+	AISuggestions []string `json:"ai_suggestions,omitempty"`
 }
 
 // StatusChipV1 是单位身上的状态。
@@ -403,6 +418,7 @@ type TurnV1 struct {
 	Suggestions []SuggestionV1 `json:"suggestions"`
 	Resolver    string         `json:"resolver,omitempty"`
 	Notices     []NoticeV1     `json:"notices,omitempty"`
+	Usage       *UsageV1       `json:"usage,omitempty"`
 }
 
 // StatV1 是属性 / 技能。
@@ -548,6 +564,10 @@ type AIStatusV1 struct {
 	HasKey    bool   `json:"has_key"`
 	Online    bool   `json:"online"`
 	LastError string `json:"last_error,omitempty"`
+	// Provider / Mode：0.2.0 多服务商（叙事任务的首选服务商与路由模式）。
+	Provider      string   `json:"provider,omitempty"`
+	Mode          string   `json:"mode,omitempty"`
+	LocalWarnings []string `json:"local_warnings,omitempty"`
 }
 
 // StreamEventV1 是推送给 UI 的流式事件。

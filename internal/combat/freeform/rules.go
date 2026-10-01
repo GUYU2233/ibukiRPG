@@ -38,11 +38,12 @@ func RulesIntent(text string, ctx Context) Intent {
 	case containsAny(t, "劝降", "谈判", "喊话", "说服"):
 		act.Kind = KindTalk
 	}
+	matched := act.Kind != KindAttack || containsAny(t, attackVerbs...)
 	var tgt *Target
 	for i := range ctx.Targets {
 		x := &ctx.Targets[i]
 		if containsAny(t, names(x.ID, x.Name, x.Aliases)...) {
-			tgt = x
+			tgt, matched = x, true
 			break
 		}
 	}
@@ -60,7 +61,7 @@ func RulesIntent(text string, ctx Context) Intent {
 	if act.Kind == KindAttack {
 		for _, s := range ctx.Skills {
 			if containsAny(t, names(s.ID, s.Name, s.Aliases)...) {
-				act.Kind, act.Skill = KindSkill, s.ID
+				act.Kind, act.Skill, matched = KindSkill, s.ID, true
 				break
 			}
 		}
@@ -68,14 +69,14 @@ func RulesIntent(text string, ctx Context) Intent {
 	if act.Kind == KindAttack {
 		for _, m := range ctx.Maneuvers {
 			if containsAny(t, append([]string{m.Name}, m.Keywords...)...) {
-				act.Kind, act.Maneuver = KindManeuver, m.ID
+				act.Kind, act.Maneuver, matched = KindManeuver, m.ID, true
 				break
 			}
 		}
 	}
 	for _, m := range ctx.Means {
 		if containsAny(t, names(m.ID, m.Name, m.Aliases)...) {
-			act.Means = m.ID
+			act.Means, matched = m.ID, true
 		}
 	}
 	if containsAny(t, "绕到", "冲到", "靠近", "后退", "拉开距离", "躲到") {
@@ -87,5 +88,14 @@ func RulesIntent(text string, ctx Context) Intent {
 			in.Circumstances = append(in.Circumstances, Circumstance{Tag: tg.ID, Why: "玩家描述"})
 		}
 	}
+	if !matched {
+		// 没有任何战斗相关的关键词：交给调用方拒绝并给出战斗选项
+		in.SelfCheck = Unmatched
+	}
 	return in
 }
+
+// Unmatched 标记规则解析器没有识别出任何战斗动作。
+const Unmatched = "unmatched"
+
+var attackVerbs = []string{"打", "砍", "刺", "砸", "攻击", "踢", "扑", "射", "捅", "挥", "劈", "撞", "冲", "揍", "拳", "斩", "戳", "敲"}

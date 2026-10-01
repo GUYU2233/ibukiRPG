@@ -76,6 +76,9 @@ type ToolCaller interface {
 	SupportsTools() bool
 }
 
+// ErrOffline 表示没有可用的模型（离线模式）。
+var ErrOffline = errors.New("no AI provider configured")
+
 // ErrToolsUnsupported 表示服务端拒绝了 tools 参数（调用方应降级为预检索）。
 var ErrToolsUnsupported = errors.New("provider does not support tool calling")
 

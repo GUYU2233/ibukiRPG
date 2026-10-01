@@ -9,7 +9,9 @@ import (
 
 	"github.com/GUYU2233/ibukiRPG/internal/action/resolver"
 	"github.com/GUYU2233/ibukiRPG/internal/agent/narrator"
+	"github.com/GUYU2233/ibukiRPG/internal/ai/router"
 	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
+	"github.com/GUYU2233/ibukiRPG/internal/combat/freeform"
 	"github.com/GUYU2233/ibukiRPG/internal/core/command"
 	"github.com/GUYU2233/ibukiRPG/internal/core/engine"
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
@@ -83,6 +85,17 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		v.Duplicate = true
 		return v, err
 	}
+	// 已“回到这里”：先分出新分支（原分支保留）
+	if st, err = s.forkIfPending(ctx, slot, g, st, cmdID); err != nil {
+		return dto.TurnV1{}, err
+	}
+	sl, err := s.store.GetSlot(ctx, slot)
+	if err != nil {
+		return dto.TurnV1{}, err
+	}
+	branch := sl.Branch
+	s.setRec(aiRec{slot: slot, branch: branch, cmdID: cmdID, turn: st.Turn + 1})
+	defer s.setRec(aiRec{})
 	s.emit(dto.StreamEventV1{Type: "turn_started", CommandID: cmdID, Text: input})
 	res, nar, online := s.components()
 
@@ -92,13 +105,27 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 	case quick != nil:
 		cmd = *quick
 	case st.RPG != nil && st.RPG.Combat != nil:
-		// 战斗中的自然语言输入：确定性规则解析为战斗动作
+		// 战斗中的自然语言输入：短指令走确定性解析；自由描述走自由战斗裁定（AI 解析意图，引擎裁定数值）
 		c, ok, reason, opts := resolver.ResolveCombat(input, g.pkg, st)
 		resolverName = "combat"
-		if !ok {
+		switch {
+		case ok && utf8.RuneCountInString(input) <= 8:
+			cmd = c
+		case st.RPG.Combat.Current() != nil && st.RPG.Combat.Current().ID == "player":
+			in, src := s.combatIntent(ctx, g, st, input)
+			resolverName = "freeform:" + src
+			if src == "rules" && in.SelfCheck == freeform.Unmatched {
+				if reason == "" {
+					reason = "战斗中做不到这件事。"
+				}
+				return s.commitRejection(ctx, slot, cmdID, input, st.Turn+1, reason, opts, resolverName)
+			}
+			cmd = command.Command{Kind: command.KindCombat, Action: "freeform", Intent: &in, Input: input, Source: "resolver:" + src}
+		case ok:
+			cmd = c
+		default:
 			return s.commitRejection(ctx, slot, cmdID, input, st.Turn+1, reason, opts, resolverName)
 		}
-		cmd = c
 	default:
 		rctx, cancel := context.WithTimeout(ctx, s.opts.ResolverTimeout)
 		r, err := res.Resolve(rctx, resolver.Input{Text: input, Pkg: g.pkg, State: st})
@@ -150,13 +177,31 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		nar = narrator.Template{}
 	}
 	brief := narrator.Build(g.pkg, st, after, cmd, result)
-	if _, ai := nar.(*narrator.LLM); ai {
+	llm, ai := nar.(*narrator.LLM)
+	if ai {
 		s.prepareBrief(ctx, slot, g, after, &brief)
 	}
 	nctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.opts.NarratorTimeout)
-	out := nar.Narrate(nctx, brief, func(d string) {
+	onDelta := func(d string) {
 		s.emit(dto.StreamEventV1{Type: "narration_delta", CommandID: cmdID, Text: d})
-	})
+	}
+	var out narrator.Output
+	var wo narrator.WorldOutput
+	merged := ai && cmd.Kind != command.KindCombat
+	if merged {
+		// 叙事 + 世界更新合并输出（第 11.3 节）
+		tgt, _ := s.router.Primary(router.TaskNarrate)
+		tier := tgt.Tier
+		wo = llm.NarrateWorld(nctx, brief, s.worldSections(g, after, input, tier), tier, onDelta)
+		out = wo.Output
+		if wo.Refused {
+			out.Text = brief.Base + "\n\n（AI 服务商拒绝生成本回合内容（内容审核）。规则结果已保存；你可以换种说法、回到上一回合，或在生成设置里为叙事换一个模型。）"
+		} else if wo.WorldErr == "parse" {
+			out.Text += "\n\n（本回合的世界变化没能记录（AI 输出格式错误），叙事已保留。审查时会补上。）"
+		}
+	} else {
+		out = nar.Narrate(nctx, brief, onDelta)
+	}
 	cancel()
 	if online && out.Err != "" {
 		s.mu.Lock()
@@ -168,19 +213,44 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 		return dto.TurnV1{}, err
 	}
 	s.emit(dto.StreamEventV1{Type: "narration_done", CommandID: cmdID, Text: out.Text, Corrected: out.Corrected, Source: out.Source})
-	notices := g.q.Notices(after, result.Events)
-	s.scheduleMemory(slot, g, s.stateOr(after))
+	final := after
+	if merged {
+		wr, err := s.commitWorld(context.WithoutCancel(ctx), slot, branch, g, cmdID, st, after, wo, tierOf(s.router))
+		if err != nil {
+			return dto.TurnV1{}, err
+		}
+		final = wr.after
+		if wo.World != nil {
+			s.setAISuggestions(slot, wo.World.Suggestions)
+		}
+		s.emit(dto.StreamEventV1{Type: "world_update_done", CommandID: cmdID})
+	} else {
+		s.setAISuggestions(slot, nil)
+	}
+	s.mu.Lock()
+	if s.slot == slot {
+		s.st = final
+	}
+	s.mu.Unlock()
+	s.dailyCheckpoint(context.WithoutCancel(ctx), slot, branch, st, final)
+	notices := g.q.Notices(final, result.Events)
+	s.scheduleMemory(slot, g, s.stateOr(final))
 	v, err := s.view(ctx, slot, cmdID, true)
 	v.Notices = notices
 	v.Resolver = resolverName
+	if s.router.Settings().ShowUsage && online {
+		if u, uerr := s.Usage(ctx, result.Turn); uerr == nil && u.Calls > 0 {
+			v.Usage = &u
+		}
+	}
 	s.emit(dto.StreamEventV1{Type: "turn_done", CommandID: cmdID})
 	return v, err
 }
 
 func templateOnly(cmd command.Command, res *engine.Result) bool {
 	switch cmd.Kind {
-	case command.KindManage, command.KindDecision, command.KindWorldChange:
-		return true
+	case command.KindManage, command.KindDecision, command.KindWorldChange, command.KindWait:
+		return res.Interrupted == ""
 	case command.KindCombat:
 		for _, e := range res.Events {
 			if e.Type == event.CombatEnded || e.Type == event.CombatStarted {
@@ -229,6 +299,7 @@ func (s *Session) currentSummary() eventstore.Summary {
 }
 
 func (s *Session) view(ctx context.Context, slot, cmdID string, accepted bool) (dto.TurnV1, error) {
+	// 同时取回 <id>:fork / <id>:world / <id>:decision 的条目（前缀匹配）
 	es, err := s.store.EntriesByCommand(ctx, slot, cmdID)
 	if err != nil {
 		return dto.TurnV1{}, err
@@ -249,4 +320,30 @@ func (s *Session) stateOr(fallback *state.State) *state.State {
 		return s.st
 	}
 	return fallback
+}
+
+// tierOf 返回叙事任务首选模型的能力档位。
+func tierOf(r *router.Router) string {
+	if t, ok := r.Primary(router.TaskNarrate); ok {
+		return t.Tier
+	}
+	return router.TierFull
+}
+
+func (s *Session) setAISuggestions(slot string, sg []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.aiSugg == nil {
+		s.aiSugg = map[string][]string{}
+	}
+	if len(sg) > 3 {
+		sg = sg[:3]
+	}
+	s.aiSugg[slot] = sg
+}
+
+func (s *Session) aiSuggestions(slot string) []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.aiSugg[slot]
 }

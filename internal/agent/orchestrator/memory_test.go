@@ -99,7 +99,9 @@ func TestAINarratorPromptIncludesNPCMemory(t *testing.T) {
 			out = `{"choices":[{"message":{"content":"{\"kind\":\"action\",\"matched_action\":\"demo:action/talk\",\"targets\":[\"demo:character/borin\"],\"reasonability\":\"ALLOW\",\"confidence\":0.9}"}}]}`
 		} else {
 			mu.Lock()
-			prompts = append(prompts, string(body))
+			if !strings.Contains(string(body), "世界更新器") {
+				prompts = append(prompts, string(body))
+			}
 			mu.Unlock()
 			out = "data: {\"choices\":[{\"delta\":{\"content\":\"伯林点点头。\"}}]}\n\ndata: [DONE]\n\n"
 		}

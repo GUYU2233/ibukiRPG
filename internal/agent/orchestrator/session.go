@@ -18,6 +18,8 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/action/resolver"
 	"github.com/GUYU2233/ibukiRPG/internal/agent/narrator"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
+	"github.com/GUYU2233/ibukiRPG/internal/ai/router"
+	"github.com/GUYU2233/ibukiRPG/internal/ai/structured"
 	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
 	"github.com/GUYU2233/ibukiRPG/internal/api/query"
 	"github.com/GUYU2233/ibukiRPG/internal/buildinfo"
@@ -29,6 +31,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/package/registry"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/expression"
 	"github.com/GUYU2233/ibukiRPG/internal/storage/eventstore"
+	"github.com/GUYU2233/ibukiRPG/internal/world/change"
 	"github.com/GUYU2233/ibukiRPG/internal/world/worldtime"
 )
 
@@ -70,8 +73,14 @@ type Session struct {
 	slot   string
 	st     *state.State
 	g      *game // 当前存档绑定的故事包运行时
-	ai     provider.Config
+	router *router.Router
 	aiErr  string
+	// prompts 是偏离提示灵敏度设置（App 设置，不属于存档）。
+	prompts change.Settings
+	// rec 是当前回合的 AI 调用记账上下文。
+	rec aiRec
+	// aiSugg 是每个存档最近一回合的 AI 行动建议。
+	aiSugg map[string][]string
 	sink   func(dto.StreamEventV1)
 
 	memWG sync.WaitGroup // 后台记忆整理任务
@@ -116,7 +125,9 @@ func Open(ctx context.Context, opts Options) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Session{opts: opts, store: st, reg: reg, ev: ev, ai: provider.Config{Kind: provider.KindOffline}, sink: opts.Sink}, nil
+	tr := opts.Transport
+	rt := router.New(func(cfg provider.Config) provider.Provider { return provider.NewOpenAICompatible(cfg, tr) })
+	return &Session{opts: opts, store: st, reg: reg, ev: ev, router: rt, prompts: change.DefaultSettings(), sink: opts.Sink}, nil
 }
 
 // game 是一个故事包的运行时：内容、引擎与查询层。
@@ -174,20 +185,57 @@ func (s *Session) Package() *loader.Package {
 
 // ---------- AI 配置 ----------
 
-// ConfigureAI 设置运行时 AI Provider（密钥只保存在内存）。
+// ConfigureAI 设置单一 AI Provider（0.1.x 接口；等价于一个服务商 + 统一模型）。密钥只保存在内存。
 func (s *Session) ConfigureAI(cfg provider.Config) dto.AIStatusV1 {
+	ps, st := router.FromLegacy(cfg)
+	st.ShowUsage = s.router.Settings().ShowUsage || len(ps) == 0
+	s.router.SetProviders(ps)
+	s.router.SetSettings(st)
 	s.mu.Lock()
-	s.ai = cfg.Normalize()
 	s.aiErr = ""
 	s.mu.Unlock()
 	return s.AIStatus()
 }
 
+// ConfigureProviders 设置多个服务商与生成设置（第 11 节）。密钥只保存在内存。
+func (s *Session) ConfigureProviders(ps []router.Provider, st router.Settings) dto.AIStatusV1 {
+	s.router.SetProviders(ps)
+	s.router.SetSettings(st)
+	s.mu.Lock()
+	s.aiErr = ""
+	s.mu.Unlock()
+	return s.AIStatus()
+}
+
+// Router 返回模型路由器。
+func (s *Session) Router() *router.Router { return s.router }
+
+// SetPromptSettings 设置偏离提示灵敏度（第 7.3 节）。
+func (s *Session) SetPromptSettings(p change.Settings) {
+	s.mu.Lock()
+	s.prompts = p
+	s.mu.Unlock()
+}
+
+// PromptSettings 返回偏离提示灵敏度。
+func (s *Session) PromptSettings() change.Settings {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.prompts
+}
+
 // AIStatus 返回当前 AI 状态（不含密钥）。
 func (s *Session) AIStatus() dto.AIStatusV1 {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return dto.AIStatusV1{Kind: s.ai.Kind, BaseURL: s.ai.BaseURL, Model: s.ai.Model, HasKey: s.ai.APIKey != "", Online: s.ai.Online(), LastError: s.aiErr}
+	aiErr := s.aiErr
+	s.mu.RUnlock()
+	st := dto.AIStatusV1{Kind: provider.KindOffline, LastError: aiErr, Mode: s.router.Settings().Mode}
+	if t, ok := s.router.Primary(router.TaskNarrate); ok {
+		st.Kind, st.BaseURL, st.Model, st.HasKey, st.Online = t.Entry.Kind, t.Entry.Config("").BaseURL, t.Model, t.Entry.APIKey != "", true
+		st.Provider = t.Entry.ID
+	}
+	st.LocalWarnings = s.router.LocalWarnings()
+	return st
 }
 
 // TestAI 用给定配置发一个极小请求。
@@ -196,7 +244,7 @@ func (s *Session) TestAI(ctx context.Context, cfg provider.Config) (string, time
 	if cfg.Kind == provider.KindOffline {
 		return "离线模式无需联网", 0, nil
 	}
-	if !cfg.Online() {
+	if !cfg.Online() && (!provider.IsLocalKind(cfg.Kind) || cfg.BaseURL == "") {
 		return "", 0, errors.New("请填写 Base URL、模型名和 API Key")
 	}
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
@@ -208,20 +256,58 @@ func (s *Session) TestAI(ctx context.Context, cfg provider.Config) (string, time
 	return strings.TrimSpace(resp.Text), resp.Latency, nil
 }
 
-func (s *Session) components() (resolver.Resolver, narrator.Narrator, bool) {
+// aiRec 是一次回合内 AI 调用的记账上下文。
+type aiRec struct {
+	slot, branch, cmdID string
+	turn                int
+}
+
+func (s *Session) setRec(r aiRec) {
+	s.mu.Lock()
+	s.rec = r
+	s.mu.Unlock()
+}
+
+// recorder 返回把调用写入 ai_calls 的回调（归属到当前回合）。
+func (s *Session) recorder() func(router.Usage) {
 	s.mu.RLock()
-	cfg := s.ai
+	r := s.rec
 	s.mu.RUnlock()
-	if !cfg.Online() {
-		return resolver.Offline{}, narrator.Template{}, false
+	return func(u router.Usage) {
+		if r.slot == "" {
+			return
+		}
+		_ = s.store.RecordAICall(context.Background(), r.slot, eventstore.AICall{Branch: r.branch, CommandID: r.cmdID, Turn: r.turn, Task: u.Task,
+			Provider: u.Provider, Model: u.Model, PromptTokens: u.PromptTokens, CompletionTokens: u.CompletionTokens, LatencyMS: u.LatencyMS, OK: u.OK, Error: u.Error})
 	}
-	p := provider.NewOpenAICompatible(cfg, s.opts.Transport)
-	r := &resolver.WithFallback{Primary: &resolver.LLM{Provider: p}, Fallback: resolver.Offline{}, OnFallback: func(err error) {
-		s.mu.Lock()
-		s.aiErr = "解析降级为离线规则：" + err.Error()
-		s.mu.Unlock()
-	}}
-	return r, &narrator.LLM{Provider: p}, true
+}
+
+func refusalStop(err error) bool { return structured.IsRefusal("", err) }
+
+// providerFor 返回任务的 Provider（降级链 + 记账）；ok=false 表示离线。
+func (s *Session) providerFor(task string) (provider.Provider, router.Target, bool) {
+	stop := refusalStop
+	if s.router.Settings().RetryOnRefusal {
+		stop = nil
+	}
+	return s.router.For(task, s.recorder(), stop)
+}
+
+func (s *Session) components() (resolver.Resolver, narrator.Narrator, bool) {
+	rp, _, rok := s.providerFor(router.TaskParse)
+	np, _, nok := s.providerFor(router.TaskNarrate)
+	var res resolver.Resolver = resolver.Offline{}
+	if rok {
+		res = &resolver.WithFallback{Primary: &resolver.LLM{Provider: rp}, Fallback: resolver.Offline{}, OnFallback: func(err error) {
+			s.mu.Lock()
+			s.aiErr = "解析降级为离线规则：" + err.Error()
+			s.mu.Unlock()
+		}}
+	}
+	if !nok {
+		return res, narrator.Template{}, rok
+	}
+	return res, &narrator.LLM{Provider: np}, true
 }
 
 // ---------- 存档 ----------
@@ -479,7 +565,19 @@ func (s *Session) Scene(ctx context.Context) (dto.SceneV1, error) {
 	v.SlotID = slot
 	if sl, err := s.store.GetSlot(ctx, slot); err == nil {
 		v.SaveName = sl.Name
+		if sl.PendingFork.Branch != "" {
+			v.PendingTurn = max(sl.PendingFork.Turn, 1)
+			if sl.PendingFork.Turn == 0 {
+				v.PendingTurn = -1 // 回到开局
+			}
+		}
+		if b, err := s.store.GetBranch(ctx, slot, sl.Branch); err == nil {
+			v.Branch = branchName(b)
+		}
 	}
+	v.Decision = g.q.DecisionView(st, s.PromptSettings())
+	v.Upcoming = g.q.Upcoming(st, 3)
+	v.AISuggestions = s.aiSuggestions(slot)
 	return v, nil
 }
 
@@ -562,12 +660,16 @@ func (s *Session) SlotID() string {
 }
 
 type entryMeta struct {
-	Check     *dto.CheckV1     `json:"check,omitempty"`
-	Chips     []string         `json:"chips,omitempty"`
-	Options   []dto.OptionV1   `json:"options,omitempty"`
-	Corrected bool             `json:"corrected,omitempty"`
-	Source    string           `json:"source,omitempty"`
-	Combat    *dto.CombatLogV1 `json:"combat,omitempty"`
+	Check     *dto.CheckV1        `json:"check,omitempty"`
+	Chips     []string            `json:"chips,omitempty"`
+	Options   []dto.OptionV1      `json:"options,omitempty"`
+	Corrected bool                `json:"corrected,omitempty"`
+	Source    string              `json:"source,omitempty"`
+	Combat    *dto.CombatLogV1    `json:"combat,omitempty"`
+	World     *dto.WorldLogV1     `json:"world,omitempty"`
+	Adj       *dto.AdjudicationV1 `json:"adj,omitempty"`
+	Usage     *dto.UsageV1        `json:"usage,omitempty"`
+	AISugg    []string            `json:"ai_sugg,omitempty"`
 }
 
 func toEntry(e eventstore.Entry) dto.EntryV1 {
@@ -576,6 +678,7 @@ func toEntry(e eventstore.Entry) dto.EntryV1 {
 		var m entryMeta
 		if json.Unmarshal(e.Meta, &m) == nil {
 			v.Check, v.Chips, v.Options, v.Corrected, v.Source, v.Combat = m.Check, m.Chips, m.Options, m.Corrected, m.Source, m.Combat
+			v.World, v.Adjudication, v.Usage = m.World, m.Adj, m.Usage
 		}
 	}
 	return v
@@ -608,8 +711,8 @@ func groupByCommand(in []dto.EntryV1) []dto.EntryV1 {
 
 func fromEntry(v dto.EntryV1) eventstore.Entry {
 	e := eventstore.Entry{CommandID: v.CommandID, Turn: v.Turn, Kind: v.Kind, Text: v.Text}
-	m := entryMeta{Check: v.Check, Chips: v.Chips, Options: v.Options, Corrected: v.Corrected, Source: v.Source, Combat: v.Combat}
-	if m.Check != nil || len(m.Chips) > 0 || len(m.Options) > 0 || m.Corrected || m.Source != "" || m.Combat != nil {
+	m := entryMeta{Check: v.Check, Chips: v.Chips, Options: v.Options, Corrected: v.Corrected, Source: v.Source, Combat: v.Combat, World: v.World, Adj: v.Adjudication, Usage: v.Usage}
+	if m.Check != nil || len(m.Chips) > 0 || len(m.Options) > 0 || m.Corrected || m.Source != "" || m.Combat != nil || m.World != nil || m.Adj != nil || m.Usage != nil {
 		e.Meta, _ = json.Marshal(m)
 	}
 	return e

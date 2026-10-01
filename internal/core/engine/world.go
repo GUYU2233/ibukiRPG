@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/GUYU2233/ibukiRPG/internal/core/command"
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
@@ -581,8 +582,21 @@ func (e *Engine) ValidationEnv(s *state.State, source, tier string) *validate.En
 }
 
 func (w *work) execWorldChange(res *Result) error {
-	if w.cmd.Action == "revert" {
+	switch w.cmd.Action {
+	case "revert":
 		return w.revertChange(w.cmd.Target)
+	case "failed":
+		// 世界更新失败（格式错误 / 内容审核拒绝）：只记录，审查时补上
+		return w.emit(event.WorldUpdateFailed, event.Data{Reason: w.cmd.Target})
+	}
+	for i, f := range w.cmd.Facts {
+		f = strings.TrimSpace(f)
+		if i >= 3 || f == "" || utf8.RuneCountInString(f) > 60 || slices.Contains(w.s.SceneFacts[w.s.Player.Location], f) {
+			continue
+		}
+		if err := w.emit(event.SceneFactChanged, event.Data{Location: w.s.Player.Location, Text: f}); err != nil {
+			return err
+		}
 	}
 	source := w.cmd.Source
 	if source == "" {

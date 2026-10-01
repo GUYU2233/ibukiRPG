@@ -8,6 +8,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/agent/narrator"
 	"github.com/GUYU2233/ibukiRPG/internal/agent/tools"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
+	"github.com/GUYU2233/ibukiRPG/internal/ai/router"
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
 	"github.com/GUYU2233/ibukiRPG/internal/prompt/sections"
 	"github.com/GUYU2233/ibukiRPG/internal/storage/eventstore"
@@ -103,11 +104,8 @@ func (s *Session) scheduleMemory(slot string, g *game, st *state.State) {
 		ctx := context.Background()
 		ag := &memory.Agent{}
 		if s.opts.MemoryLLM {
-			s.mu.RLock()
-			cfg := s.ai
-			s.mu.RUnlock()
-			if cfg.Online() {
-				ag.Summarizer = memory.LLM{Provider: provider.NewOpenAICompatible(cfg, s.opts.Transport)}
+			if p, _, ok := s.router.For(router.TaskMemory, nil, refusalStop); ok {
+				ag.Summarizer = memory.LLM{Provider: p}
 			}
 		}
 		tr, err := s.store.Transcript(ctx, slot, 600, 0)
