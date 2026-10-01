@@ -29,20 +29,20 @@ type MergedCase struct {
 
 // SensitivityCase 是提示灵敏度用例：本回合影响 + 设置 → 是否提示 / 仅通知。
 type SensitivityCase struct {
-	Impact   map[string]any    `yaml:"impact"` // change.TurnImpact（JSON 字段名）
+	Impact   map[string]any    `yaml:"impact"`   // change.TurnImpact（JSON 字段名）
 	Settings map[string]string `yaml:"settings"` // type → "level[/notify]"
 	Expect   string            `yaml:"expect"`   // none | <type> | <type>/notify
 }
 
 // RoutingCase 是按任务路由用例：服务商 + 生成设置 → 某任务实际使用的服务商 / 档位。
 type RoutingCase struct {
-	Providers      []map[string]any  `yaml:"providers"` // router.Provider（JSON 字段名）
-	Settings       map[string]any    `yaml:"settings"`  // router.Settings（JSON 字段名）
-	Task           string            `yaml:"task"`
-	ExpectProvider string            `yaml:"expect_provider"` // 空 = 应当没有可用服务商（离线）
-	ExpectTier     string            `yaml:"expect_tier"`
-	ExpectChain    int               `yaml:"expect_chain"`
-	ExpectWarning  bool              `yaml:"expect_local_warning"`
+	Providers      []map[string]any `yaml:"providers"` // router.Provider（JSON 字段名）
+	Settings       map[string]any   `yaml:"settings"`  // router.Settings（JSON 字段名）
+	Task           string           `yaml:"task"`
+	ExpectProvider string           `yaml:"expect_provider"` // 空 = 应当没有可用服务商（离线）
+	ExpectTier     string           `yaml:"expect_tier"`
+	ExpectChain    int              `yaml:"expect_chain"`
+	ExpectWarning  bool             `yaml:"expect_local_warning"`
 }
 
 type resultBuilder struct{ Result }
