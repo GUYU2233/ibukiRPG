@@ -1,5 +1,6 @@
 # 故事包：边境酒馆 ·《失窃的钱袋》（1 个酒馆 + 2 个相邻地点、4 个 NPC、1 个小事件、少量 Action）
 # 格式说明见 docs/story-pack-format.md。id 保持为 demo，以兼容 0.1.x 的旧存档。
+format: 3
 id: demo
 namespace: demo
 name: "边境酒馆"

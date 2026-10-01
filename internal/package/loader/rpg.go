@@ -8,6 +8,7 @@ import (
 
 	"github.com/GUYU2233/ibukiRPG/internal/action/definition"
 	"github.com/GUYU2233/ibukiRPG/internal/combat"
+	"github.com/GUYU2233/ibukiRPG/internal/combat/freeform"
 	"github.com/GUYU2233/ibukiRPG/internal/package/manifest"
 )
 
@@ -24,7 +25,8 @@ type CodexEntry struct {
 	Stats       map[string]string `yaml:"stats"`
 	Tags        []string          `yaml:"tags"`
 	// Unlock 是解锁条件（CEL）；为空时 faction / lore / tech 开局即解锁。
-	Unlock string `yaml:"unlock"`
+	Unlock   string `yaml:"unlock"`
+	Envelope `yaml:",inline"`
 }
 
 // Dimension 是关系维度（信任 / 好感 / 敬畏 / 恩情 / 敌意……可由故事包扩展）。
@@ -79,12 +81,14 @@ func (p *Package) HasCombat() bool {
 }
 
 type combatFile struct {
-	Rules      *combat.Config     `yaml:"rules"`
-	Statuses   []combat.StatusDef `yaml:"statuses"`
-	Skills     []combat.SkillDef  `yaml:"skills"`
-	Enemies    []combat.EnemyDef  `yaml:"enemies"`
-	Mechs      []combat.MechDef   `yaml:"mechs"`
-	Encounters []combat.Encounter `yaml:"encounters"`
+	Rules      *combat.Config      `yaml:"rules"`
+	Statuses   []combat.StatusDef  `yaml:"statuses"`
+	Skills     []combat.SkillDef   `yaml:"skills"`
+	Enemies    []combat.EnemyDef   `yaml:"enemies"`
+	Mechs      []combat.MechDef    `yaml:"mechs"`
+	Encounters []combat.Encounter  `yaml:"encounters"`
+	Maneuvers  []freeform.Maneuver `yaml:"maneuvers"`
+	Tags       []freeform.Tag      `yaml:"tags"`
 }
 
 // loadRPG 读取 combat / codex / relations / mainline 内容。
@@ -145,6 +149,8 @@ func (p *Package) loadRPG(fsys fs.FS, m *manifest.Manifest) error {
 			c.Mechs[x.ID] = &x
 			c.MechIDs = append(c.MechIDs, x.ID)
 		}
+		c.Maneuvers = append(c.Maneuvers, raw.Maneuvers...)
+		c.Tags = append(c.Tags, raw.Tags...)
 		for i := range raw.Encounters {
 			x := raw.Encounters[i]
 			if err := checkID(m, x.ID, f); err != nil {

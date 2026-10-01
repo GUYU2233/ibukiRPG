@@ -249,6 +249,9 @@ type Unit struct {
 	Defending bool         `json:"defending,omitempty"`
 	Down      bool         `json:"down,omitempty"`
 	Mech      *MechForm    `json:"mech,omitempty"`
+	// PartDamage / Broken：自由战斗的部位累计伤害与已破坏部位。
+	PartDamage map[string]int `json:"part_damage,omitempty"`
+	Broken     []string       `json:"broken,omitempty"`
 }
 
 // HasStatus 报告单位是否有某状态。

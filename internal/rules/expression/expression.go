@@ -2,6 +2,7 @@ package expression
 
 import (
 	"fmt"
+	"regexp"
 	"sync"
 
 	"cel.dev/cel-go/cel"
@@ -39,11 +40,40 @@ func New() (*Evaluator, error) {
 		cel.Variable("foes", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("allies", cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable("battle", cel.MapType(cel.StringType, cel.DynType)),
+		// v0.2.0：世界事件（event.vars.*）、玩家知识（known[实体][字段] = 0/1/2）、退场实体（gone[实体] = true）。
+		cel.Variable("event", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("known", cel.MapType(cel.StringType, cel.DynType)),
+		cel.Variable("gone", cel.MapType(cel.StringType, cel.DynType)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create cel env: %w", err)
 	}
 	return &Evaluator{env: env, cache: map[string]cel.Program{}}, nil
+}
+
+var (
+	knowsRe = regexp.MustCompile(`\b(knows|heard)\(\s*("[^"]*"|'[^']*')\s*,\s*("[^"]*"|'[^']*')\s*\)`)
+	aliveRe = regexp.MustCompile(`\b(alive|retired)\(\s*("[^"]*"|'[^']*')\s*\)`)
+)
+
+// Rewrite 把故事包里的便捷函数改写为普通 CEL：
+// knows("实体", "字段") → 玩家已知该字段；heard(...) → 至少听说过；alive("实体") → 未退场；retired("实体") → 已退场。
+func Rewrite(expr string) string {
+	expr = knowsRe.ReplaceAllStringFunc(expr, func(m string) string {
+		g := knowsRe.FindStringSubmatch(m)
+		lvl := "2"
+		if g[1] == "heard" {
+			lvl = "1"
+		}
+		return fmt.Sprintf("(%s in known && %s in known[%s] && known[%s][%s] >= %s)", g[2], g[3], g[2], g[2], g[3], lvl)
+	})
+	return aliveRe.ReplaceAllStringFunc(expr, func(m string) string {
+		g := aliveRe.FindStringSubmatch(m)
+		if g[1] == "alive" {
+			return fmt.Sprintf("!(%s in gone)", g[2])
+		}
+		return fmt.Sprintf("(%s in gone)", g[2])
+	})
 }
 
 // Compile 编译表达式并缓存，可在加载 Package 时提前校验语法。
@@ -54,7 +84,7 @@ func (e *Evaluator) Compile(expr string) (cel.Program, error) {
 	if ok {
 		return prg, nil
 	}
-	ast, iss := e.env.Compile(expr)
+	ast, iss := e.env.Compile(Rewrite(expr))
 	if iss != nil && iss.Err() != nil {
 		return nil, fmt.Errorf("compile %q: %w", expr, iss.Err())
 	}
@@ -89,6 +119,9 @@ func (e *Evaluator) Eval(expr string, vars Vars) (any, error) {
 		"foes":    map[string]any{},
 		"allies":  map[string]any{},
 		"battle":  map[string]any{},
+		"event":   map[string]any{},
+		"known":   map[string]any{},
+		"gone":    map[string]any{},
 	}
 	for k, v := range vars {
 		in[k] = v

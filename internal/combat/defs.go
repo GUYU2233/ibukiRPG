@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/GUYU2233/ibukiRPG/internal/action/definition"
+	"github.com/GUYU2233/ibukiRPG/internal/combat/freeform"
 )
 
 // 数值键：角色、敌人、机甲共用同一套数值模型。
@@ -189,6 +190,8 @@ type StatusDef struct {
 	Stun   bool  `yaml:"stun"`
 	// Debuff 为 true 表示负面状态（会被净化）。
 	Debuff bool `yaml:"debuff"`
+	// Tags 是自由战斗修正标签前提用的状态标签（cooling / stagger / prone / blind ...）。
+	Tags []string `yaml:"tags"`
 }
 
 // StatusApply 描述技能附加状态。
@@ -287,23 +290,46 @@ type EnemyDef struct {
 	Drops       []Drop   `yaml:"drops"`
 	Mech        bool     `yaml:"mech"`
 	Tags        []string `yaml:"tags"`
+	// ---- v0.2.0 自由战斗 ----
+	Size  string    `yaml:"size"`  // 尺寸档（balance.size_classes）；默认 human
+	Parts []PartDef `yaml:"parts"` // 部位 / 弱点
+	// Importance 是敌人的重要度（1–5；首领死亡计入影响评估）。
+	Importance int `yaml:"importance"`
+}
+
+// PartDef 是敌人 / 机甲的部位（自由战斗：弱点加成只在玩家知识层已知该部位时生效）。
+type PartDef struct {
+	ID   string `yaml:"id" json:"id"`
+	Name string `yaml:"name" json:"name"`
+	// Mult 是伤害倍率（百分比，默认 100；弱点通常 150）。
+	Mult int `yaml:"mult" json:"mult,omitempty"`
+	// DC 是瞄准该部位的额外难度。
+	DC   int  `yaml:"dc" json:"dc,omitempty"`
+	Weak bool `yaml:"weak" json:"weak,omitempty"`
+	// Break 是部位耐久（累计伤害达到后破坏；0 = 不可破坏）；Status 是破坏后附加的状态。
+	Break  int    `yaml:"break" json:"break,omitempty"`
+	Status string `yaml:"status" json:"status,omitempty"`
+	Hint   string `yaml:"hint" json:"hint,omitempty"` // 揭示后显示的说明
 }
 
 // MechDef 是机甲形态（例如炽天使）：独立数值、技能与能源 / 热量规则。
 type MechDef struct {
-	ID          string   `yaml:"id"`
-	Name        string   `yaml:"name"`
-	Icon        string   `yaml:"icon"`
-	Rarity      string   `yaml:"rarity"`
-	Description string   `yaml:"description"`
-	Lore        string   `yaml:"lore"`
-	Stats       Stats    `yaml:"stats"`
-	Skills      []string `yaml:"skills"`
-	EngageCost  int      `yaml:"engage_cost"`      // 启动消耗红水银
-	PerTurn     int      `yaml:"mercury_per_turn"` // 每回合消耗
-	HeatMax     int      `yaml:"heat_max"`
-	AttackHeat  int      `yaml:"attack_heat"` // 普通攻击产生的热量
-	CoolPerTurn int      `yaml:"cool_per_turn"`
+	ID string `yaml:"id"`
+	// Parts / Size：自由战斗的部位与尺寸档（v0.2.0）。
+	Parts       []PartDef `yaml:"parts"`
+	Size        string    `yaml:"size"`
+	Name        string    `yaml:"name"`
+	Icon        string    `yaml:"icon"`
+	Rarity      string    `yaml:"rarity"`
+	Description string    `yaml:"description"`
+	Lore        string    `yaml:"lore"`
+	Stats       Stats     `yaml:"stats"`
+	Skills      []string  `yaml:"skills"`
+	EngageCost  int       `yaml:"engage_cost"`      // 启动消耗红水银
+	PerTurn     int       `yaml:"mercury_per_turn"` // 每回合消耗
+	HeatMax     int       `yaml:"heat_max"`
+	AttackHeat  int       `yaml:"attack_heat"` // 普通攻击产生的热量
+	CoolPerTurn int       `yaml:"cool_per_turn"`
 	// OverheatDamage：过热时驾驶者受到的伤害（生命百分比）。
 	OverheatDamage int `yaml:"overheat_damage"`
 	// Requires 是可以启动的 CEL 条件（例如 world.flags.dragon_awake）。
@@ -404,6 +430,9 @@ type Content struct {
 	MechIDs    []string
 	Encounters map[string]*Encounter
 	EncIDs     []string
+	// ---- v0.2.0 自由战斗 ----
+	Maneuvers []freeform.Maneuver
+	Tags      []freeform.Tag
 }
 
 // NewContent 返回空内容。

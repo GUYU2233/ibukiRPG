@@ -58,3 +58,32 @@ func TestErrors(t *testing.T) {
 		t.Error("expected missing key error")
 	}
 }
+
+func TestRewriteHelpers(t *testing.T) {
+	e, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	vars := Vars{
+		"known": map[string]any{"a:character/x": map[string]any{"faction": int64(2), "name": int64(1)}},
+		"gone":  map[string]any{"a:character/dead": true},
+		"event": map[string]any{"vars": map[string]any{"g": int64(4), "c": int64(6)}},
+	}
+	cases := map[string]bool{
+		`knows("a:character/x", "faction")`:          true,
+		`knows("a:character/x", "name")`:             false,
+		`heard("a:character/x", "name")`:             true,
+		`knows("a:character/y", "name")`:             false,
+		`alive("a:character/x")`:                     true,
+		`alive('a:character/dead')`:                  false,
+		`retired("a:character/dead")`:                true,
+		`event.vars.g >= event.vars.c`:               false,
+		`alive("a:character/x") && event.vars.g > 3`: true,
+	}
+	for expr, want := range cases {
+		got, err := e.EvalBool(expr, vars)
+		if err != nil || got != want {
+			t.Errorf("%s = %v, %v; want %v", expr, got, err, want)
+		}
+	}
+}

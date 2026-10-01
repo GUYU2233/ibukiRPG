@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -50,7 +51,9 @@ type Manifest struct {
 	Authors      []string            `yaml:"authors"`
 	Dependencies []Dependency        `yaml:"dependencies"`
 	Content      map[string][]string `yaml:"content"`
-	Start        Start               `yaml:"start"`
+	// Format 是故事包格式版本。0.2.0 只接受 format: 3（开放世界设定库，架构 V0.3 第 4 节）。
+	Format int   `yaml:"format"`
+	Start  Start `yaml:"start"`
 	// 以下为故事包卡片信息（故事包选择界面）。
 	Author  string   `yaml:"author"`
 	Tagline string   `yaml:"tagline"`
@@ -78,6 +81,8 @@ type Start struct {
 	Intro    string `yaml:"intro"`
 	// Variables 是故事变量的初始值（整数）。
 	Variables map[string]int `yaml:"variables"`
+	// Known 是开局就知道的条目（实体 ID 或 "实体 ID#字段"；只写 ID 时揭示其公开字段）。
+	Known []string `yaml:"known"`
 }
 
 var packIDRe = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$`)
@@ -117,8 +122,20 @@ func Load(path string) (*Manifest, error) {
 	return Parse(data)
 }
 
+// CurrentFormat 是本引擎支持的故事包格式。
+const CurrentFormat = 3
+
+// ErrOldFormat 是旧格式故事包的错误（第 19 节决定 5：不提供迁移工具）。
+var ErrOldFormat = errors.New("这个故事包是旧格式（v0.1.x），ibukiRPG 0.2.0 不再支持。请向作者索取 format 3 版本的故事包")
+
 // Validate 做基础结构校验。
 func (m *Manifest) Validate() error {
+	if m.Format != CurrentFormat && m.ID != "" {
+		if m.Format > CurrentFormat {
+			return fmt.Errorf("故事包 %s 使用了更新的格式（format %d），请升级 ibukiRPG", m.ID, m.Format)
+		}
+		return fmt.Errorf("%s：%w", m.ID, ErrOldFormat)
+	}
 	switch {
 	case m.ID == "":
 		return fmt.Errorf("manifest.yaml 缺少 id")

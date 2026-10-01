@@ -797,3 +797,23 @@ func Resolve(r Result, p Profile, roll func(sides int) int) Outcome {
 	margin := total - r.DC
 	return Outcome{Dice: p.DiceSpec(), Rolls: rolls, Roll: sum, Total: total, Margin: margin, Degree: Degree(margin, rolls, p)}
 }
+
+// Adjudication 是 ActionAdjudicated 事件的载荷：合理性、修正明细、骰子与程度、后果。
+type Adjudication struct {
+	Check        Result   `json:"check"`
+	Roll         *Outcome `json:"roll,omitempty"`
+	Band         string   `json:"band"`
+	Consequences []string `json:"consequences,omitempty"`
+	Damage       int      `json:"damage,omitempty"`
+	Status       string   `json:"status,omitempty"`
+	PartRevealed bool     `json:"part_revealed,omitempty"`
+	PartBroken   bool     `json:"part_broken,omitempty"`
+}
+
+// Degree 返回程度（不需要掷骰的动作视为成功）。
+func (a *Adjudication) Degree() string {
+	if a.Roll == nil {
+		return Success
+	}
+	return a.Roll.Degree
+}

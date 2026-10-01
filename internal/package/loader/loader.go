@@ -153,6 +153,9 @@ func Load(fsys fs.FS, ev *expression.Evaluator) (*Package, error) {
 		return nil, err
 	}
 	p.tidyText()
+	if err := p.loadV3(fsys, m); err != nil {
+		return nil, err
+	}
 	p.normalizeDialogue()
 	if err := p.validate(ev); err != nil {
 		return nil, err
@@ -372,5 +375,6 @@ func (p *Package) validate(ev *expression.Evaluator) error {
 		}
 	}
 	errs = append(errs, p.validateRPG(compile)...)
+	errs = append(errs, p.validateV3(compile)...)
 	return errors.Join(errs...)
 }

@@ -2,6 +2,7 @@ package command
 
 import (
 	"github.com/GUYU2233/ibukiRPG/internal/combat/freeform"
+	"github.com/GUYU2233/ibukiRPG/internal/knowledge"
 	"github.com/GUYU2233/ibukiRPG/internal/world/change"
 )
 
@@ -20,6 +21,8 @@ const (
 	KindDecision = "decision"
 	// KindWait 是时间跳跃（Target = 10m / 1h / dawn / event:<id>）。
 	KindWait = "wait"
+	// KindHook 是参与 / 破坏世界事件（Action = 事件 ID，Target = hook ID）。
+	KindHook = "hook"
 )
 
 // SuggestedCheck 是 AI / 规则解析器建议的检定。仅是建议，Core 会校验并夹紧。
@@ -62,6 +65,12 @@ type Command struct {
 	Skill       string    `json:"skill,omitempty"`
 	// Changes 是世界变更提案（KindWorldChange），已经过校验器。
 	Changes []change.Change `json:"changes,omitempty"`
+	// Reveals 是知识揭示提案（KindWorldChange）；SelfLevel 是 AI 自评影响等级；Tier 是提出者的模型能力档位。
+	Reveals   []knowledge.Reveal `json:"reveals,omitempty"`
+	SelfLevel string             `json:"self_level,omitempty"`
+	Tier      string             `json:"tier,omitempty"`
+	// Decision 是偏离提示（KindDecision，Action = request）。
+	Decision *change.Decision `json:"decision,omitempty"`
 	// Intent 是自由战斗意图（KindCombat，Action = freeform）。
 	Intent *freeform.Intent `json:"intent,omitempty"`
 	Input  string           `json:"input,omitempty"`  // 玩家原始输入（审计用）

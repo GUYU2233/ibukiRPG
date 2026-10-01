@@ -6,6 +6,8 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/action/definition"
 	"github.com/GUYU2233/ibukiRPG/internal/combat"
 	"github.com/GUYU2233/ibukiRPG/internal/package/manifest"
+	"github.com/GUYU2233/ibukiRPG/internal/world/overlay"
+	"github.com/GUYU2233/ibukiRPG/internal/world/timeline"
 )
 
 // Skill 是技能定义。
@@ -72,6 +74,7 @@ type Location struct {
 	SceneFacts  []string       `yaml:"scene_facts"`
 	Shop        *Shop          `yaml:"shop"`
 	Search      Search         `yaml:"search"`
+	Envelope    `yaml:",inline"`
 }
 
 // Identity 是角色身份。
@@ -176,6 +179,12 @@ type Character struct {
 	Lore        string   `yaml:"lore"`
 	// Portrait 是立绘图片在包内的相对路径（assets/ 下，png/jpg/webp，≤ 2 MB）；可省略。
 	Portrait string `yaml:"portrait"`
+	Envelope `yaml:",inline"`
+	// Playable：可作为预设主角；StartKnowledge：选择该主角时开局就知道的条目。
+	Playable       bool        `yaml:"playable"`
+	StartKnowledge []StartKnow `yaml:"start_knowledge"`
+	// Size 是尺寸档（自由战斗；默认 human）。
+	Size string `yaml:"size"`
 }
 
 // Promote 是次要角色升格为主要角色（创建角色卡）的量化条件：满足任意一条即可。
@@ -225,7 +234,11 @@ type Item struct {
 	// Level 是装备需求等级。
 	Level int `yaml:"level"`
 	// Mech 是机甲改装件 / 挂载武器的属性（kind: mech_part / mech_weapon）。
-	Mech *combat.MechItem `yaml:"mech"`
+	Mech     *combat.MechItem `yaml:"mech"`
+	Envelope `yaml:",inline"`
+	// Quick：可在战斗中快速取用；Pierce：破甲（凡人武器对机甲有效）。
+	Quick  bool `yaml:"quick"`
+	Pierce bool `yaml:"pierce"`
 }
 
 // StoryStep 是故事中的非终结步骤或结局。
@@ -324,6 +337,14 @@ type Package struct {
 	// Prompts 是提示词段落补丁（manifest content.prompts）。
 	Prompts   []PromptPatch
 	Relations Relations
+	// ---- v0.2.0（format 3）----
+	Factions   map[string]*Faction
+	FactionIDs []string
+	Timeline   map[string]*timeline.Event
+	Balance    Balance
+	Creation   Creation
+	// Docs 是全部实体的通用文档（静态设定）。
+	Docs map[string]*overlay.EntityDoc
 }
 
 // Key 返回命名空间化 ID 的最后一段，例如 demo:action/talk → talk。

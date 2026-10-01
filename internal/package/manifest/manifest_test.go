@@ -1,8 +1,10 @@
 package manifest
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -32,9 +34,9 @@ func TestLoadDemoManifest(t *testing.T) {
 func TestValidation(t *testing.T) {
 	bad := []string{
 		"namespace: demo\nversion: 1\ntype: world\n",
-		"id: x\nnamespace: Demo\nversion: 1\ntype: world\n",
-		"id: x\nnamespace: demo\ntype: world\n",
-		"id: x\nnamespace: demo\nversion: 1\ntype: weird\n",
+		"format: 3\nid: x\nnamespace: Demo\nversion: 1\ntype: world\n",
+		"format: 3\nid: x\nnamespace: demo\ntype: world\n",
+		"format: 3\nid: x\nnamespace: demo\nversion: 1\ntype: weird\n",
 	}
 	for _, b := range bad {
 		if _, err := Parse([]byte(b)); err == nil {
@@ -86,5 +88,18 @@ func TestVersionConstraints(t *testing.T) {
 	b, _ := ParseVersion("0.1.2")
 	if a.Compare(b) >= 0 {
 		t.Error("prerelease should sort before release")
+	}
+}
+
+// TestOldFormatRejected：format 缺省或为 2 的旧包被拒绝，并给出清楚的提示（没有迁移工具）。
+func TestOldFormatRejected(t *testing.T) {
+	for _, b := range []string{"id: x\nnamespace: x\nversion: 1.0.0\ntype: story\n", "format: 2\nid: x\nnamespace: x\nversion: 1.0.0\ntype: story\n"} {
+		_, err := Parse([]byte(b))
+		if err == nil || !errors.Is(err, ErrOldFormat) || !strings.Contains(err.Error(), "旧格式") {
+			t.Fatalf("old format not rejected clearly: %v", err)
+		}
+	}
+	if _, err := Parse([]byte("format: 3\nid: x\nnamespace: x\nversion: 1.0.0\ntype: story\n")); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -1,5 +1,12 @@
 package event
 
+import (
+	"github.com/GUYU2233/ibukiRPG/internal/combat/freeform"
+	"github.com/GUYU2233/ibukiRPG/internal/knowledge"
+	"github.com/GUYU2233/ibukiRPG/internal/world/change"
+	"github.com/GUYU2233/ibukiRPG/internal/world/timeline"
+)
+
 // 事件类型。所有永久状态变化都必须通过这些事件（第 3.2 节）。
 const (
 	GameStarted           = "GameStarted"
@@ -76,7 +83,27 @@ const (
 	CharacterCardRestored = "CharacterCardRestored"
 	CharacterDied         = "CharacterDied"
 
-	// ---- 主线贴合度 / 自由推演 ----
+	// ---- 开放世界（v0.2.0）：世界变更、知识层、时间线、偏离提示、自由战斗、分支 ----
+	WorldChangeApplied  = "WorldChangeApplied"  // Change
+	WorldChangeReverted = "WorldChangeReverted" // Change=反向操作，Key=被撤销的变更 ID
+	ImpactAssessed      = "ImpactAssessed"      // Impact，Tags=变更 ID
+	WorldUpdateFailed   = "WorldUpdateFailed"   // Reason=parse/refused/timeout/interrupted/validator_all_rejected
+	KnowledgeRevealed   = "KnowledgeRevealed"   // Reveal
+	RumorHeard          = "RumorHeard"          // Reveal（level=rumored），Story=世界事件 ID
+	WorldEventScheduled = "WorldEventScheduled" // WorldEvent（AI / 玩家新增；故事包事件不需要）
+	WorldEventStarted   = "WorldEventStarted"   // Story=事件 ID，Step=阶段
+	WorldEventStage     = "WorldEventStageAdvanced"
+	WorldEventJoined    = "WorldEventJoined"    // Story，Key=hook，Values=vars 增量
+	WorldEventDisrupted = "WorldEventDisrupted" // 同上
+	WorldEventResolved  = "WorldEventResolved"  // Story，Outcome，Source=world/player/ai
+	WorldEventCancelled = "WorldEventCancelled" // Story，Reason
+	DecisionRequested   = "DecisionRequested"   // Decision
+	DecisionResolved    = "DecisionResolved"    // Key=决定 ID，Outcome=accepted/rolled_back
+	CombatIntentParsed  = "CombatIntentParsed"  // Intent，Text=原文，Source
+	ActionAdjudicated   = "ActionAdjudicated"   // Adjudication
+	PartHit             = "PartHit"             // Target，Key=部位，Delta=倍率，Remove=破坏
+	BranchCreated       = "BranchCreated"       // Key=分支 ID，Seed=随机盐
+	CharacterCreated    = "CharacterCreated"    // Profile（开局角色创建）
 	// ---- 机械甲胄卡（v0.1.2-rc2）----
 	MechStatusChanged = "MechStatusChanged" // Target=机甲 Key=状态 Reason
 	MechPartChanged   = "MechPartChanged"   // Target=机甲 Key=槽位 Item=部件 Remove=卸下
@@ -158,6 +185,15 @@ type Data struct {
 	Notable    bool           `json:"notable,omitempty"`
 	Nudge      bool           `json:"nudge,omitempty"`
 	Repeat     bool           `json:"repeat,omitempty"`
+	// ---- v0.2.0 ----
+	Change       *change.Change         `json:"change,omitempty"`
+	Reveal       *knowledge.Reveal      `json:"reveal,omitempty"`
+	WorldEvent   *timeline.Event        `json:"world_event,omitempty"`
+	Decision     *change.Decision       `json:"decision,omitempty"`
+	Impact       *change.TurnImpact     `json:"impact,omitempty"`
+	Intent       *freeform.Intent       `json:"intent,omitempty"`
+	Adjudication *freeform.Adjudication `json:"adjudication,omitempty"`
+	Profile      map[string]string      `json:"profile,omitempty"`
 	// Units 是战斗单位快照（CombatStarted / MechEngaged）。
 	Units []Unit `json:"units,omitempty"`
 	// Node 是被正典化的主线节点（MainlineNodeCanonized）或动态角色（CharacterCardCreated）。

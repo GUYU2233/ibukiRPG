@@ -109,7 +109,8 @@ func Vars(p *loader.Package, s *state.State, target, item string) expression.Var
 	}
 	rpgVars(p, s, actor, world)
 	world["cards"] = cards
-	return expression.Vars{"actor": actor, "target": tgt, "item": itm, "scene": scene, "world": world, "npcs": npcs, "stories": Stories(p, s)}
+	known, gone := s.KnowledgeVars()
+	return expression.Vars{"actor": actor, "target": tgt, "item": itm, "scene": scene, "world": world, "npcs": npcs, "stories": Stories(p, s), "known": known, "gone": gone}
 }
 
 // rpgVars 加入成长 / 战斗 / 主线变量：actor.level/xp/hp/max_hp/mercury/in_combat/equipment/combat_skills，

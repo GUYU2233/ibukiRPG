@@ -14,6 +14,8 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/rules/checks"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/expression"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/rng"
+	"github.com/GUYU2233/ibukiRPG/internal/world/change"
+	"github.com/GUYU2233/ibukiRPG/internal/world/validate"
 	"github.com/GUYU2233/ibukiRPG/internal/world/worldtime"
 )
 
@@ -34,6 +36,15 @@ type Result struct {
 	Accepted  bool          `json:"accepted"`
 	Reason    string        `json:"reason,omitempty"` // 被拒绝时给玩家看的原因
 	Events    []event.Event `json:"events"`
+	// ---- v0.2.0 ----
+	// Rejects 是被校验器丢弃的世界变更 / 揭示提案（诊断，不是游戏事件）。
+	Rejects []validate.Reject `json:"rejects,omitempty"`
+	// Impact 是本回合世界变更的影响汇总（KindWorldChange）。
+	Impact *change.TurnImpact `json:"impact,omitempty"`
+	// Hidden 是本回合被接受揭示的隐藏真相（实体#ID），Guard 放行其泄露关键词。
+	Hidden []string `json:"hidden,omitempty"`
+	// Interrupted 是时间跳跃被打断的原因。
+	Interrupted string `json:"interrupted,omitempty"`
 }
 
 // Rejection 表示命令在校验阶段被拒绝（不产生任何事件，不推进时间）。
@@ -73,7 +84,17 @@ func (e *Engine) Execute(s *state.State, cmd command.Command) (*Result, *state.S
 		}
 	}
 	var err error
-	if w.s.RPG != nil && w.s.RPG.Combat != nil && cmd.Kind != command.KindCombat && cmd.Kind != command.KindManage {
+	if w.s.Pending != nil && cmd.Kind != command.KindDecision {
+		res.Reason = "有一个待决的选择：请先在面板里选择“接受”或“回到之前”。"
+		return res, s, nil
+	}
+	if systemCommand(cmd) {
+		// 提交 B / 系统回合与玩家回合共享回合号（第 3.1 节）
+		w.turn = s.Turn
+		res.Turn = w.turn
+		w.passive = true
+	}
+	if w.s.RPG != nil && w.s.RPG.Combat != nil && cmd.Kind != command.KindCombat && cmd.Kind != command.KindManage && !systemCommand(cmd) {
 		res.Reason = "正在战斗中：请选择攻击、技能、物品、防御或逃跑。"
 		return res, s, nil
 	}
@@ -88,8 +109,19 @@ func (e *Engine) Execute(s *state.State, cmd command.Command) (*Result, *state.S
 		err = w.execCombat()
 	case command.KindManage:
 		err = w.execManage()
+	case command.KindWorldChange:
+		err = w.execWorldChange(res)
+	case command.KindDecision:
+		err = w.execDecision()
+	case command.KindWait:
+		err = w.execWait(res)
+	case command.KindHook:
+		err = w.execHook()
 	default:
 		err = fmt.Errorf("unknown command kind %q", cmd.Kind)
+	}
+	if err == nil && !systemCommand(cmd) {
+		err = w.runTimeline(nil)
 	}
 	if err == nil {
 		err = w.runStories(preActive)
@@ -101,6 +133,9 @@ func (e *Engine) Execute(s *state.State, cmd command.Command) (*Result, *state.S
 		err = w.runPacing()
 	}
 	if err == nil {
+		err = w.runKnowledge()
+	}
+	if err == nil && !systemCommand(cmd) {
 		err = w.emit(event.TurnCompleted, event.Data{})
 	}
 	if err != nil {

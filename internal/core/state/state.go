@@ -7,12 +7,16 @@ import (
 	"strings"
 
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
+	"github.com/GUYU2233/ibukiRPG/internal/knowledge"
 	"github.com/GUYU2233/ibukiRPG/internal/package/loader"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/rng"
+	"github.com/GUYU2233/ibukiRPG/internal/world/change"
+	"github.com/GUYU2233/ibukiRPG/internal/world/overlay"
+	"github.com/GUYU2233/ibukiRPG/internal/world/timeline"
 )
 
 // SchemaVersion 是 State JSON 结构版本，用于存档迁移。
-const SchemaVersion = 1
+const SchemaVersion = 2
 
 // 关系数值范围。
 const (
@@ -35,6 +39,8 @@ type Player struct {
 	Conditions []string       `json:"conditions"`
 	Attributes map[string]int `json:"attributes"`
 	Skills     map[string]int `json:"skills"`
+	// Profile 是开局创建的角色（v0.2.0）。
+	Profile *Profile `json:"profile,omitempty"`
 }
 
 // Belief 是 NPC 对某事的信念，可沿 Event → Observation → Belief 追溯（第 15、16 节）。
@@ -170,6 +176,16 @@ type State struct {
 	LastSeq        int64               `json:"last_seq"`
 	// RPG 是战斗 / 成长 / 图鉴 / 关系网 / 角色卡 / 主线贴合度状态（v0.1.1-rc2，旧存档为空）。
 	RPG *RPG `json:"rpg,omitempty"`
+	// ---- v0.2.0：开放世界 ----
+	// World 是生效世界覆盖层；Knowledge 是玩家知识层；Timeline 是世界事件运行时。
+	World     *overlay.Overlay `json:"world,omitempty"`
+	Knowledge *knowledge.Store `json:"knowledge,omitempty"`
+	Timeline  *timeline.State  `json:"timeline,omitempty"`
+	// Pending 是待决的偏离提示（非空时引擎拒绝新的玩家命令）；Notice 是“仅通知”模式的提示卡。
+	Pending *change.Decision `json:"pending,omitempty"`
+	Notice  *change.Decision `json:"notice,omitempty"`
+	// Branch 是当前分支（BranchCreated 写入）。
+	Branch string `json:"branch,omitempty"`
 }
 
 // New 根据内容包构造初始状态。
@@ -310,6 +326,9 @@ func Apply(s *State, e event.Event) error {
 	d := e.Data
 	if e.Seq > s.LastSeq {
 		s.LastSeq = e.Seq
+	}
+	if handled, err := applyWorld(s, e); handled {
+		return err
 	}
 	if handled, err := applyRPG(s, e); handled {
 		if d.Stream != "" && s.RNG[d.Stream] <= d.Counter {
