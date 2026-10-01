@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-val appVersionName = "0.1.2-rc2"
+val appVersionName = "0.1.3-rc1"
 
 // llama.cpp 原生库的 ABI：默认 arm64-v8a + x86_64（模拟器）；CI 可用 -Pibuki.llama.abis=arm64-v8a 缩短构建时间
 val llamaAbis: List<String> = ((project.findProperty("ibuki.llama.abis") as String?) ?: "arm64-v8a,x86_64")
@@ -22,6 +22,16 @@ val keystoreProps = Properties().apply {
     if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
 }
 
+// CI：环境变量优先（ANDROID_KEYSTORE_FILE 为解码后的密钥库路径；其余来自 GitHub Actions secrets）。
+// 任一缺失（例如来自 fork 的 pull_request）时回退到 keystore.properties；都没有则 release APK 不签名。
+fun signingValue(env: String, prop: String): String? =
+    System.getenv(env)?.takeIf { it.isNotBlank() } ?: keystoreProps.getProperty(prop)?.takeIf { it.isNotBlank() }
+
+val envSigningComplete = listOf("ANDROID_KEYSTORE_FILE", "ANDROID_KEYSTORE_PASSWORD", "ANDROID_KEY_ALIAS", "ANDROID_KEY_PASSWORD")
+    .all { !System.getenv(it).isNullOrBlank() }
+val releaseStoreFile: String? =
+    if (envSigningComplete) System.getenv("ANDROID_KEYSTORE_FILE") else keystoreProps.getProperty("storeFile")
+
 android {
     namespace = "com.guyu2233.ibukirpg.app"
     compileSdk = 36
@@ -30,7 +40,7 @@ android {
         applicationId = "com.guyu2233.ibukirpg"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
+        versionCode = 5
         versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -55,12 +65,18 @@ android {
     ndkVersion = "27.3.13750724"
 
     signingConfigs {
-        if (keystoreProps.getProperty("storeFile") != null) {
+        if (releaseStoreFile != null && file(releaseStoreFile).exists()) {
             create("release") {
-                storeFile = file(keystoreProps.getProperty("storeFile"))
-                storePassword = keystoreProps.getProperty("storePassword")
-                keyAlias = keystoreProps.getProperty("keyAlias")
-                keyPassword = keystoreProps.getProperty("keyPassword")
+                storeFile = file(releaseStoreFile)
+                if (envSigningComplete) {
+                    storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                    keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                    keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                } else {
+                    storePassword = signingValue("ANDROID_KEYSTORE_PASSWORD", "storePassword")
+                    keyAlias = signingValue("ANDROID_KEY_ALIAS", "keyAlias")
+                    keyPassword = signingValue("ANDROID_KEY_PASSWORD", "keyPassword")
+                }
             }
         }
     }
@@ -118,7 +134,7 @@ kotlin {
     }
 }
 
-// 输出文件名：ibukiRPG-v0.1.2-rc2.apk
+// 输出文件名：ibukiRPG-v0.1.3-rc1.apk
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->

@@ -63,6 +63,8 @@ jobs:
       # 与 android/app/build.gradle.kts 中的 ndkVersion / cmake version 保持一致
       IBUKI_NDK: 27.3.13750724
       IBUKI_CMAKE: 3.31.6
+      # 发布密钥证书的 SHA-256（公开信息）；CI 用 apksigner 校验 release APK 必须由该证书签名
+      EXPECTED_CERT_SHA256: 5a9ac40d7ed48d05e2a1e1b7f989fe100f82b886a9101feb166ea71ed2323339
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -117,10 +119,68 @@ jobs:
           done
           grep -q 'lib/arm64-v8a/libggml-cpu-' native-libs.txt || { echo "missing ggml cpu backends"; exit 1; }
           echo "### APK size: $(du -h "$apk" | cut -f1) ($(basename "$apk"))" >> "$GITHUB_STEP_SUMMARY"
+      - name: Check 16 KB page alignment (debug APK)
+        run: tools/check-apk-alignment.sh android/app/build/outputs/apk/debug/*.apk
       - uses: actions/upload-artifact@v4
         with:
           name: ibukiRPG-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+      # ---- 发布签名：只在本仓库的 push / workflow_dispatch 上运行，绝不在 pull_request（含 fork）上运行 ----
+      - name: Decode release keystore
+        id: signing
+        if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::warning::release signing secrets are not available; skipping signed release APK"
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          ks="$RUNNER_TEMP/release.keystore"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$ks"
+          chmod 600 "$ks"
+          echo "ANDROID_KEYSTORE_FILE=$ks" >> "$GITHUB_ENV"
+          echo "available=true" >> "$GITHUB_OUTPUT"
+      - name: Require release signing for tag builds
+        if: startsWith(github.ref, 'refs/tags/v') && steps.signing.outputs.available != 'true'
+        run: |
+          echo "::error::tag builds must produce a release-signed APK, but signing secrets are missing"
+          exit 1
+      - name: Assemble release APK (R8 minified, release-signed)
+        if: steps.signing.outputs.available == 'true'
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease
+      - name: Verify release signing certificate + 16 KB alignment
+        if: steps.signing.outputs.available == 'true'
+        run: |
+          set -euo pipefail
+          rm -f "$RUNNER_TEMP/release.keystore"
+          apk=$(ls android/app/build/outputs/apk/release/*.apk)
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          # 只输出证书 SHA-256 摘要（公开信息）
+          digest=$("$apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          echo "release certificate SHA-256: ${digest}"
+          [ "$digest" = "$EXPECTED_CERT_SHA256" ] || { echo "::error::certificate digest mismatch (expected ${EXPECTED_CERT_SHA256})"; exit 1; }
+          tools/check-apk-alignment.sh "$apk"
+          echo "### Release APK: $(basename "$apk") $(du -h "$apk" | cut -f1), cert SHA-256 ${digest}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Clean up keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
+      - uses: actions/upload-artifact@v4
+        if: steps.signing.outputs.available == 'true'
+        with:
+          name: ibukiRPG-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
@@ -165,12 +225,25 @@ jobs:
         with:
           name: ibukiRPG-debug-apk
           path: apk
-      - name: Package installable Android debug APK
+      - uses: actions/download-artifact@v4
+        with:
+          name: ibukiRPG-release-apk
+          path: release-apk
+      - name: Package Android APKs (release-signed + debug)
+        env:
+          EXPECTED_CERT_SHA256: 5a9ac40d7ed48d05e2a1e1b7f989fe100f82b886a9101feb166ea71ed2323339
         run: |
           set -euo pipefail
+          cp release-apk/*.apk "dist/ibukiRPG-${GITHUB_REF_NAME}.apk"
           cp apk/*.apk "dist/ibukiRPG-${GITHUB_REF_NAME}-android-debug.apk"
+          apksigner=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          digest=$("$apksigner" verify --print-certs "dist/ibukiRPG-${GITHUB_REF_NAME}.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          echo "release certificate SHA-256: ${digest}"
+          [ "$digest" = "$EXPECTED_CERT_SHA256" ] || { echo "::error::certificate digest mismatch"; exit 1; }
+          tools/check-apk-alignment.sh "dist/ibukiRPG-${GITHUB_REF_NAME}.apk"
       - name: Create checksums
-        run: sha256sum dist/* > dist/SHA256SUMS.txt
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS.txt
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

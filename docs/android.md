@@ -7,7 +7,7 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 | 项目 | 值 |
 |---|---|
 | applicationId | `com.guyu2233.ibukirpg`（debug 版为 `.debug` 后缀，可与正式版共存） |
-| versionName / versionCode | `0.1.2-rc2` / `4` |
+| versionName / versionCode | `0.1.3-rc1` / `5` |
 | minSdk / targetSdk / compileSdk | 24 / 36 / 36 |
 | 工具链 | Gradle 8.14.3（wrapper）、AGP 8.13.2、Kotlin 2.3.21、Compose BOM 2025.10.01 |
 | ABI | armeabi-v7a、arm64-v8a、x86_64（llama.cpp 本地模型：arm64-v8a、x86_64） |
@@ -19,9 +19,9 @@ Go 引擎通过 `gomobile bind` 生成 AAR（`android/app/libs/ibukirpg.aar`，�
 source /etc/profile.d/ibukirpg-dev.sh      # JAVA_HOME / ANDROID_HOME / ANDROID_NDK_HOME
 make android-aar                           # gomobile bind → android/app/libs/ibukirpg.aar
 cd android
-./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.2-rc2-debug.apk（含 llama.cpp 原生库）
+./gradlew assembleDebug                    # app/build/outputs/apk/debug/ibukiRPG-v0.1.3-rc1-debug.apk（含 llama.cpp 原生库）
 ./gradlew testDebugUnitTest                # JVM 单元测试 + 截图测试（Robolectric + Roborazzi）→ ../build/screenshots/*.png
-./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.1.2-rc2.apk
+./gradlew assembleRelease                  # app/build/outputs/apk/release/ibukiRPG-v0.1.3-rc1.apk
 ```
 
 或在仓库根目录执行 `make apk`（产物复制到 `build/release/`）。
@@ -53,7 +53,21 @@ keytool -genkeypair -keystore ~/.ibukirpg/keystore -storetype PKCS12 -alias ibuk
 # 然后按上面的格式写 ~/.ibukirpg/keystore.properties，并 chmod 600
 ```
 
+CI（`.github/workflows/ci.yml`）改用环境变量签名：`ANDROID_KEYSTORE_FILE`（由 secret `ANDROID_KEYSTORE_BASE64` 解码到临时文件）、
+`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`。四个变量齐全时优先使用，否则回退到 keystore.properties。
+release 签名只在本仓库的 push / 手动触发上运行，pull_request（含 fork）不会接触密钥；`v*` 标签构建必须产出 release 签名 APK，
+并用 `apksigner verify --print-certs` 校验证书 SHA-256（`5a9ac40d7ed48d05e2a1e1b7f989fe100f82b886a9101feb166ea71ed2323339`）后附到 GitHub Release。
+
 找不到该文件时 release 构建仍会成功，但 APK 未签名（无法直接安装）。**请备份密钥库**：后续版本必须用同一个密钥签名才能覆盖安装。
+
+## 16 KB 页对齐
+
+Android 15+ 的 16 KB 页设备要求每个 `.so` 的 ELF LOAD 段按 16384 对齐。NDK 27 编译的 llama.cpp 默认已满足；
+gomobile 生成的 `libgojni.so` 需显式传 `-ldflags '… -extldflags=-Wl,-z,max-page-size=16384'`（Makefile 的 `MOBILE_LDFLAGS`，三个 ABI 都生效）。
+`tools/check-apk-alignment.sh <apk>`（或 `make check-apk-align APK=…`）检查 APK 内所有 `.so` 的 `p_align >= 16384` 并运行
+`zipalign -c -P 16 -v 4`；CI 对 debug 与 release APK 都执行该检查。
+
+注意：v0.1.2-rc2 及更早发布的是 debug 签名 APK，与 v0.1.3-rc1 起的 release 签名不同，需先卸载旧版再安装。
 
 ## 本地模型（llama.cpp）
 

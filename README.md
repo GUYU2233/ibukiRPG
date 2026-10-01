@@ -2,7 +2,11 @@
 
 > AI 驱动、事件化、可扩展的中文文字冒险 RPG。**用你自己的话行动，骰子与规则决定结果。**
 
-当前版本：**v0.1.2-rc2（试玩版，预发布）** —— 三个内置故事包：《边境酒馆 · 失窃的钱袋》、小短篇《雾港灯塔 · 守灯人的信》，以及数值 RPG 示例《锈钟镇 · 黄铜试炼》；支持导入第三方故事包（.zip，格式见 [docs/story-pack-format.md](docs/story-pack-format.md)）。
+当前版本：**v0.1.3-rc1（试玩版，预发布）** —— 三个内置故事包：《边境酒馆 · 失窃的钱袋》、小短篇《雾港灯塔 · 守灯人的信》，以及数值 RPG 示例《锈钟镇 · 黄铜试炼》；支持导入第三方故事包（.zip，格式见 [docs/story-pack-format.md](docs/story-pack-format.md)）。
+
+v0.1.3-rc1 新增：Android 正式版 APK 使用发布密钥签名（R8 压缩）并附在 GitHub Release；所有原生库（含 Go 引擎 libgojni.so）按 16 KB 页对齐，兼容 16 KB 页大小的 Android 15+ 设备。
+
+> 注意：v0.1.2-rc2 及更早的安装包是 debug 签名，安装 v0.1.3-rc1 正式版前需先卸载旧版。
 
 v0.1.2-rc2 新增：
 - **数值 RPG**：回合制战斗（技能、状态、敌人 AI、同伴、掉落）、**机甲形态**（能源 / 过热、改装槽与武器挂点、机甲卡与情报揭示）、成长与装备、**图鉴**、**关系网**（多维关系与变化原因）、**角色卡**（主要 / 次要角色升格、归档）、**立绘**（故事包内图片）。
@@ -82,7 +86,7 @@ MCP 服务（只读）：`./build/bin/ibukirpg mcp --save <存档目录或 .db>`
 | `make mobile-smoke` | gomobile 生成 `build/android/ibukirpg.aar`（冒烟） |
 | `make android-aar` | 为 App 生成 `android/app/libs/ibukirpg.aar`（arm / arm64 / x86_64） |
 | `make apk-debug` | 调试版 APK |
-| `make apk VERSION=0.1.2-rc2` | 发布版 `build/release/ibukiRPG-v0.1.2-rc2.apk`（签名配置见 docs/android.md） |
+| `make apk VERSION=0.1.3-rc1` | 发布版 `build/release/ibukiRPG-v0.1.3-rc1.apk`（签名配置见 docs/android.md） |
 | `make pack-zip PACK=lighthouse` | 校验并把 `packages/<PACK>` 打包成可导入的 `build/packs/<id>-<version>.zip` |
 
 ## 目录结构
@@ -109,7 +113,7 @@ android/           Android App（Kotlin + Compose + Material 3）
 docs/              架构文档（architecture-v0.2.md）与开发文档
 ```
 
-## 已知限制（v0.1.2-rc2）
+## 已知限制（v0.1.3-rc1）
 
 - 内容规模很小：三个短故事。没有 `combat` 的故事包里暴力行为仍会被拒绝；有战斗的故事包里，场景中动粗是有后果的自由行动并计入主线偏离。
 - 战斗中的自然语言输入由规则解析器识别；AI 自由推演临时生成的角色只有角色卡（没有立绘与台词池）；图鉴条目除人物 / 机甲立绘外暂不支持配图。

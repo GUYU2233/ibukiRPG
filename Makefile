@@ -1,12 +1,14 @@
 # ibukiRPG — 开发命令
 GO        ?= go
 PKG       := github.com/GUYU2233/ibukiRPG
-VERSION   ?= 0.1.2-rc2
+VERSION   ?= 0.1.3-rc1
 COMMIT    ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 LDFLAGS   := -s -w -X $(PKG)/internal/buildinfo.Version=$(VERSION) -X $(PKG)/internal/buildinfo.Commit=$(COMMIT)
 BIN       := build/bin
 ANDROID_API ?= 24
 AAR       := build/android/ibukirpg.aar
+# Android 15+ 16 KB 页设备：libgojni.so 的 ELF LOAD 段必须按 16384 对齐（所有 ABI，含 armeabi-v7a）
+MOBILE_LDFLAGS := $(LDFLAGS) -extldflags=-Wl,-z,max-page-size=16384
 
 # Windows：产物加 .exe 后缀 + POSIX shell 目录前置（否则 System32 的 find/sort 会遮蔽 Unix 版）
 ifeq ($(OS),Windows_NT)
@@ -16,7 +18,7 @@ export PATH := $(subst /,\,$(dir $(SHELL)));$(PATH)
 endif
 endif
 
-.PHONY: all build test lint fmt vet run-cli run-server eval eval-synthesize mobile-smoke android-aar apk apk-debug tidy clean pack-zip
+.PHONY: all build test lint fmt vet run-cli run-server eval eval-synthesize mobile-smoke android-aar apk apk-debug check-apk-align tidy clean pack-zip
 
 all: fmt vet lint test build
 
@@ -58,7 +60,7 @@ eval-synthesize: ## 根据用例 llm_output 重新生成合成录音（Prompt �
 mobile-smoke: ## gomobile 生成 Android AAR（需 ANDROID_HOME / ANDROID_NDK_HOME）
 	@mkdir -p $(dir $(AAR))
 	gomobile bind -target=android -androidapi $(ANDROID_API) -javapkg com.guyu2233.ibukirpg \
-		-ldflags "$(LDFLAGS)" -o $(AAR) ./mobile
+		-ldflags "$(MOBILE_LDFLAGS)" -o $(AAR) ./mobile
 	@ls -lh $(AAR)
 
 APP_AAR   := android/app/libs/ibukirpg.aar
@@ -67,7 +69,7 @@ APP_ABIS  ?= android/arm,android/arm64,android/amd64
 android-aar: ## 为 Android App 生成 AAR（arm/arm64/x86_64）
 	@mkdir -p $(dir $(APP_AAR))
 	gomobile bind -target=$(APP_ABIS) -androidapi $(ANDROID_API) -javapkg com.guyu2233.ibukirpg \
-		-ldflags "$(LDFLAGS)" -o $(APP_AAR) ./mobile
+		-ldflags "$(MOBILE_LDFLAGS)" -o $(APP_AAR) ./mobile
 	@ls -lh $(APP_AAR)
 
 apk-debug: android-aar ## 构建调试版 APK
@@ -78,6 +80,9 @@ apk: android-aar ## 构建签名发布版 APK（签名配置见 docs/android.md�
 	@mkdir -p build/release
 	cp android/app/build/outputs/apk/release/ibukiRPG-v$(VERSION).apk build/release/
 	@ls -lh build/release/ibukiRPG-v$(VERSION).apk
+
+check-apk-align: ## 检查 APK 内所有 .so 的 LOAD 段 16 KB 对齐 + zipalign：make check-apk-align APK=path/to.apk
+	tools/check-apk-alignment.sh $(APK)
 
 tidy:
 	$(GO) mod tidy
