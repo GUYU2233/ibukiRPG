@@ -15,6 +15,9 @@ exits:
   - to: brass:location/arena
     label: 竞技场
     minutes: 5
+  - to: brass:location/north_dock
+    label: 北码头
+    minutes: 15
   - to: brass:location/sewer
     label: 下水道入口
     minutes: 10

@@ -1,0 +1,25 @@
+id: brass:location/north_dock
+type: location
+name: 北码头
+aliases: [码头, 三号仓, 仓库]
+tags: [outdoor, dock]
+description: >
+  运煤驳船挤在北码头的木桩之间，吊臂吱呀作响。三号仓的铁门上刷着煤烟帮的黑手印，门缝里飘出一股煤油味。
+short: 驳船、吊臂和煤油味——三号仓的铁门上有一只黑手印。
+properties:
+  search_dc: 13
+exits:
+  - to: brass:location/plaza
+    label: 钟楼广场
+    minutes: 15
+scene_facts:
+  - 三号仓门上刷着黑手印
+  - 码头堆着成排的煤油桶
+search:
+  success: 你在三号仓外的煤堆里翻出一张被齿轮咬住的手的传单，背面写着“钟停之时，北码头”。
+  failure: 码头工人瞪了你一眼：“看什么看？没活干就滚。”
+importance: 3
+canon: major
+knowledge:
+  public: [name, description, exits]
+  discoverable: [controller, dangers]

@@ -1,0 +1,4 @@
+description: 重要角色（重要度 4）死亡，灵敏度中 → 弹出重要角色死亡提示
+sensitivity:
+  impact: {score: 70, types: [major_death, story_impact], death_importance: 4}
+  expect: major_death

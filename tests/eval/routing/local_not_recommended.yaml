@@ -1,0 +1,9 @@
+description: 把“叙事 + 世界更新”交给 1.5B 本地模型：可以，但档位为 minimal 且给出不推荐提示
+routing:
+  providers:
+    - {id: tiny, kind: llamacpp, base_url: "http://127.0.0.1:8080/v1", model: qwen2.5-1.5b, size_b: 1.5}
+  settings: {mode: unified, unified: {provider: tiny}}
+  task: narrate_world
+  expect_provider: tiny
+  expect_tier: minimal
+  expect_local_warning: true

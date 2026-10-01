@@ -1,0 +1,8 @@
+description: 按任务分配但某任务未指定：回落到统一模型；指定的服务商缺密钥时跳过
+routing:
+  providers:
+    - {id: ds, kind: deepseek, model: deepseek-chat, api_key: k}
+    - {id: qw, kind: qwen, model: qwen-plus}
+  settings: {mode: per_task, unified: {provider: ds}, tasks: {audit: {provider: qw}}}
+  task: audit
+  expect_provider: ds

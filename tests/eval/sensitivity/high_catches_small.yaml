@@ -1,0 +1,5 @@
+description: 灵敏度高：影响分 45 的设定偏离也会提示
+sensitivity:
+  impact: {score: 45, types: [lore_deviation]}
+  settings: {lore_deviation: high}
+  expect: lore_deviation

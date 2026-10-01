@@ -3,6 +3,7 @@
 // 用例位于 tests/eval/<suite>/*.yaml，分两类：
 //   - 解析用例（intent / reasonability / action_matching / freeform_action）：
 //     同一输入分别交给离线解析器与 LLM 解析器（经 Recorded Transport 回放录音）评估；
+//   - 0.2.0 确定性用例（merged_output / sensitivity / routing）：合并输出解析与修复、提示灵敏度、按任务路由；
 //   - 叙事用例（narrative_consistency / secret_leakage）：把候选叙事交给 Narrative Guard，
 //     检查是否按预期放行或拦截。
 //
@@ -46,6 +47,10 @@ type Case struct {
 	LLMOutput map[string]any `yaml:"llm_output"`
 	Guard     *GuardCase     `yaml:"guard"`
 	Lookup    *LookupCase    `yaml:"lookup"`
+	// 0.2.0：合并输出 / 提示灵敏度 / 按任务路由（见 v02.go）。
+	Merged      *MergedCase      `yaml:"merged"`
+	Sensitivity *SensitivityCase `yaml:"sensitivity"`
+	Routing     *RoutingCase     `yaml:"routing"`
 }
 
 // LookupCase 是检索用例（retrieval 套件）：正确答案不在默认上下文里，必须用只读工具查到；
@@ -198,6 +203,17 @@ func (r *Runner) Run(ctx context.Context, cases []Case) []Result {
 			out = append(out, r.runLookup(ctx, c)...)
 			continue
 		}
+		switch {
+		case c.Merged != nil:
+			out = append(out, runMerged(c))
+			continue
+		case c.Sensitivity != nil:
+			out = append(out, runSensitivity(c))
+			continue
+		case c.Routing != nil:
+			out = append(out, runRouting(c))
+			continue
+		}
 		in := resolver.Input{Text: c.Input, Pkg: r.Pkg, State: r.state(c)}
 		if c.wants("offline") {
 			res, err := resolver.Offline{}.Resolve(ctx, in)
@@ -300,7 +316,7 @@ func (r *Runner) runGuard(c Case) Result {
 func (r *Runner) Synthesize(ctx context.Context, cases []Case) (int, error) {
 	n := 0
 	for _, c := range cases {
-		if c.Guard != nil || c.Lookup != nil || c.LLMOutput == nil || !c.wants("llm") {
+		if c.Guard != nil || c.Lookup != nil || c.Merged != nil || c.Sensitivity != nil || c.Routing != nil || c.LLMOutput == nil || !c.wants("llm") {
 			continue
 		}
 		content, err := json.Marshal(c.LLMOutput)

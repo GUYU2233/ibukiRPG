@@ -1,0 +1,5 @@
+description: 常见的模型 JSON 错误（尾逗号 / 单引号）可被修复
+merged:
+  raw: "广场上的人比往常多。\n<<<WORLD>>>\n{'v':1,'scene_facts':['钟楼脚下搭起了临时木台',],}"
+  expect_world: true
+  expect_repaired: true

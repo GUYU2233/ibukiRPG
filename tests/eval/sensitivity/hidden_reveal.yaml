@@ -1,0 +1,4 @@
+description: 自由揭示的隐藏真相（无 reveal_when）每条 +15；三条合计 60 → 剧情影响提示（第 19 节决定 1）
+sensitivity:
+  impact: {score: 60, types: [story_impact], hidden_reveals: 3}
+  expect: story_impact

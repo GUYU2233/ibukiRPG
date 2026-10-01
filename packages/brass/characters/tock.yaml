@@ -64,4 +64,9 @@ canon: minor
 knowledge:
   public: [name, appearance, location]
   discoverable: [identity, personality, background, goals, faction]
+  hidden:
+    # 没有 reveal_when：AI 可以自由揭示（第 19 节决定 1），影响较大时会触发剧情影响提示。
+    - id: soot_errands
+      text: 托克替煤烟帮跑腿送货，换钱给妹妹买药。他怕行会知道后取消他的竞技场资格。
+      leak_markers: [替煤烟帮, 跑腿]
 alias_unknown: 缺门牙的拳手

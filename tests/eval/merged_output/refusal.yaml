@@ -1,0 +1,4 @@
+description: 内容拒绝被识别（不当作叙事显示，改用模板叙事 / 提示换模型）
+merged:
+  raw: 抱歉，我无法继续这个故事。
+  expect_refusal: true

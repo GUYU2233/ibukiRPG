@@ -33,6 +33,7 @@ content:
     - world/arena.yaml
     - world/plaza.yaml
     - world/sewer.yaml
+    - world/north_dock.yaml
   characters:
     - characters/player.yaml
     - characters/orin.yaml

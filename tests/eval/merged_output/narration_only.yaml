@@ -1,0 +1,4 @@
+description: 没有 WORLD 段的纯叙事（允许：本回合世界无变化）
+merged:
+  raw: 你在喷泉边坐了一会儿，看着孩子们追逐。
+  narration_contains: [喷泉]

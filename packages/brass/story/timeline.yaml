@@ -72,3 +72,77 @@ events:
         text: 天亮时，人们发现钟楼底座空了一大块——两只铜齿轮不见了。
         effects:
           - effect: {type: flag_set, values: {flag: gears_stolen}}
+  - id: brass:event/dock_strike
+    title: 码头罢工
+    summary: 码头工人抗议煤烟帮压价，在北码头罢工，驳船卸不了货，燃料开始涨价。
+    importance: 2
+    canon: minor
+    window: {start: "D2 06:00", end: "D3 18:00"}
+    location: brass:location/north_dock
+    rumor:
+      - {at: "D1 20:00", where: [brass:location/plaza, brass:location/workshop], text: 码头那边吵起来了，说煤烟帮又压了工钱。}
+    hooks:
+      - {id: mediate, label: 去码头调停, tags: [resolve], minutes: 40, vars: {calm: 2}}
+      - {id: side_workers, label: 帮工人写请愿书, tags: [join], minutes: 30, vars: {calm: 1}}
+    outcomes:
+      - id: settled
+        title: 罢工平息
+        when: 'event.vars.calm >= 2'
+        text: 工人们拿到了一半的欠薪，驳船重新开始卸货。
+      - id: dragged
+        title: 罢工不了了之
+        default: true
+        text: 罢工拖到最后，工人们饿着肚子回去上工，燃料价钱再没降下来。
+        effects:
+          - effect: {type: flag_set, values: {flag: fuel_expensive}}
+  - id: brass:event/council_vote
+    title: 议会投票
+    summary: 钟楼议会投票决定修缮款交给行会还是码头。
+    importance: 4
+    canon: major
+    known: true
+    window: {start: "D4 09:00", end: "D4 12:00"}
+    location: brass:location/plaza
+    rumor:
+      - {at: "D3 12:00", where: [brass:location/plaza], text: 有人看见议会代表进了三号仓，出来时口袋鼓鼓的。}
+    hooks:
+      - {id: speak, label: 在投票前替行会说话, tags: [join], minutes: 30, vars: {guild: 1}}
+      - {id: expose, label: 当众揭穿收钱的代表, tags: [disrupt, resolve], minutes: 20, vars: {guild: 3}}
+    outcomes:
+      - id: guild_wins
+        title: 修缮款交给行会
+        when: 'event.vars.guild >= 2'
+        text: 议会投票结束，修缮款交给了行会，钟楼重新敲响。
+        effects:
+          - effect: {type: flag_set, values: {flag: vote_exposed}}
+      - id: dock_wins
+        title: 修缮款流向码头
+        default: true
+        text: 投票结果出来了——修缮款给了码头。广场上一片嘘声。
+  - id: brass:event/clock_stop
+    title: 钟停之时
+    summary: 煤烟帮约定的暗号——在钟楼停摆的夜里于北码头动手。
+    importance: 5
+    canon: major
+    pivotal: true
+    window: {start: "D4 21:00", end: "D5 01:00"}
+    location: brass:location/north_dock
+    participants: [brass:character/tock]
+    rumor:
+      - {at: "D3 18:00", where: [brass:location/plaza], text: 有人在广场散发传单：一只被齿轮咬住的手，“明晚，钟停之时”。}
+    stages:
+      - {id: oil, at: "D4 21:30", text: 三号仓外的煤油桶被人推倒了，油迹一路淌到木梁下。}
+    hooks:
+      - {id: warn_dock, label: 提醒码头工人离开仓库, tags: [disrupt], minutes: 20, vars: {saved: 1}}
+      - {id: stop_fire, label: 冲进三号仓阻止纵火, tags: [disrupt, resolve], minutes: 15, vars: {saved: 2}}
+    outcomes:
+      - id: prevented
+        title: 纵火被阻止
+        when: 'event.vars.saved >= 2'
+        text: 火在烧到木梁之前就被扑灭了，煤烟帮的人丢下油桶跑了。
+      - id: warehouse_burned
+        title: 三号仓烧毁
+        default: true
+        text: 三号仓烧了一整夜，煤烟帮第二天就以“维持治安”为名接管了码头。
+        effects:
+          - effect: {type: flag_set, values: {flag: dock_burned}}

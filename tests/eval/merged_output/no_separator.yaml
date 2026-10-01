@@ -1,0 +1,6 @@
+description: 模型忘了分隔符，但在末尾附上了 JSON：仍能切开，正文不泄漏 JSON
+merged:
+  raw: '你推开工坊的门，炉火正旺。{"v":1,"scene_facts":["炉火正旺"]}'
+  expect_world: true
+  narration_contains: [炉火正旺]
+  narration_lacks: ['{"v"']

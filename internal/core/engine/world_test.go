@@ -3,6 +3,7 @@ package engine_test
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/GUYU2233/ibukiRPG/internal/combat/freeform"
@@ -209,5 +210,41 @@ func TestTimelineRuns(t *testing.T) {
 	}
 	if r.s.Timeline.Status("brass:event/market") != timeline.Resolved {
 		t.Fatalf("market status %s", r.s.Timeline.Status("brass:event/market"))
+	}
+}
+
+// TestBoilerHoundParts：精英敌人锅炉看门犬的部位（膝关节弱点 / 锅炉未知）进入自由战斗上下文；
+// 瞄准已知弱点的攻击会被解析到该部位并得到修正。
+func TestBoilerHoundParts(t *testing.T) {
+	eng, s0 := brassSetup(t, 11)
+	s0.Player.Location = "brass:location/sewer"
+	s0.RPG.Encounters["brass:encounter/sewer_ambush"] = &state.EncounterRecord{Result: "victory", Wins: 1}
+	r := &runner{t: t, eng: eng, s: s0}
+	mustAccept(t, r, command.Command{Kind: command.KindCombat, Action: "start", Target: "brass:encounter/boiler_hound"})
+	for r.s.RPG.Combat != nil && r.s.RPG.Combat.Current().ID != "player" {
+		mustAccept(t, r, sim.Policy(eng, r.s))
+	}
+	if r.s.RPG.Combat == nil {
+		t.Skip("combat ended before the player acted")
+	}
+	fc := engine.FreeContext(eng.Pkg, r.s, r.s.RPG.Combat.Current())
+	var parts map[string]bool
+	for _, tg := range fc.Targets {
+		if strings.Contains(tg.ID, "boiler_hound") || tg.Name == "锅炉看门犬" {
+			parts = map[string]bool{}
+			for _, p := range tg.Parts {
+				parts[p.ID] = p.Known
+			}
+		}
+	}
+	if parts == nil || len(parts) != 3 {
+		t.Fatalf("hound parts missing: %+v", fc.Targets)
+	}
+	if parts["boiler"] {
+		t.Fatal("boiler should start unknown")
+	}
+	res := r.do(freeCmd(eng, r.s, "滑到它腿下面，用扳手卡进膝关节"))
+	if !res.Accepted || !has(res, event.ActionAdjudicated) {
+		t.Fatalf("knee attack not adjudicated: %+v", res)
 	}
 }

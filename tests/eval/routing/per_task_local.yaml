@@ -1,0 +1,9 @@
+description: 按任务分配：意图解析交给本地 3B 模型（limited 档），叙事仍走云端
+routing:
+  providers:
+    - {id: ds, kind: deepseek, model: deepseek-chat, api_key: k}
+    - {id: phone, kind: llamacpp, base_url: "http://127.0.0.1:8080/v1", model: qwen2.5-3b, size_b: 3}
+  settings: {mode: per_task, unified: {provider: ds}, tasks: {parse_action: {provider: phone}}}
+  task: parse_action
+  expect_provider: phone
+  expect_tier: limited

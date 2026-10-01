@@ -1,0 +1,5 @@
+description: 三类提示全关：任何变化都不打断
+sensitivity:
+  impact: {score: 95, types: [major_death, lore_deviation], death_importance: 5}
+  settings: {major_death: "off", lore_deviation: "off", story_impact: "off"}
+  expect: none

@@ -1,0 +1,5 @@
+description: 灵敏度低时只有重要度 5 的人物死亡才提示；重要度 4 + 影响分 70 仍会触发剧情影响（中）
+sensitivity:
+  impact: {score: 70, types: [major_death], death_importance: 4}
+  settings: {major_death: low}
+  expect: story_impact

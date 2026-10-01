@@ -15,6 +15,21 @@ rules:
     rescued: injured
 
 statuses:
+  - id: brass:status/joint_jam
+    tags: [crippled, slowed]
+    name: 关节卡死
+    icon: settings_alert
+    turns: 2
+    mods: {spd: -4, eva: -10}
+    debuff: true
+    description: 关节被卡住，动作迟缓，闪避大幅下降。
+  - id: brass:status/overheat
+    tags: [overheat]
+    name: 过热
+    icon: local_fire_department
+    turns: 2
+    mods: {atk: 4, def: -4}
+    description: 锅炉烧得通红，攻击更猛，但外壳也更脆。
   - id: brass:status/bleed
     tags: [wound]
     name: 流血
@@ -307,6 +322,27 @@ enemies:
       - {id: shell, name: 锅炉外壳, mult: 60}
     lore: 钢铁外壳厚得离谱——凡人的武器几乎敲不动它。行会的老人说，只有甲胄能和甲胄对话。
 
+  - id: brass:enemy/boiler_hound
+    name: 锅炉看门犬
+    icon: pets
+    tier: elite
+    rarity: rare
+    level: 3
+    stats: {hp: 110, sp: 0, atk: 18, def: 14, spd: 9, acc: 80, eva: 6, crit: 6}
+    ai:
+      - target: lowest_hp
+    xp: 90
+    gold: 12
+    drops: [{item: brass:item/relief_valve, chance: 50}]
+    description: 拾荒者用废锅炉和弹簧拼出来的机械猎犬，鳃缝里一阵阵喷出蒸汽，守着钟楼下水道的入口。
+    size: large
+    importance: 3
+    parts:
+      - {id: head, name: 头部, mult: 100, dc: 1}
+      - {id: knee, name: 膝关节, mult: 150, dc: 2, weak: true, break: 25, status: brass:status/joint_jam, hint: 它左后腿的膝关节每走一步都“咔哒”一声，齿槽露在外面。}
+      - {id: boiler, name: 锅炉, mult: 200, dc: 4, break: 30, status: brass:status/stagger, hint: 背上的锅炉在喷完蒸汽后会有一瞬间冷下来。}
+    lore: 拾荒者管它叫“老烟囱”。它不认人，只认锅炉里的火——火越旺，咬得越狠。
+
 mechs:
   - id: brass:mech/warden
     name: 黄铜守卫
@@ -390,6 +426,19 @@ encounters:
     defeat:
       branch: injured
       text: 你被打晕在积水里。醒来时，小铆钉正用力拍你的脸。
+      move_to: brass:location/plaza
+  - id: brass:encounter/boiler_hound
+    title: 锅炉看门犬
+    label: 闯过锅炉看门犬
+    location: brass:location/sewer
+    intro: 管道深处亮起两点炉火，一只锅炉拼成的机械猎犬弓起了背，鳃缝里喷出一股白汽。
+    enemies: [brass:enemy/boiler_hound]
+    allies: [brass:character/rivet]
+    allow_mech: true
+    available: 'world.combats.sewer_ambush.wins > 0 && world.combats.boiler_hound.wins == 0'
+    defeat:
+      branch: injured
+      text: 看门犬把你逼进了积水里。小铆钉用一罐烟雾弹把你拖了出来。
       move_to: brass:location/plaza
   - id: brass:encounter/golem
     title: 失控蒸汽傀儡

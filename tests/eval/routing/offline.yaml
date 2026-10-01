@@ -1,0 +1,5 @@
+description: 没有任何可用服务商：离线（规则解析 + 模板叙事）
+routing:
+  providers: [{id: ds, kind: deepseek, model: deepseek-chat}]
+  settings: {mode: unified, unified: {provider: ds}}
+  task: narrate_world

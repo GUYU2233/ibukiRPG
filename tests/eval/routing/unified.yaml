@@ -1,0 +1,7 @@
+description: 统一模型：所有任务都走同一个服务商
+routing:
+  providers: [{id: ds, kind: deepseek, model: deepseek-chat, api_key: k}]
+  settings: {mode: unified, unified: {provider: ds}}
+  task: combat_adjudicate
+  expect_provider: ds
+  expect_tier: full

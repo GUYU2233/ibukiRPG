@@ -1,0 +1,9 @@
+description: 截断的 JSON（流式中断）先本地修复，丢弃半截变更
+merged:
+  raw: |
+    蒸汽从看门犬的鳃缝里喷尽。
+    <<<WORLD>>>
+    {"v":1,"changes":[{"op":"patch","target":"brass:location/sewer","path":"fields.dangers","value":"看门犬已被击退","reason":"战斗结束"},{"op":"crea
+  expect_world: true
+  expect_repaired: true
+  expect_changes: 1

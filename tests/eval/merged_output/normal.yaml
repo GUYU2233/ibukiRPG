@@ -1,0 +1,13 @@
+description: 正常的合并输出：叙事正文 + <<<WORLD>>> 世界更新（变更 + 知识解锁）
+merged:
+  raw: |
+    托克犹豫了一下，还是把传单抖开——上面印着一只被齿轮咬住的手。
+    <<<WORLD>>>
+    {"v":1,"changes":[{"op":"patch","target":"brass:character/tock","path":"fields.goals","value":"替煤烟帮送完最后一批货","reason":"托克承认在替煤烟帮跑腿"}],
+     "reveals":[{"entity":"brass:character/tock","fields":["faction"],"channel":"dialogue"}],"impact":{"level":"minor"}}
+    <<<END>>>
+  expect_world: true
+  expect_changes: 1
+  expect_reveals: 1
+  narration_contains: [被齿轮咬住的手]
+  narration_lacks: ["<<<WORLD>>>", '"changes"']

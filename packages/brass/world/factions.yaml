@@ -32,3 +32,35 @@ factions:
         - id: valve_thief
           text: 拾荒者头目拧松了傀儡锅炉的泄压阀，想趁乱拆走钟楼的铜齿轮。
           leak_markers: [拧松, 泄压阀被人动过]
+  - id: brass:faction/council
+    name: 钟楼议会
+    icon: account_balance
+    description: 由镇上的商会、码头和行会各派代表组成的议会，决定钟楼的修缮款和码头的税。
+    goals: [在钟楼停摆期间维持秩序, 投票决定修缮款交给谁]
+    territory: [brass:location/plaza]
+    importance: 4
+    canon: major
+    knowledge:
+      public: [name, description, territory]
+      discoverable: [goals, stance]
+      hidden:
+        - id: bought_votes
+          text: 议会里有两名代表收了煤烟帮的钱，准备在投票时把修缮款转给码头。
+          reveal_when: '"vote_exposed" in world.flags'
+          leak_markers: [收了钱, 买票]
+  - id: brass:faction/soot_gang
+    name: 煤烟帮
+    icon: local_fire_department
+    description: 控制北码头煤炭生意的帮派，门上刷黑手印。表面上做运输，暗地里什么都做。
+    goals: [垄断燃料生意, 趁钟楼停摆从议会手里抢走码头税]
+    members: [brass:character/tock]
+    territory: [brass:location/north_dock]
+    importance: 3
+    canon: major
+    knowledge:
+      public: [name, territory]
+      discoverable: [description, goals, members, leader]
+      hidden:
+        - id: clock_plot
+          text: 煤烟帮计划在“钟停之时”烧掉三号仓，嫁祸给拾荒者，逼议会把码头交给他们“维持治安”。
+          leak_markers: [烧掉三号仓, 嫁祸]

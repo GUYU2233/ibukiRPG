@@ -1,0 +1,5 @@
+description: 设为“只通知”的类型不打断游戏
+sensitivity:
+  impact: {score: 65, types: [lore_deviation]}
+  settings: {lore_deviation: mid/notify, story_impact: "off"}
+  expect: lore_deviation/notify

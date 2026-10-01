@@ -1,0 +1,5 @@
+description: 无法修复的 WORLD 段：解析失败（调用方重试一次后降级为仅叙事），正文照常保留
+merged:
+  raw: "钟楼还是没有响。\n<<<WORLD>>>\n世界没有变化，我就不写 JSON 了。"
+  expect_broken: true
+  narration_contains: [钟楼还是没有响]
