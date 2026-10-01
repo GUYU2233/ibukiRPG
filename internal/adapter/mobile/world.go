@@ -30,6 +30,7 @@ var worldTypes = map[string]bool{
 	"create_checkpoint": true, "restore_checkpoint": true, "rename_checkpoint": true, "delete_checkpoint": true,
 	"export_save": true, "inspect_save": true, "import_save": true,
 	"get_usage": true, "wait": true, "get_world_panel": true, "get_entity": true,
+	"preview_change": true, "apply_preview": true, "run_audit": true, "resolve_audit_suggestion": true,
 }
 
 // legacyInfo 报告数据目录里是否还有 0.1.x 的旧存档。
@@ -153,6 +154,34 @@ func worldRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV
 			return nil, err
 		}
 		return s.RevertChange(ctx, p.ID)
+	case "preview_change":
+		// 玩家明确要求的修改（卡片“让 AI 修改”、新建 NPC 等）：先预览，确认后 apply_preview
+		p, err := decode[struct {
+			Changes []change.Change `json:"changes"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		return s.PreviewChanges(ctx, change.SourceUserRequest, p.Changes)
+	case "apply_preview":
+		p, err := decode[struct {
+			Token string `json:"preview_token"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		return s.ApplyPreview(ctx, p.Token, 0)
+	case "run_audit":
+		return s.RunAudit(ctx)
+	case "resolve_audit_suggestion":
+		p, err := decode[struct {
+			ID     string `json:"id"`
+			Action string `json:"action"`
+		}](req.Payload)
+		if err != nil {
+			return nil, err
+		}
+		return s.ResolveAuditSuggestion(ctx, p.ID, p.Action)
 	case "get_timeline":
 		return s.Timeline(ctx)
 	case "rollback_to":

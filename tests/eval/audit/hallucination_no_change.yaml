@@ -1,0 +1,4 @@
+description: 幻觉优先不改世界，只在下一次叙事注入更正
+audit:
+  raw: '{"findings":[{"kind":"hallucination","turn":46,"text":"叙事称欧琳是议会成员","fix":[],"note":"欧琳是工匠行会长，不是议会成员"}]}'
+  expect_corrections: 1

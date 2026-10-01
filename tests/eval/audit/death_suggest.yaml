@@ -1,0 +1,5 @@
+description: 人物生死的修复不自动应用
+audit:
+  raw: '{"findings":[{"kind":"contradiction","turn":20,"text":"托克在回合 18 已死，回合 20 又出现","fix":[{"op":"retire","target":"brass:character/tock","value":"death","reason":"修正矛盾"}]}]}'
+  kinds: {brass:character/tock: character}
+  expect_suggestions: 1

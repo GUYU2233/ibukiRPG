@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/GUYU2233/ibukiRPG/internal/agent/audit"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/provider"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/router"
 	"github.com/GUYU2233/ibukiRPG/internal/ai/structured"
@@ -43,6 +44,17 @@ type RoutingCase struct {
 	ExpectTier     string           `yaml:"expect_tier"`
 	ExpectChain    int              `yaml:"expect_chain"`
 	ExpectWarning  bool             `yaml:"expect_local_warning"`
+}
+
+// AuditCase 是一致性审查用例（audit 套件）：审查 Agent 的原始输出 → 自动修复 / 建议 / 更正提示的分类。
+type AuditCase struct {
+	Raw string `yaml:"raw"`
+	// Kinds 是实体类型表（实体 ID → character / location / item …），判断“生死”这类机械状态。
+	Kinds             map[string]string `yaml:"kinds"`
+	ExpectAutos       int               `yaml:"expect_autos"`
+	ExpectSuggestions int               `yaml:"expect_suggestions"`
+	ExpectCorrections int               `yaml:"expect_corrections"`
+	ExpectError       bool              `yaml:"expect_error"`
 }
 
 type resultBuilder struct{ Result }
@@ -185,4 +197,31 @@ func viaJSON(v, out any) error {
 		return err
 	}
 	return json.Unmarshal(b, out)
+}
+
+func runAudit(c Case) Result {
+	a := c.Audit
+	rs := newResult(c, "audit")
+	fs, err := audit.Parse(a.Raw)
+	if a.ExpectError {
+		if err == nil {
+			rs.fail("expected parse error")
+		}
+		return rs.Result
+	}
+	if err != nil {
+		rs.fail("parse: %v", err)
+		return rs.Result
+	}
+	p := audit.Classify(fs, func(id string) string { return a.Kinds[id] })
+	if len(p.Autos) != a.ExpectAutos {
+		rs.fail("autos=%d want %d", len(p.Autos), a.ExpectAutos)
+	}
+	if len(p.Suggestions) != a.ExpectSuggestions {
+		rs.fail("suggestions=%d want %d", len(p.Suggestions), a.ExpectSuggestions)
+	}
+	if len(p.Corrections) != a.ExpectCorrections {
+		rs.fail("corrections=%d want %d", len(p.Corrections), a.ExpectCorrections)
+	}
+	return rs.Result
 }

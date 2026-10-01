@@ -1,8 +1,9 @@
 // Package mcp 是 MCP 适配器（架构文档第 48 节）：把只读检索工具（internal/agent/tools）
 // 以 Model Context Protocol 服务器的形式暴露给外部 MCP 客户端（桌面 / CLI，stdio 传输）。
 //
-// 只暴露读取工具，不暴露任何会写状态的操作（提交输入、快捷操作、存读档都不在其中）。
-// 每次调用都会重新以只读方式载入存档，因此一边玩一边查也能看到最新状态。
+// 默认只暴露读取工具。0.2 起可选的世界写入工具（预览 → 确认 / 撤销 / 检查点）只有在
+// `--allow-write` 且范围为 director / author 时才会列出，并与游戏内修改走同一个校验网关与事件日志（第 14.5 节）。
+// 每次调用都会重新载入存档，因此一边玩一边查也能看到最新状态。
 // 移动端不走 MCP，而是通过进程内工具网关（mobile 适配器的 list_tools / call_tool）。
 package mcp
 
@@ -31,6 +32,9 @@ type Server struct {
 	Scope   tools.Scope
 	Name    string
 	Version string
+	// World 提供 0.2 世界层工具（可为空）；AllowWrite 打开写入工具。
+	World      World
+	AllowWrite bool
 
 	mu sync.Mutex // 串行写出
 }
@@ -154,9 +158,7 @@ func (s *Server) dispatch(ctx context.Context, req request) (any, *rpcError) {
 			"protocolVersion": v,
 			"capabilities":    map[string]any{"tools": map[string]any{"listChanged": false}},
 			"serverInfo":      map[string]any{"name": name, "version": s.Version},
-			"instructions": "ibukiRPG 故事包与存档的只读检索工具（范围：" + s.Scope.String() + "）。" +
-				"先用 pack_search 找到实体 ID，再用 pack_get_entity / character_get_card / mech_get_card 查看详情；" +
-				"memory_search 检索记忆与对话摘要；story_get_state 查看当前进度。所有工具都不会修改存档。",
+			"instructions":    s.instructions(),
 		}, nil
 	case "ping":
 		return map[string]any{}, nil
@@ -164,6 +166,12 @@ func (s *Server) dispatch(ctx context.Context, req request) (any, *rpcError) {
 		return nil, nil
 	case "tools/list":
 		var list []map[string]any
+		for _, t := range s.worldToolsVisible() {
+			list = append(list, map[string]any{
+				"name": t.name, "title": t.title, "description": t.desc, "inputSchema": t.schema,
+				"annotations": map[string]any{"readOnlyHint": !t.write, "destructiveHint": t.write, "idempotentHint": !t.write, "openWorldHint": false},
+			})
+		}
 		for _, t := range tools.All() {
 			if !t.Allowed(s.Scope) {
 				continue
@@ -184,6 +192,14 @@ func (s *Server) dispatch(ctx context.Context, req request) (any, *rpcError) {
 		}
 		if err := json.Unmarshal(req.Params, &p); err != nil || p.Name == "" {
 			return nil, &rpcError{codeInvalidParams, "tools/call 需要 name"}
+		}
+		if wt, ok := s.findWorldTool(p.Name); ok {
+			out, err := wt.call(ctx, s.World, p.Arguments)
+			if err != nil {
+				return toolResult(errJSON(err.Error()), true), nil
+			}
+			b, _ := json.Marshal(out)
+			return toolResult(string(b), false), nil
 		}
 		if _, ok := tools.Find(p.Name); !ok {
 			return nil, &rpcError{codeInvalidParams, "未知工具：" + p.Name}
@@ -220,4 +236,17 @@ func toolResult(text string, isErr bool) map[string]any {
 func errJSON(msg string) string {
 	b, _ := json.Marshal(map[string]string{"error": msg})
 	return string(b)
+}
+
+func (s *Server) instructions() string {
+	t := "ibukiRPG 故事包与存档的检索工具（范围：" + s.Scope.String() + "）。" +
+		"先用 pack_search 找到实体 ID，再用 pack_get_entity / character_get_card / mech_get_card 查看详情；" +
+		"memory_search 检索记忆与对话摘要；story_get_state 查看当前进度。"
+	if s.World != nil {
+		t += "world_change_log / timeline_get / knowledge_get 查看世界变更、时间线与玩家知识。"
+	}
+	if s.writable() {
+		return t + "写入已开启：先 world_preview_change 预览，再用返回的 preview_token 调 world_apply_change 提交；所有写入都记录为“外部工具”来源，可撤销。"
+	}
+	return t + "所有工具都不会修改存档。"
 }

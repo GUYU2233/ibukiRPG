@@ -54,6 +54,20 @@ func TestWorldAPI(t *testing.T) {
 	if r = call(t, req("get_tasks", nil)); r["ok"] != true || len(r["data"].(map[string]any)["tasks"].([]any)) < 5 {
 		t.Fatalf("get_tasks: %v", r)
 	}
+	// 玩家明确要求的修改：预览 → 确认
+	chg := []map[string]any{{"op": "patch", "target": "brass:location/workshop", "path": "fields.description", "value": "墙上新刷了一层绿漆。", "reason": "玩家要求"}}
+	r = call(t, req("preview_change", map[string]any{"changes": chg}))
+	tok, _ := r["data"].(map[string]any)["preview_token"].(string)
+	if r["ok"] != true || tok == "" {
+		t.Fatalf("preview_change: %v", r)
+	}
+	if r = call(t, req("apply_preview", map[string]any{"preview_token": tok})); r["ok"] != true {
+		t.Fatalf("apply_preview: %v", r)
+	}
+	// 离线时审查返回清楚的错误
+	if r = call(t, req("run_audit", nil)); r["ok"] == true {
+		t.Fatalf("run_audit offline should fail: %v", r)
+	}
 	for _, typ := range []string{"get_prompt_settings", "get_pending_decision", "search_world_changes", "get_timeline", "get_usage"} {
 		if r := call(t, req(typ, nil)); r["ok"] != true {
 			t.Errorf("%s: %v", typ, r)

@@ -48,16 +48,17 @@ func (s Scope) String() string {
 	return string(s.Kind)
 }
 
-// ParseScope 解析 "npc:<id>" / "player"（或 "narrator"）/ "director"。
+// ParseScope 解析 "npc:<id>" / "player"（或 "narrator"）/ "director"（"author" 是 director 的别名：作者调试用，读权限相同，
+// MCP `--allow-write` 时可写）。
 func ParseScope(v string) (Scope, error) {
 	v = strings.TrimSpace(v)
 	switch {
 	case v == "" || v == "player" || v == "narrator":
 		return Player(), nil
-	case v == "director" || v == "planner":
+	case v == "director" || v == "planner" || v == "author":
 		return Director(), nil
 	case strings.HasPrefix(v, "npc:") && len(v) > 4:
 		return NPC(strings.TrimPrefix(v, "npc:")), nil
 	}
-	return Scope{}, fmt.Errorf("未知的范围 %q（可用：player / director / npc:<角色ID>）", v)
+	return Scope{}, fmt.Errorf("未知的范围 %q（可用：player / director / author / npc:<角色ID>）", v)
 }

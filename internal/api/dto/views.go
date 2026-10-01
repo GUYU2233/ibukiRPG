@@ -54,6 +54,8 @@ type EntryV1 struct {
 	Adjudication *AdjudicationV1 `json:"adjudication,omitempty"`
 	// Usage 是本回合 token 用量（kind=usage）。
 	Usage *UsageV1 `json:"usage,omitempty"`
+	// Audit 是一致性审查结果（kind=audit）：自动修复 + 待确认的建议。
+	Audit *AuditV1 `json:"audit,omitempty"`
 }
 
 // CombatLogV1 是一条战斗记录。

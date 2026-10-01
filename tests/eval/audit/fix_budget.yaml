@@ -1,0 +1,4 @@
+description: 一次审查最多处理 5 项修复
+audit:
+  raw: '{"findings":[{"kind":"omission","turn":1,"text":"多处描述没更新","fix":[{"op":"patch","target":"a:location/a","path":"fields.description","value":"1","reason":"r"},{"op":"patch","target":"a:location/b","path":"fields.description","value":"2","reason":"r"},{"op":"patch","target":"a:location/c","path":"fields.description","value":"3","reason":"r"},{"op":"patch","target":"a:location/d","path":"fields.description","value":"4","reason":"r"},{"op":"patch","target":"a:location/e","path":"fields.description","value":"5","reason":"r"},{"op":"patch","target":"a:location/f","path":"fields.description","value":"6","reason":"r"}]}]}'
+  expect_autos: 5

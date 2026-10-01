@@ -51,6 +51,7 @@ type Case struct {
 	Merged      *MergedCase      `yaml:"merged"`
 	Sensitivity *SensitivityCase `yaml:"sensitivity"`
 	Routing     *RoutingCase     `yaml:"routing"`
+	Audit       *AuditCase       `yaml:"audit"`
 }
 
 // LookupCase 是检索用例（retrieval 套件）：正确答案不在默认上下文里，必须用只读工具查到；
@@ -212,6 +213,9 @@ func (r *Runner) Run(ctx context.Context, cases []Case) []Result {
 			continue
 		case c.Routing != nil:
 			out = append(out, runRouting(c))
+			continue
+		case c.Audit != nil:
+			out = append(out, runAudit(c))
 			continue
 		}
 		in := resolver.Input{Text: c.Input, Pkg: r.Pkg, State: r.state(c)}

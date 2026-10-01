@@ -1,0 +1,5 @@
+description: 设定类遗漏（地点描述没跟上叙事）自动补记
+audit:
+  raw: '{"findings":[{"kind":"omission","turn":12,"text":"仓库失火，描述没变","fix":[{"op":"patch","target":"brass:location/north_dock","path":"fields.description","value":"三号仓只剩焦黑的木桩。","reason":"补记：仓库失火"}]}]}'
+  kinds: {brass:location/north_dock: location}
+  expect_autos: 1

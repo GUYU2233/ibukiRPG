@@ -244,3 +244,50 @@ type WorldPanelV1 struct {
 
 // WorldTabs 是世界面板的 8 个页签（顺序即 UI 顺序）。
 var WorldTabs = []string{"characters", "relations", "codex", "equipment", "map", "factions", "timeline", "log"}
+
+// ChangePreviewV1 是一组变更提案的预览（第 14.3 节）：字段级差异、影响分、被拒绝项与确认令牌。
+type ChangePreviewV1 struct {
+	Token   string          `json:"preview_token,omitempty"`
+	Changes []WorldChangeV1 `json:"changes,omitempty"`
+	// HiddenCount 是会被修改、但玩家还不知道的字段数（不剧透，只计数）。
+	HiddenCount int        `json:"hidden_count,omitempty"`
+	Impact      int        `json:"impact"`
+	Types       []string   `json:"types,omitempty"`
+	Rejected    []RejectV1 `json:"rejected,omitempty"`
+}
+
+// RejectV1 是一项被校验器拒绝的提案。
+type RejectV1 struct {
+	Target string `json:"target,omitempty"`
+	Path   string `json:"path,omitempty"`
+	Op     string `json:"op,omitempty"`
+	Reason string `json:"reason"`
+}
+
+// AuditV1 是一次一致性审查的结果（叙事流 kind=audit 条目）。
+type AuditV1 struct {
+	ID       string           `json:"id"`
+	Findings []AuditFindingV1 `json:"findings,omitempty"`
+	// Fixed 是自动应用的修复（设定 / 文字类，可在日志页单项撤销）。
+	Fixed *WorldLogV1 `json:"fixed,omitempty"`
+	// Suggestions 是涉及机械状态（物品 / 金钱 / 经验 / 生死）的修复建议，需要玩家确认（第 19 节决定 4）。
+	Suggestions []AuditSuggestionV1 `json:"suggestions,omitempty"`
+}
+
+// AuditFindingV1 是一条审查发现。
+type AuditFindingV1 struct {
+	Kind string `json:"kind"` // omission / hallucination / contradiction
+	Turn int    `json:"turn,omitempty"`
+	Text string `json:"text"`
+	Note string `json:"note,omitempty"`
+}
+
+// AuditSuggestionV1 是一条待确认的修复建议。
+type AuditSuggestionV1 struct {
+	ID      string `json:"id"`
+	Summary string `json:"summary"`
+	Reason  string `json:"reason,omitempty"`
+	// Status：pending / applied / ignored。
+	Status  string          `json:"status"`
+	Changes json.RawMessage `json:"changes,omitempty"`
+}

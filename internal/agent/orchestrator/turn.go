@@ -67,6 +67,12 @@ func (s *Session) Quick(ctx context.Context, cmdID string, qa dto.QuickActionV1)
 // turn 执行一个完整回合。任何失败都不会产生半个回合：事件、命令记录与对话记录在同一事务提交；
 // 叙事在提交之后生成，失败时降级为模板，永不重新执行命令或重新掷骰。
 func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.Command) (dto.TurnV1, error) {
+	var afterTurn func() // 在释放回合锁之后运行（一致性审查需要自己拿回合锁）
+	defer func() {
+		if afterTurn != nil {
+			afterTurn()
+		}
+	}()
 	if !s.turnMu.TryLock() {
 		return dto.TurnV1{}, ErrBusy
 	}
@@ -241,6 +247,8 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 	s.dailyCheckpoint(context.WithoutCancel(ctx), slot, branch, st, final)
 	notices := g.q.Notices(final, result.Events)
 	s.scheduleMemory(slot, g, s.stateOr(final))
+	auditState := s.stateOr(final)
+	afterTurn = func() { s.maybeAudit(slot, g, auditState) }
 	var usage *dto.UsageV1
 	if s.router.Settings().ShowUsage && online {
 		if u, uerr := s.Usage(ctx, result.Turn); uerr == nil && u.Calls > 0 {

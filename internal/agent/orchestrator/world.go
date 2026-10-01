@@ -79,6 +79,15 @@ func (s *Session) worldSections(g *game, st *state.State, input, tier string) st
 		}
 		sb.WriteString("隐藏真相（hidden:*）属于重大揭示：只有剧情自然走到时才揭示。\n")
 	}
+	s.mu.RLock()
+	slot := s.slot
+	s.mu.RUnlock()
+	if cs := s.takeCorrections(slot); len(cs) > 0 {
+		sb.WriteString("[CORRECTION]（一致性检查发现之前的叙事与设定不符；在本回合叙事中自然地更正，不要直接点破）\n")
+		for _, c := range cs {
+			sb.WriteString("- " + c + "\n")
+		}
+	}
 	var ents []string
 	for _, id := range present {
 		ents = append(ents, id+"="+g.pkg.EntityName(id))

@@ -18,14 +18,16 @@ import (
 	"github.com/GUYU2233/ibukiRPG/packages"
 )
 
-// runMCP 实现 `ibukirpg mcp`：以 stdio 运行只读 MCP 服务器（第 48 节）。
+// runMCP 实现 `ibukirpg mcp`：以 stdio 运行 MCP 服务器（第 48 节）。默认只读；
+// `--allow-write` 且范围为 director / author 时开放世界写入工具（V0.3 第 14.5 节）。
 // stdout 只输出协议消息，日志一律写 stderr。
 func runMCP(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	save := fs.String("save", "", "存档数据库文件（或存档目录，默认 "+filepath.Join(defaultDataDir(), adapter.DBFileName)+"）")
 	slot := fs.String("slot", "", "存档 ID（留空为最近更新的存档）")
-	scope := fs.String("scope", "player", "检索范围：player（叙述者 / 玩家已知）/ director（完整设定）/ npc:<角色ID>")
+	scope := fs.String("scope", "player", "检索范围：player（叙述者 / 玩家已知）/ director（完整设定）/ author（同 director，可写）/ npc:<角色ID>")
+	allowWrite := fs.Bool("allow-write", false, "开放世界写入工具（预览 / 提交 / 撤销 / 检查点）；仅 director / author 范围有效")
 	packs := fs.String("packs", "", "导入故事包目录（默认为存档目录下的 packs/）")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -49,7 +51,7 @@ func runMCP(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	s, err := orchestrator.Open(ctx, orchestrator.Options{DBPath: path, Packs: packages.Builtin(), PackDir: packDir})
+	s, err := orchestrator.Open(ctx, orchestrator.Options{DBPath: path, Packs: packages.Builtin(), PackDir: packDir, NoSlotLock: true})
 	if err != nil {
 		return err
 	}
@@ -62,8 +64,17 @@ func runMCP(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(stderr, "ibukirpg mcp: save=%s slot=%s scope=%s（只读）\n", path, id, sc)
+	mode := "只读"
+	if *allowWrite {
+		if sc.Kind == tools.ScopeDirector {
+			mode = "可写"
+		} else {
+			fmt.Fprintf(stderr, "ibukirpg mcp: --allow-write 只对 director / author 范围有效，%s 范围保持只读\n", sc)
+		}
+	}
+	fmt.Fprintf(stderr, "ibukirpg mcp: save=%s slot=%s scope=%s（%s）\n", path, id, sc, mode)
 	srv := &mcp.Server{Scope: sc, Name: "ibukirpg", Version: buildinfo.Version,
+		World: &mcpWorld{s: s, slot: id}, AllowWrite: *allowWrite,
 		Env: func(ctx context.Context) (*tools.Env, error) {
 			env, _, err := s.SlotToolEnv(ctx, *slot)
 			return env, err

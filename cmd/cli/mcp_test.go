@@ -2,11 +2,17 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/GUYU2233/ibukiRPG/internal/adapter/mcp"
 	adapter "github.com/GUYU2233/ibukiRPG/internal/adapter/mobile"
+	"github.com/GUYU2233/ibukiRPG/internal/agent/orchestrator"
+	"github.com/GUYU2233/ibukiRPG/internal/agent/tools"
+	"github.com/GUYU2233/ibukiRPG/packages"
 )
 
 // `ibukirpg mcp`：对真实存档跑一轮 stdio MCP 会话（initialize → tools/list → tools/call），
@@ -77,5 +83,87 @@ func TestMCPStdio(t *testing.T) {
 	}
 	if resp[5]["error"] == nil || resp[6]["error"] == nil || resp[7]["error"] == nil {
 		t.Fatalf("write methods / unknown tools / garbage must error: %v | %v | %v", resp[5], resp[6], resp[7])
+	}
+}
+
+// MCP 写入门控：只有 --allow-write + director/author 范围才列出写工具；预览 → 提交走同一网关；
+// 游戏正在使用存档时写入被拒绝。
+func TestMCPWriteGate(t *testing.T) {
+	dir := t.TempDir()
+	t.Cleanup(func() { _ = adapter.Close() })
+	var out bytes.Buffer
+	if err := run(strings.NewReader("环顾四周\n/quit\n"), &out, options{dataDir: dir, provider: "offline", newGame: true, player: "阿澈", seed: 7}); err != nil {
+		t.Fatal(err)
+	}
+	_ = adapter.Close()
+	list := `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`
+	names := func(args ...string) string {
+		var stdout, stderr bytes.Buffer
+		if err := runMCP(append([]string{"--save", dir}, args...), strings.NewReader(list+"\n"), &stdout, &stderr); err != nil {
+			t.Fatalf("%v\n%s", err, stderr.String())
+		}
+		return stdout.String()
+	}
+	if s := names("--scope", "player", "--allow-write"); strings.Contains(s, "world_apply_change") || !strings.Contains(s, "world_change_log") {
+		t.Fatalf("player scope must stay read-only: %s", s)
+	}
+	if s := names("--scope", "director"); strings.Contains(s, "world_apply_change") {
+		t.Fatalf("write tools without --allow-write: %s", s)
+	}
+	if s := names("--scope", "author", "--allow-write"); !strings.Contains(s, "world_apply_change") || !strings.Contains(s, "world_preview_change") {
+		t.Fatalf("author + --allow-write should list write tools: %s", s)
+	}
+
+	ctx := context.Background()
+	db := filepath.Join(dir, adapter.DBFileName)
+	s, err := orchestrator.Open(ctx, orchestrator.Options{DBPath: db, Packs: packages.Builtin(), NoSlotLock: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = s.Close() }()
+	srv := &mcp.Server{Scope: tools.Director(), World: &mcpWorld{s: s}, AllowWrite: true}
+	call := func(name, args string) (string, bool) {
+		r, _ := srv.Handle(ctx, []byte(`{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"`+name+`","arguments":`+args+`}}`))
+		b, _ := json.Marshal(r)
+		var m struct {
+			Result struct {
+				Content []struct {
+					Text string `json:"text"`
+				} `json:"content"`
+				IsError bool `json:"isError"`
+			} `json:"result"`
+		}
+		_ = json.Unmarshal(b, &m)
+		return m.Result.Content[0].Text, m.Result.IsError
+	}
+	text, isErr := call("world_preview_change", `{"changes":[{"op":"patch","target":"demo:location/rusty_tankard","path":"fields.description","value":"酒馆墙上多了一幅画。","reason":"作者调试"}]}`)
+	if isErr {
+		t.Fatalf("preview: %s", text)
+	}
+	var pv struct {
+		Token string `json:"preview_token"`
+	}
+	_ = json.Unmarshal([]byte(text), &pv)
+	if pv.Token == "" {
+		t.Fatalf("no token: %s", text)
+	}
+	// 游戏会话打开同一存档 → 写入被拒绝
+	game, err := orchestrator.Open(ctx, orchestrator.Options{DBPath: db, Packs: packages.Builtin()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := game.LoadGame(ctx, s.SlotID()); err != nil {
+		t.Fatal(err)
+	}
+	if text, isErr := call("world_apply_change", `{"preview_token":"`+pv.Token+`"}`); !isErr || !strings.Contains(text, "正在被游戏使用") {
+		t.Fatalf("apply while game running: %s", text)
+	}
+	_ = game.Close()
+	if text, isErr := call("world_apply_change", `{"preview_token":"`+pv.Token+`"}`); isErr {
+		t.Fatalf("apply: %s", text)
+	}
+	text, _ = call("world_change_log", `{}`)
+	if !strings.Contains(text, "外部工具") {
+		t.Fatalf("change log should mark external tool source: %s", text)
 	}
 }

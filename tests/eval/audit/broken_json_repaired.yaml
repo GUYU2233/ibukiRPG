@@ -1,0 +1,4 @@
+description: 截断的审查 JSON 本地修复后仍能解析
+audit:
+  raw: '{"findings":[{"kind":"hallucination","turn":3,"text":"叙事把钟楼说成了教堂","fix":[],"note":"钟楼不是教堂"}'
+  expect_corrections: 1

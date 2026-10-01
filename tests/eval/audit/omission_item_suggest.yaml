@@ -1,0 +1,4 @@
+description: 物品 / 金钱遗漏属于机械状态，只给建议，等玩家确认（第 19 节决定 4）
+audit:
+  raw: '审查结果如下：{"findings":[{"kind":"omission","turn":44,"text":"托克把传单交给了你，背包里没有","fix":[{"op":"patch","target":"player","path":"inventory.brass.gen:item/flyer","value":1,"reason":"补记"},{"op":"patch","target":"player","path":"gold","value":5,"reason":"补记：酬劳"}]}]}'
+  expect_suggestions: 2

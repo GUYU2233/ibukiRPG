@@ -58,6 +58,10 @@ type Options struct {
 	MemorySync bool
 	// MemoryLLM 让记忆 Agent 在联网时用大模型写摘要（失败回退离线摘要）。默认离线、确定性。
 	MemoryLLM bool
+	// NoSlotLock：不持有存档占用锁（MCP 服务器等外部工具）。
+	NoSlotLock bool
+	// AuditSync 让一致性审查同步运行（测试用）。
+	AuditSync bool
 }
 
 // Session 是一局游戏的编排器（Critical Path，第 38 节）：
@@ -89,6 +93,21 @@ type Session struct {
 	// memJobs 是待整理的回合队列：后台 goroutine 无论以什么顺序被调度，都按回合顺序（FIFO）取任务，
 	// 结果与同步执行完全一致（摘要分块不受调度时机影响）。
 	memJobs []memJob
+
+	// previews 是待确认的变更预览（preview_token → 提案）。
+	prevMu   sync.Mutex
+	previews map[string]preview
+	// 存档占用锁（slot_lock）
+	lockMu    sync.Mutex
+	lockStop  chan struct{}
+	lockFile  string
+	ownerOnce sync.Once
+	owner     string
+	// 一致性审查
+	auditWG     sync.WaitGroup
+	auditMu     sync.Mutex
+	corrections map[string][]string
+	lastAudit   map[string]int
 }
 
 type memJob struct {
@@ -150,6 +169,8 @@ func (s *Session) Registry() *registry.Registry { return s.reg }
 
 // Close 关闭数据库。
 func (s *Session) Close() error {
+	s.releaseSlot()
+	s.auditWG.Wait()
 	s.memWait()
 	return s.store.Close()
 }
@@ -386,6 +407,7 @@ func (s *Session) NewGameWith(ctx context.Context, packID, saveName string, seed
 	s.mu.Lock()
 	s.slot, s.st, s.g = slot.ID, st, g
 	s.mu.Unlock()
+	s.holdSlot(slot.ID)
 	return slot.ID, nil
 }
 
@@ -408,6 +430,7 @@ func (s *Session) LoadGame(ctx context.Context, slotID string) error {
 	s.mu.Lock()
 	s.slot, s.st, s.g = slotID, st, g
 	s.mu.Unlock()
+	s.holdSlot(slotID)
 	return s.repairNarrations(ctx, slotID, g)
 }
 
@@ -670,6 +693,7 @@ type entryMeta struct {
 	Adj       *dto.AdjudicationV1 `json:"adj,omitempty"`
 	Usage     *dto.UsageV1        `json:"usage,omitempty"`
 	AISugg    []string            `json:"ai_sugg,omitempty"`
+	Audit     *dto.AuditV1        `json:"audit,omitempty"`
 }
 
 func toEntry(e eventstore.Entry) dto.EntryV1 {
@@ -678,7 +702,7 @@ func toEntry(e eventstore.Entry) dto.EntryV1 {
 		var m entryMeta
 		if json.Unmarshal(e.Meta, &m) == nil {
 			v.Check, v.Chips, v.Options, v.Corrected, v.Source, v.Combat = m.Check, m.Chips, m.Options, m.Corrected, m.Source, m.Combat
-			v.World, v.Adjudication, v.Usage = m.World, m.Adj, m.Usage
+			v.World, v.Adjudication, v.Usage, v.Audit = m.World, m.Adj, m.Usage, m.Audit
 		}
 	}
 	return v
@@ -690,6 +714,7 @@ func toEntries(es []eventstore.Entry) []dto.EntryV1 {
 	for _, e := range es {
 		out = append(out, toEntry(e))
 	}
+	markAudit(out)
 	return groupByCommand(out)
 }
 
@@ -711,8 +736,8 @@ func groupByCommand(in []dto.EntryV1) []dto.EntryV1 {
 
 func fromEntry(v dto.EntryV1) eventstore.Entry {
 	e := eventstore.Entry{CommandID: v.CommandID, Turn: v.Turn, Kind: v.Kind, Text: v.Text}
-	m := entryMeta{Check: v.Check, Chips: v.Chips, Options: v.Options, Corrected: v.Corrected, Source: v.Source, Combat: v.Combat, World: v.World, Adj: v.Adjudication, Usage: v.Usage}
-	if m.Check != nil || len(m.Chips) > 0 || len(m.Options) > 0 || m.Corrected || m.Source != "" || m.Combat != nil || m.World != nil || m.Adj != nil || m.Usage != nil {
+	m := entryMeta{Check: v.Check, Chips: v.Chips, Options: v.Options, Corrected: v.Corrected, Source: v.Source, Combat: v.Combat, World: v.World, Adj: v.Adjudication, Usage: v.Usage, Audit: v.Audit}
+	if m.Check != nil || len(m.Chips) > 0 || len(m.Options) > 0 || m.Corrected || m.Source != "" || m.Combat != nil || m.World != nil || m.Adj != nil || m.Usage != nil || m.Audit != nil {
 		e.Meta, _ = json.Marshal(m)
 	}
 	return e
