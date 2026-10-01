@@ -1,0 +1,34 @@
+<!--INC-->
+<div class="appbar">
+  <div class="ib"><span class="i">arrow_back</span></div>
+  <div class="ttl"><b>生成设置</b></div>
+  <div class="ib" style="background:var(--secondary-c);color:var(--on-secondary-c)"><span class="i f">tips_and_updates</span></div>
+</div>
+<div style="padding:4px 16px">
+  <div class="seg" style="height:40px;border-radius:20px;font-size:14px"><span style="flex:1;justify-content:center">统一模型</span><span class="on" style="flex:1;justify-content:center"><span class="i s">check</span>按任务分配</span></div>
+  <div class="h">每个任务使用的模型</div>
+</div>
+<div style="padding:0 16px;display:flex;flex-direction:column;gap:2px;font-size:14px">
+  <div class="row" style="height:56px"><span class="i">auto_stories</span><div style="flex:1"><div>叙事 + 世界更新 <span class="uchip" style="height:18px;font-size:10px">合并输出</span></div><div style="font-size:12px;color:var(--on-sv)">DeepSeek · deepseek-chat</div></div><span class="i" style="color:var(--outline)">chevron_right</span></div>
+  <div class="row" style="height:52px"><span class="i">psychology_alt</span><div style="flex:1"><div>意图解析</div><div style="font-size:12px;color:var(--on-sv)"><span class="i xs">smartphone</span> 本地 · Qwen2.5-3B Q4_K_M</div></div><span class="i" style="color:var(--outline)">chevron_right</span></div>
+  <div class="row" style="height:52px"><span class="i">swords</span><div style="flex:1"><div>战斗裁定</div><div style="font-size:12px;color:var(--on-sv)">通义千问 · qwen-plus</div></div><span class="i" style="color:var(--outline)">chevron_right</span></div>
+  <div class="row" style="height:52px"><span class="i">compress</span><div style="flex:1"><div>检索 / 摘要 / 记忆压缩</div><div style="font-size:12px;color:var(--on-sv)"><span class="i xs">smartphone</span> 本地 · Qwen2.5-1.5B Q4_K_M</div></div><span class="i" style="color:var(--outline)">chevron_right</span></div>
+  <div class="row" style="height:52px"><span class="i">fact_check</span><div style="flex:1"><div>一致性审查 <span style="font-size:12px;color:var(--on-sv)">· 每 15 回合</span></div><div style="font-size:12px;color:var(--on-sv)">DeepSeek · deepseek-reasoner</div></div><span class="i" style="color:var(--outline)">chevron_right</span></div>
+</div>
+<div class="scrim" style="top:0"></div>
+<div class="sheet" style="top:430px">
+  <div class="handle"></div>
+  <div style="padding:2px 20px">
+    <div class="row"><span class="i f" style="color:var(--primary)">tips_and_updates</span><b style="font-size:17px">哪些任务适合本地模型</b></div>
+    <div style="font-size:12.5px;color:var(--on-sv);margin:4px 0 8px">本地 1.5B–3B 模型速度快、免费、离线，但长 JSON 与复杂推理不稳定。</div>
+    <div class="h" style="color:var(--ok)"><span class="i s f">check_circle</span> 适合</div>
+    <div style="font-size:13.5px;line-height:1.8">检索关键词 · 摘要与记忆压缩 · 简单意图解析 · 传闻 / 环境描写</div>
+    <div class="h" style="color:var(--warn)"><span class="i s f">error</span> 可以，但会变保守</div>
+    <div style="font-size:13.5px;line-height:1.8">战斗裁定（荒谬动作更容易被降级）· 世界模拟（只做小改动）</div>
+    <div class="h" style="color:var(--error)"><span class="i s f">cancel</span> 不推荐</div>
+    <div style="font-size:13.5px;line-height:1.8">叙事 + 世界更新 · 一致性审查 · 角色审查 · 卡片生成</div>
+    <div class="card" style="margin-top:10px;font-size:12.5px;color:var(--on-sv)"><span class="i s">info</span> 本地模型也能修改世界，但受限：每回合最多 3 项、只能改动次要设定，不能新建或删除重要人物 / 势力。</div>
+    <div class="row" style="margin-top:14px"><span class="btn txt">在 API 设置中导入本地模型</span><span class="sp"></span><span class="btn fill">知道了</span></div>
+  </div>
+</div>
+</body></html>

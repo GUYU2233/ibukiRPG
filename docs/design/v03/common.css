@@ -1,0 +1,68 @@
+/* ibukiRPG v0.3 设计稿公共样式：Material 3 琥珀配色（与 android/ui/theme/Theme.kt 的回退配色一致）。仅用于设计稿，不随 App 发布。 */
+:root{
+  --primary:#8C4A1C; --on-primary:#fff; --primary-c:#FFDBC8; --on-primary-c:#6E3406;
+  --secondary:#765848; --secondary-c:#FFDBC8; --on-secondary-c:#5C4132;
+  --tertiary:#636032; --tertiary-c:#E9E5AB; --on-tertiary-c:#4B481D;
+  --error:#BA1A1A; --error-c:#FFDAD6; --on-error-c:#93000A;
+  --bg:#FFF8F5; --on-bg:#221A15; --surface:#FFF8F5; --on-surface:#221A15;
+  --sv:#F4DED4; --on-sv:#52443C; --outline:#85746B; --outline-v:#D7C3B8;
+  --c-lowest:#fff; --c-low:#FFF1EB; --c:#FCEAE3; --c-high:#F6E5DD; --c-highest:#F0DFD7;
+  --inverse:#382E29; --inverse-on:#FFEDE5;
+  --ok:#2E6B30; --ok-c:#C8F0C0; --warn:#7A5900; --warn-c:#FFDF9E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:412px;height:915px;overflow:hidden}
+body{font-family:'Noto Sans CJK SC','Noto Sans SC',sans-serif;background:var(--bg);color:var(--on-surface);font-size:14px;line-height:1.5;position:relative}
+.i{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;font-size:22px;line-height:1;display:inline-block;vertical-align:middle;font-variation-settings:'FILL' 0,'wght' 400}
+.i.f{font-variation-settings:'FILL' 1,'wght' 400}
+.i.s{font-size:16px}.i.xs{font-size:14px}
+.statusbar{height:24px;padding:0 16px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--on-sv)}
+.appbar{height:56px;display:flex;align-items:center;padding:0 4px 0 4px;gap:4px}
+.appbar .ib{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;color:var(--on-sv)}
+.appbar .ttl{flex:1;min-width:0}
+.appbar .ttl b{font-size:18px;font-weight:600;display:block;line-height:1.25}
+.appbar .ttl small{font-size:12px;color:var(--on-sv)}
+.badge{position:relative}.badge::after{content:'';position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:4px;background:var(--error)}
+.strip{display:flex;gap:5px;padding:4px 10px 8px;overflow:hidden;white-space:nowrap;border-bottom:1px solid var(--outline-v)}
+.pill{display:inline-flex;align-items:center;gap:3px;height:28px;padding:0 8px;border-radius:8px;background:var(--c-high);font-size:12px;color:var(--on-surface);flex:none}
+.pill .bar{width:34px;height:4px;border-radius:2px;background:var(--outline-v);overflow:hidden}
+.pill .bar i{display:block;height:100%;background:var(--primary)}
+.pill.err{background:var(--error-c);color:var(--on-error-c)}
+.pill.ter{background:var(--tertiary-c);color:var(--on-tertiary-c)}
+.chip{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--outline-v);font-size:13px;color:var(--on-sv);background:var(--surface);flex:none;white-space:nowrap}
+.chip.ai{border-color:var(--primary);color:var(--primary)}
+.chip.sel{background:var(--secondary-c);border-color:transparent;color:var(--on-secondary-c)}
+.feed{padding:8px 16px;display:flex;flex-direction:column;gap:10px}
+.me{align-self:flex-end;max-width:78%;background:var(--primary-c);color:var(--on-primary-c);padding:8px 14px;border-radius:18px 18px 4px 18px;font-size:14px}
+.nar{font-size:15px;line-height:1.75;color:var(--on-surface)}
+.meta{font-size:11px;color:var(--outline);display:flex;gap:10px;align-items:center}
+.unlock{display:flex;flex-wrap:wrap;gap:6px}
+.uchip{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 10px;border-radius:13px;font-size:12px;background:var(--tertiary-c);color:var(--on-tertiary-c)}
+.wchip{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 10px;border-radius:13px;font-size:12px;background:var(--c-highest);color:var(--on-sv)}
+.card{background:var(--c-low);border-radius:12px;padding:10px 12px;border:1px solid var(--outline-v)}
+.inputzone{position:absolute;left:0;right:0;bottom:0;background:var(--c);padding:8px 0 10px;border-top:1px solid var(--outline-v)}
+.sugg{display:flex;gap:8px;padding:0 12px 8px;overflow:hidden}
+.inrow{display:flex;align-items:center;gap:8px;padding:0 12px}
+.field{flex:1;height:48px;border-radius:24px;background:var(--c-lowest);border:1px solid var(--outline);display:flex;align-items:center;padding:0 8px 0 6px;gap:6px;color:var(--outline);font-size:15px}
+.seg{display:flex;border:1px solid var(--outline);border-radius:16px;overflow:hidden;height:30px;font-size:12px}
+.seg span{padding:0 10px;display:flex;align-items:center;gap:2px}
+.seg span.on{background:var(--secondary-c);color:var(--on-secondary-c)}
+.fab{width:48px;height:48px;border-radius:16px;background:var(--primary);color:var(--on-primary);display:flex;align-items:center;justify-content:center}
+.navbar{position:absolute;left:0;right:0;bottom:0;height:16px}
+.scrim{position:absolute;inset:0;background:rgba(34,26,21,.32)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--c-low);border-radius:28px 28px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.15)}
+.handle{width:32px;height:4px;border-radius:2px;background:var(--outline);opacity:.5;margin:10px auto 6px}
+.tabs{display:flex;gap:0;overflow:hidden;border-bottom:1px solid var(--outline-v);padding:0 8px}
+.tab{padding:10px 10px 8px;font-size:13px;color:var(--on-sv);white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:2px;border-bottom:3px solid transparent}
+.tab.on{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 20px;border-radius:22px;font-size:14px;font-weight:500}
+.btn.fill{background:var(--primary);color:var(--on-primary)}
+.btn.out{border:1px solid var(--outline);color:var(--primary)}
+.btn.ton{background:var(--secondary-c);color:var(--on-secondary-c)}
+.btn.txt{color:var(--primary);padding:0 12px}
+.unk{color:var(--outline);font-style:normal;background:repeating-linear-gradient(135deg,var(--c-highest) 0 6px,var(--c-high) 6px 12px);padding:0 6px;border-radius:4px}
+.h{font-size:12px;color:var(--on-sv);font-weight:600;letter-spacing:.5px;margin:10px 0 6px}
+.row{display:flex;align-items:center;gap:10px}
+.sp{flex:1}
+.divider{height:1px;background:var(--outline-v);margin:8px 0}
+.label{position:absolute;top:4px;left:50%;transform:translateX(-50%);background:var(--inverse);color:var(--inverse-on);font-size:10px;padding:2px 8px;border-radius:10px;opacity:.85;z-index:99}
