@@ -1,6 +1,6 @@
 {
   "status": {
-    "base_url": "http://127.0.0.1:43021/v1",
+    "base_url": "http://127.0.0.1:44931/v1",
     "has_key": true,
     "kind": "custom",
     "last_error": "解析降级为离线规则：HTTP 503：fixture: task not scripted",

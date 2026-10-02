@@ -103,7 +103,7 @@
     "player_name": "阿砾",
     "present": [],
     "save_name": "阿砾的旅程",
-    "slot_id": "slot-1790913206762-4d261484",
+    "slot_id": "slot-1790913400032-cda007bb",
     "story": {
       "hints": [
         "去竞技场"
@@ -238,7 +238,7 @@
             "calls": 1,
             "completion_tokens": 0,
             "failed": 1,
-            "latency_ms": 1,
+            "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "意图解析",
             "prompt_tokens": 0,

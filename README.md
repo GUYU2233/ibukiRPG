@@ -2,9 +2,18 @@
 
 > AI 驱动、事件化、可扩展的中文文字冒险 RPG。**用你自己的话行动，骰子与规则决定结果。**
 
-当前版本：**v0.2.0-alpha1（开放世界引擎，预发布）** —— 三个内置原创故事包（均为新的故事包格式 3）：数值 RPG 示例《锈钟镇 · 黄铜试炼》（开放世界样板：世界事件时间线、隐藏真相、势力、角色创建、自由战斗）、《边境酒馆 · 失窃的钱袋》和小短篇《雾港灯塔 · 守灯人的信》；支持导入第三方故事包（.zip，格式见 [docs/story-pack-format.md](docs/story-pack-format.md)）。更新记录见 [CHANGELOG.md](CHANGELOG.md)，架构见 [docs/architecture-v0.3.md](docs/architecture-v0.3.md)。
+当前版本：**v0.2.0-rc1（开放世界引擎，预发布）** —— 三个内置原创故事包（均为新的故事包格式 3）：数值 RPG 示例《锈钟镇 · 黄铜试炼》（开放世界样板：世界事件时间线、隐藏真相、势力、角色创建、自由战斗）、《边境酒馆 · 失窃的钱袋》和小短篇《雾港灯塔 · 守灯人的信》；支持导入第三方故事包（.zip，格式见 [docs/story-pack-format.md](docs/story-pack-format.md)）。更新记录见 [CHANGELOG.md](CHANGELOG.md)，架构见 [docs/architecture-v0.3.md](docs/architecture-v0.3.md)。
 
 > **不兼容变更**：v0.2 只接受格式 3 的故事包，旧的格式 2 故事包导入时会被拒绝（没有迁移工具）；0.1.x 的存档无法读取，会提示重新开始。
+
+v0.2.0-rc1 新增（补完 alpha1 的未完成项）：
+- **世界模拟 Agent**：玩家不在场时，场外的势力、NPC 与事件也在推进——联网时由“世界模拟”任务提出变更（每日 AI 次数有上限），离线或超出上限时按故事包规则推进；变更同样经过校验、写入世界日志、可撤销，叙事流里显示“场外”传闻卡片。
+- **级联撤销**：撤销前列出之后依赖它的变更，可以连同撤销或只撤销这一条。
+- **外部修改提醒**：MCP 改过设定后，下次打开 App 显示“外部工具修改了 N 项设定”，一键跳到世界日志。
+- **游戏内函数调用**：支持函数调用的模型用 `world_propose_change` / `entity_generate` 提交世界变更与新卡片（每次都经校验，拒绝原因回给模型）；卡片生成也走工具，不支持时使用 JSON。
+- **卡片强度预算**：按种类 × 稀有度 × 等级计算数值预算，校验器、角色审查与 AI 生成共用。
+- **禁用词改写**：自建角色里的禁用词由 AI 改写整句（无 AI 时模板改写），不再留下残句。
+- **MCP 只读打开存档**；**离线 / 本地模型**也能做有限的世界变更（规则 / 精简格式）。
 
 v0.2.0-alpha1 新增：
 - **开放世界**：主线贴合度与偏离弹窗被**世界事件时间线**取代——世界按自己的时间表推进（事件有前置条件、截止时间与后果），玩家去不去都会发生；`/wait` 可以等待或跳到某个事件。
@@ -93,7 +102,7 @@ MCP 服务：`./build/bin/ibukirpg mcp --save <存档目录或 .db>`（默认只
 | `make mobile-smoke` | gomobile 生成 `build/android/ibukirpg.aar`（冒烟） |
 | `make android-aar` | 为 App 生成 `android/app/libs/ibukirpg.aar`（arm / arm64 / x86_64） |
 | `make apk-debug` | 调试版 APK |
-| `make apk VERSION=0.2.0-alpha1` | 发布版 `build/release/ibukiRPG-v0.2.0-alpha1.apk`（签名配置见 docs/android.md） |
+| `make apk VERSION=0.2.0-rc1` | 发布版 `build/release/ibukiRPG-v0.2.0-rc1.apk`（签名配置见 docs/android.md） |
 | `make pack-zip PACK=lighthouse` | 校验并把 `packages/<PACK>` 打包成可导入的 `build/packs/<id>-<version>.zip` |
 
 ## 目录结构
@@ -120,12 +129,12 @@ android/           Android App（Kotlin + Compose + Material 3）
 docs/              架构文档（architecture-v0.3.md）、设计稿（design/v03）与开发文档
 ```
 
-## 已知限制（v0.2.0-alpha1）
+## 已知限制（v0.2.0-rc1）
 
-- **alpha 版**：尚未在真机上验证（截图来自 JVM 渲染），AI 功能只用假模型 / 合成录音测试过，未经过真实 API 的大规模测试。
-- 世界模拟没有单独的 Agent：时间线事件按规则推进，AI 的世界改动来自合并输出（叙事 + 世界更新）。离线规则模式不会产生 AI 世界变更。
-- 撤销一条变更时不会级联提示依赖它的后续变更；MCP 外部写入只在世界日志里可见，下次打开 App 时没有单独的提醒。
-- 卡片生成的强度只受校验器上限约束，没有更细的平衡调整；游戏内 AI 还不能通过函数调用直接提出世界变更 / 生成实体（使用 JSON 提示）。
+- **预发布版**：尚未在真机上验证（截图来自 JVM 渲染），AI 功能只用假模型 / 合成录音测试过，未经过真实 API 的大规模测试。
+- 世界模拟的每日 AI 次数上限在内存里计数（重启后重新计数）；离线规则推进只覆盖故事包 `rules/simulation.yaml` 里写好的规则。
+- 游戏内写入工具只在自由行动与带“打造 / 招募 / 建造……”线索的回合运行，其它回合仍用 WORLD 段 JSON。
+- 场外传闻可能提到玩家还不认识的势力名字（不会揭示隐藏字段）。
 - 离线模式的台词来自故事包台词池；离线解析基于关键词，过于含糊的句子会被当作自由行动。
 - 故事包依赖（dependencies）只检查是否已安装及版本，暂不合并内容；NPC 只知道亲眼看到的事，暂不传播流言。
 - llama.cpp 本地模型只有 CPU 后端，32 位 ARM 设备不可用。

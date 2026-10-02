@@ -260,14 +260,14 @@ class ScreenshotTest {
         val broken = PackV1(
             id = "future_pack", name = "星海远航", version = "2.0.0", type = "story", author = "某作者",
             tagline = "需要更新的引擎版本。", builtin = false, playable = false,
-            error = "需要引擎版本 >=0.3.0，当前是 0.2.0-alpha1。请先更新 App。", accent = "#37474F",
+            error = "需要引擎版本 >=0.3.0，当前是 0.2.0-rc1。请先更新 App。", accent = "#37474F",
         )
         return PacksState(loading = false, packs = builtin + imported + broken)
     }
 
     private val home: HomeState get() {
         val s = slots
-        return HomeState(loading = false, latest = s.firstOrNull(), saveCount = s.size, ai = AIStatusV1(kind = "offline"), version = "0.2.0-alpha1")
+        return HomeState(loading = false, latest = s.firstOrNull(), saveCount = s.size, ai = AIStatusV1(kind = "offline"), version = "0.2.0-rc1")
     }
 
     @Test fun home() = shoot("01-home.png") {
@@ -327,7 +327,7 @@ class ScreenshotTest {
             settings = AppSettings(aiKind = "deepseek"),
             form = AIForm(kind = "deepseek", baseUrl = "https://api.deepseek.com", model = "deepseek-chat", hasSavedKey = true, test = TestState.Idle),
             saved = false,
-            engineVersion = "0.2.0-alpha1",
+            engineVersion = "0.2.0-rc1",
             actions = SettingsActions(),
         )
     }
@@ -337,7 +337,7 @@ class ScreenshotTest {
             settings = AppSettings(),
             form = AIForm(kind = "offline"),
             saved = false,
-            engineVersion = "0.2.0-alpha1",
+            engineVersion = "0.2.0-rc1",
             actions = SettingsActions(),
         )
     }
@@ -442,7 +442,7 @@ class ScreenshotTest {
             settings = AppSettings(aiKind = "deepseek"),
             form = AIForm(kind = "deepseek", baseUrl = "https://api.deepseek.com", model = "deepseek-chat", hasSavedKey = true, test = TestState.Idle),
             saved = false,
-            engineVersion = "0.2.0-alpha1",
+            engineVersion = "0.2.0-rc1",
             actions = SettingsActions(),
             ai = aiState,
         )

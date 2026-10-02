@@ -32,6 +32,7 @@ MCP 里的工具名用下划线（`pack_search`），与游戏内函数调用的
 | `rules_get_action(id)` | 动作规则：说明、关键词、检定技能、耗时 | 全部 |
 
 | `world_change_log(query?, since_turn?)` | 世界变更日志（谁、何时、为什么改了什么；隐藏真相相关的只给脱敏摘要） | 全部 |
+| `world_revert_plan(change_id)` | 撤销前检查（rc1）：之后依赖这条变更的全部变更（撤销顺序），以及能否只撤销这一条。不修改存档 | director / author |
 | `timeline_get()` | 世界事件时间线（玩家知道的：公开日程、传闻、亲眼所见） | 全部 |
 | `knowledge_get(entity)` | 一个实体对玩家可见的字段（未解锁的显示“未知”） | 全部 |
 
@@ -86,7 +87,7 @@ ibukirpg mcp --save ./saves --scope author --allow-write
 | --- | --- |
 | `world_preview_change(changes[])` | 预览一组修改：返回字段级差异、影响分、被拒绝项与原因，以及 `preview_token`。**不会修改存档** |
 | `world_apply_change(preview_token, accept_impact?)` | 只接受预览过的提案。预览之后存档发生了变化（例如游戏又走了一回合）则失败，需要重新预览；影响分超过 50 时必须带 `accept_impact: true` |
-| `world_revert_change(change_id)` | 单项撤销一条世界变更（之后的变更依赖它时会失败） |
+| `world_revert_change(change_id, mode?)` | 撤销一条世界变更。之后有依赖它的变更时需要 `mode`：`chain` = 连同依赖一起撤销；`single` = 只撤销这一条（被后续变更覆盖的值保持不变；新建 / 退场等不能单独撤销）。先用 `world_revert_plan` 查看依赖链 |
 | `checkpoint_create(name?)` | 在当前回合新建手动检查点 |
 
 变更格式与游戏内 AI 的 WORLD 段相同，例如：
@@ -97,7 +98,11 @@ ibukirpg mcp --save ./saves --scope author --allow-write
 
 `op` 可以是 `patch` / `create` / `retire` / `restore` / `link` / `unlink`。所有写入都经过与游戏内相同的校验（实体存在、`locked` 路径、重要度上限、玩家资源单回合上限……），以“外部工具”来源记入世界变更日志，可以在 App 的“世界面板 → 日志”里看到并撤销。MCP 写入不会弹出偏离提示（没有玩家界面）。Android 不运行 MCP 服务。
 
-> 说明：只读模式下服务器不会写任何游戏数据。第一次用新版本打开旧存档时，数据库会像游戏本身一样自动补建空的 `memory` 表（记忆摘要表），这一步不影响存档内容。
+**只读打开（v0.2.0-rc1）**：没有 `--allow-write`（或范围不是 director / author）时，服务器以只读方式打开存档数据库（SQLite `mode=ro`）：不做迁移、不加存档锁、不写任何数据；读档时发现的叙事模板问题只在内存里修复。即使开了 `--allow-write`，读取工具也走只读加载，只有写入工具才以读写方式打开。
+
+**外部修改提醒（v0.2.0-rc1）**：MCP 写入的变更以“外部工具”来源记入世界日志。玩家下次打开 App 或读档时会看到“外部工具修改了 N 项设定”的横幅（只计未撤销的），“查看日志”打开世界面板日志页并只显示外部工具的修改；CLI 载入时同样提示（`/changes 外部` 筛选）。
+
+> 游戏内的 AI 另有一组**写入工具**（`world_propose_change` / `entity_generate` / `rules_power_budget`，v0.2.0-rc1），只在游戏进程内、写入范围下列出，MCP 永远拿不到它们；MCP 写入始终走上面的 preview → apply 两步。
 
 ## 在 MCP 客户端里配置
 

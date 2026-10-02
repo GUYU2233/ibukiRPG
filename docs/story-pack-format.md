@@ -1,4 +1,4 @@
-# 故事包格式 3（ibukiRPG v0.2.0-alpha1）
+# 故事包格式 3（ibukiRPG v0.2.0-rc1）
 
 ibukiRPG 的每个故事（剧本）都是一个独立的**故事包**：一个目录，根目录放 `manifest.yaml`，其余是 YAML 内容文件。
 引擎只负责规则与判定，故事包提供世界、人物、台词、事件与界面上的实时信息（HUD）。
@@ -44,7 +44,8 @@ my_pack/
 ├── world/factions.yaml    # 可选（format 3）：势力
 ├── story/timeline.yaml    # 可选（format 3）：世界事件时间线
 ├── rules/balance.yaml     # 可选（format 3）：随机性、强度档位、能力边界、单回合上限
-├── rules/creation.yaml    # 可选（format 3）：角色创建（背景、属性点、强度上限）
+├── rules/creation.yaml    # 可选（format 3）：角色创建（背景、属性点、强度上限、禁用词改写）
+├── rules/simulation.yaml  # 可选（v0.2.0-rc1）：场外世界模拟（间隔、每日 AI 次数、离线规则）
 ├── prompts/*.yaml         # 可选：AI 提示词段落补丁
 └── assets/                # 可选：立绘图片（portraits / mechs）
 ```
@@ -99,6 +100,7 @@ content:
   timeline: [story/timeline.yaml]
   balance: [rules/balance.yaml]
   creation: [rules/creation.yaml]
+  simulation: [rules/simulation.yaml]   # 可选（v0.2.0-rc1）
 ```
 
 版本约束支持 `>=1.2.0`、`>1.0`、`<2`、`=1.0.0`、`^1.2`、`~1.2`，多个条件用逗号或空格分隔（同时满足）。
@@ -497,6 +499,7 @@ attr_max: 15
 max_power: 115          # 引擎强度分上限（超过不能开局）
 rules: [自建角色属于这座小镇……]     # 给审查 Agent 的设定约束
 forbidden: [魔法, 不死]             # 背景 / 外貌 / 性格里出现即判为不符合设定
+rewrites: {魔法: 修理机械的诀窍}     # 可选（rc1）：模板改写词——AI 改写不可用时用它替换禁用词
 backgrounds:
   - id: apprentice
     name: 行会学徒候选人
@@ -509,6 +512,41 @@ backgrounds:
 ```
 
 开局时玩家可以选择预设主角（`characters/player.yaml`），或自建角色：引擎先做规则检查（点数、上限、强度分、禁用词），联网时再由审查 Agent 检查设定契合度、强度与冲突，并给出建议与推荐卡。
+
+**禁用词改写（v0.2.0-rc1）**：推荐角色卡里的禁用词不再被直接删除。联网时先请 AI 改写整句（保留意图、去掉违规设定）；没有 AI、改写失败或改写后仍含禁用词时，按 `rewrites` 替换；没有改写词的禁用词会删掉它所在的整个分句并清理标点（不会留下“会一点，”这样的残句）。
+
+### 卡片强度预算（v0.2.0-rc1）
+
+校验器、角色审查与 AI 卡片生成共用同一个预算公式：
+
+```
+预算   = 参考强度 × 种类系数 × 稀有度系数 × (1 + 0.1 × (等级 − 1))      （等级 1–20）
+强度分 = Σ 数值 × 权重        （hp / max_hp 0.25，atk / def / dmg / armor 2，spd / crit 1.5，energy 0.2，其它 1；level / rarity / size / price 不计）
+```
+
+- **参考强度**：`balance.yaml` 里 `player_start_tier` 档位的上限（没有档位时为 90）。
+- **种类系数**：character / enemy 1.0，mech 2.0，weapon 0.35，armor 0.3，item 0.2，skill / tech 0.25（其它种类不限数值）。
+- **稀有度系数**：common 1.0，uncommon 1.25，rare 1.6，epic 2.0，legendary 2.6。稀有度取 `tags` 里的稀有度词（或 `meta.rarity`），等级取 `stats.level`（或 `meta.level`）；武器 / 护甲 / 敌人 / 技能按 `tags` 里的 `weapon` / `armor` / `enemy` / `skill` 区分。
+- AI 新建实体或修改数值超出预算时，数值被**等比缩小**到预算以内（不会拒绝整条变更）；故事包自带的实体不受影响。
+
+## 16b. 场外世界模拟（rules/simulation.yaml，v0.2.0-rc1）
+
+```yaml
+every_minutes: 240          # 模拟间隔（游戏分钟）；玩家可在生成设置里改或关闭
+max_ai_calls_per_day: 4     # 每个游戏日最多几次 AI 世界模拟；超过后用下面的规则
+rules:                      # 离线 / 超出上限 / AI 输出无效时的规则推进
+  - id: council_vote
+    on: [time, wait]        # time = 回合之间跨过模拟间隔；wait = /wait 等待 ≥ 60 分钟
+    when: 'world.day >= 2'  # 可选：CEL 条件
+    once: true              # 可选：只触发一次
+    news: 钟楼议会连夜开会，修缮款的投票被推迟到了下周。
+    changes:
+      - {op: patch, target: mine:faction/council, path: fields.stance, value: 修缮款投票被推迟, reason: 场外：议会投票推迟}
+```
+
+- 每次触发先筛出触发方式匹配、条件成立、（once）尚未触发过的规则，再按时间段序号轮流选一条——同一存档同一时刻结果相同。
+- 场外变更只允许 `patch` / `link` / `unlink` / `timeline_patch` / `timeline_add`，不能指向玩家；原因会加上“场外”前缀。变更走与叙事相同的校验器、事件日志（来源 `world_sim`）和提示灵敏度。
+- 没有 `simulation.yaml` 的故事包：联网时 AI 世界模拟照常按默认间隔运行（240 分钟、每日 4 次），离线时不做场外推进。
 
 ## 17. 效果（effects）一览
 
@@ -620,3 +658,4 @@ sections:
 - AI 生成的实体（`<namespace>.gen:*`）只有文档与角色卡，没有立绘和台词池。
 - 自由战斗离线时用规则解析器识别动作，联网时由战斗意图解析器与裁定流程处理；`absurd_words` 只做关键词匹配。
 - 时间线事件的 `resolve: ai` 在离线时退回规则判定。
+- 场外世界模拟的离线规则只能写固定的变更（不能引用变量计算新值）。
