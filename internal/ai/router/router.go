@@ -151,7 +151,9 @@ type Settings struct {
 	// SimEvery：场外世界模拟间隔（游戏内分钟）；0 = 使用故事包默认；-1 = 关闭。
 	SimEvery int `json:"sim_every_minutes,omitempty"`
 	// SimAICalls：每个游戏日最多调用 AI 世界模拟的次数（成本上限）；0 = 使用故事包默认；-1 = 只用离线规则。
-	SimAICalls     int  `json:"sim_ai_calls_per_day,omitempty"`
+	SimAICalls int `json:"sim_ai_calls_per_day,omitempty"`
+	// NoWorldTools 关闭游戏内写入工具（函数调用）：世界修改只走 WORLD 段 JSON。
+	NoWorldTools   bool `json:"world_tools_off,omitempty"`
 	ShowUsage      bool `json:"show_token_usage"`
 	RetryOnRefusal bool `json:"retry_on_refusal,omitempty"`
 }

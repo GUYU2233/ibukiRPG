@@ -258,6 +258,8 @@ type ChangePreviewV1 struct {
 	Rejected    []RejectV1 `json:"rejected,omitempty"`
 	// Note 是卡片编辑器的一句话说明（可空）。
 	Note string `json:"note,omitempty"`
+	// Via 是卡片编辑器给出提案的方式：tools（函数调用）/ json（JSON 兜底）。
+	Via string `json:"via,omitempty"`
 }
 
 // RejectV1 是一项被校验器拒绝的提案。

@@ -29,6 +29,17 @@ const (
 type Scope struct {
 	Kind ScopeKind
 	NPC  string // Kind == npc 时为 NPC 的 ID
+	// Write 开放写入工具（world.propose_change / entity.generate / rules.power_budget）：只用于游戏内的叙述者与卡片编辑器，
+	// 提案经同一校验器演练后由编排器提交。MCP 与 NPC 永远不设置。
+	Write bool
+}
+
+// WithWrite 返回开放了写入工具的范围（NPC 范围不能写）。
+func (s Scope) WithWrite() Scope {
+	if s.Kind != ScopeNPC {
+		s.Write = true
+	}
+	return s
 }
 
 // Player 是叙述者使用的 PlayerScope。

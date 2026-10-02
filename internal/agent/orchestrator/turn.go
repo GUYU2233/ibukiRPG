@@ -17,6 +17,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
 	"github.com/GUYU2233/ibukiRPG/internal/storage/eventstore"
+	"github.com/GUYU2233/ibukiRPG/internal/world/change"
 )
 
 // MaxInputRunes 是玩家单次输入的最大长度。
@@ -200,11 +201,23 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 	var out narrator.Output
 	var wo narrator.WorldOutput
 	merged := ai && cmd.Kind != command.KindCombat
+	var toolChanges []change.Change
 	if merged {
 		// 叙事 + 世界更新合并输出（第 11.3 节）
 		tgt, _ := s.router.Primary(router.TaskNarrate)
 		tier := tgt.Tier
-		wo = llm.NarrateWorld(nctx, brief, s.worldSections(g, after, input, tier), tier, onDelta)
+		sections := s.worldSections(g, after, input, tier)
+		if s.wantsWorldTools(llm.Provider, tier, cmd, input) {
+			// 支持函数调用：先用写入工具提交世界修改（经校验），叙事再与之保持一致
+			env := s.toolEnv(ctx, slot, g, after)
+			env.Writer = newWriter(g, after, change.SourceNarrate, tier)
+			if sec := s.worldToolPhase(nctx, llm.Provider, env, brief, sections); sec != "" {
+				sections += sec
+				toolChanges = env.Writer.Proposed()
+			}
+		}
+		wo = llm.NarrateWorld(nctx, brief, sections, tier, onDelta)
+		mergeToolChanges(&wo, toolChanges)
 		out = wo.Output
 		if wo.Refused {
 			out.Text = brief.Base + "\n\n（AI 服务商拒绝生成本回合内容（内容审核）。规则结果已保存；你可以换种说法、回到上一回合，或在生成设置里为叙事换一个模型。）"

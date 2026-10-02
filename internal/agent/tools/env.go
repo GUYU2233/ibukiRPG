@@ -28,6 +28,8 @@ type Env struct {
 	Q         *query.Q
 	Events    []event.Event
 	Summaries []Summary
+	// Writer 收集写入工具的提案（nil 表示只读）。
+	Writer *Writer
 }
 
 func (e *Env) journal() []dto.JournalEntryV1 {

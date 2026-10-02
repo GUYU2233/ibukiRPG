@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/core/state"
 	"github.com/GUYU2233/ibukiRPG/internal/package/loader"
 	"github.com/GUYU2233/ibukiRPG/internal/rules/expression"
+	"github.com/GUYU2233/ibukiRPG/internal/world/change"
 	"github.com/GUYU2233/ibukiRPG/packages"
 )
 
@@ -273,5 +275,60 @@ func TestMemorySearchSummaries(t *testing.T) {
 	out, _ = call(t, e, tools.NPC("demo:character/lena"), "memory.search", `{"query":"歌"}`)
 	if strings.Contains(out, "听过她的歌") {
 		t.Errorf("lena reads mira's summary: %s", out)
+	}
+}
+
+// 写入工具只在 Scope.Write 时列出 / 可调用；entity.generate 的数值按强度预算缩放；被拒绝的提案不收集。
+func TestWriteToolsGated(t *testing.T) {
+	e := demoEnv(t)
+	for _, sp := range tools.Specs(tools.Director()) {
+		if sp.Function.Name == "world_propose_change" || sp.Function.Name == "entity_generate" {
+			t.Fatalf("write tool %s offered without write scope", sp.Function.Name)
+		}
+	}
+	if _, err := tools.Call(e, tools.Director(), "entity.generate", `{"kind":"weapon","name":"x","description":"x","reason":"x"}`); err == nil {
+		t.Fatal("write tool callable without write scope")
+	}
+	found := false
+	for _, sp := range tools.Specs(tools.Player().WithWrite()) {
+		found = found || sp.Function.Name == "entity_generate"
+	}
+	if !found {
+		t.Fatal("entity_generate missing from write scope")
+	}
+	var dry [][]change.Change
+	e.Writer = &tools.Writer{Namespace: "gen", PowerRef: 20, Dry: func(cs []change.Change) (tools.DryResult, error) {
+		dry = append(dry, cs)
+		r := tools.DryResult{}
+		for _, c := range cs {
+			if strings.Contains(c.Target, "bad") {
+				r.Rejected = append(r.Rejected, c.Target+"：不存在")
+				continue
+			}
+			r.Accepted = append(r.Accepted, c)
+			r.Summary = append(r.Summary, c.Target)
+		}
+		return r, nil
+	}}
+	sc := tools.Player().WithWrite()
+	out, err := tools.Call(e, sc, "world.propose_change", `{"changes":[{"op":"patch","target":"demo:bad/x","path":"fields.description","value":"y","reason":"r"}]}`)
+	if err != nil || !strings.Contains(out, "不存在") || len(e.Writer.Proposed()) != 0 {
+		t.Fatalf("reject: %s %v %v", out, err, e.Writer.Proposed())
+	}
+	out, err = tools.Call(e, sc, "entity.generate", `{"kind":"weapon","slug":"Big Sword!","name":"大剑","description":"很大的剑","rarity":"common","level":1,"stats":{"atk":5000},"reason":"r"}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ps := e.Writer.Proposed()
+	if len(ps) != 1 || ps[0].Op != "create" || ps[0].Target != "gen:item/big_sword" {
+		t.Fatalf("proposed %+v (%s)", ps, out)
+	}
+	var v struct {
+		Stats map[string]int `json:"stats"`
+		Tags  []string       `json:"tags"`
+	}
+	_ = json.Unmarshal(ps[0].Value, &v)
+	if v.Stats["atk"] <= 0 || v.Stats["atk"] >= 5000 || v.Stats["level"] != 1 || !slices.Contains(v.Tags, "weapon") {
+		t.Fatalf("generated value %s", ps[0].Value)
 	}
 }

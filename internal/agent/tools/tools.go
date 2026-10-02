@@ -30,6 +30,7 @@ type Tool struct {
 	Description string         // 中文说明
 	Params      map[string]any // JSON Schema
 	Scopes      []ScopeKind    // 允许的范围（为空表示全部）
+	Write       bool           // 写入工具：只有 Scope.Write 时可用（v0.2.0-rc1）
 	run         func(e *Env, sc Scope, a args) (any, error)
 }
 
@@ -37,7 +38,12 @@ type Tool struct {
 func (t Tool) FuncName() string { return strings.ReplaceAll(t.Name, ".", "_") }
 
 // Allowed 报告工具在该范围是否可用。
-func (t Tool) Allowed(sc Scope) bool { return len(t.Scopes) == 0 || slices.Contains(t.Scopes, sc.Kind) }
+func (t Tool) Allowed(sc Scope) bool {
+	if t.Write != sc.Write && t.Write {
+		return false
+	}
+	return len(t.Scopes) == 0 || slices.Contains(t.Scopes, sc.Kind)
+}
 
 type args map[string]any
 
@@ -100,9 +106,9 @@ func All() []Tool {
 	return ts
 }
 
-// Find 按规范名或函数名查找工具。
+// Find 按规范名或函数名查找工具（含写入工具；是否可用由 Allowed 判断）。
 func Find(name string) (Tool, bool) {
-	for _, t := range All() {
+	for _, t := range append(All(), WriteTools()...) {
 		if t.Name == name || t.FuncName() == name {
 			return t, true
 		}
@@ -113,7 +119,11 @@ func Find(name string) (Tool, bool) {
 // Specs 返回某范围可用工具的函数声明（OpenAI tools 格式）。
 func Specs(sc Scope) []provider.ToolSpec {
 	var out []provider.ToolSpec
-	for _, t := range All() {
+	ts := All()
+	if sc.Write {
+		ts = append(ts, WriteTools()...)
+	}
+	for _, t := range ts {
 		if t.Allowed(sc) {
 			out = append(out, provider.ToolSpec{Type: "function", Function: provider.FunctionSpec{Name: t.FuncName(), Description: t.Description, Parameters: t.Params}})
 		}
