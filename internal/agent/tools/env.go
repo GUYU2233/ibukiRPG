@@ -125,6 +125,11 @@ func (e *Env) npcKnows(npc, id string) bool {
 	}
 	for _, c := range p.Codex {
 		if c.ID == id {
+			// 显式解锁条件的纯图鉴不是 NPC 的公共知识；玩家解锁也不代表 NPC 知道。
+			// 实际地点 / 物品等实体仍遵循上面的实体可见性规则。
+			if strings.TrimSpace(c.Unlock) != "" {
+				return false
+			}
 			return c.Kind == "faction" || c.Kind == "location" || c.Kind == "item" || c.Kind == "tech"
 		}
 	}

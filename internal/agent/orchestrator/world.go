@@ -39,7 +39,7 @@ func (s *Session) worldSections(g *game, st *state.State, input, tier string) st
 		more := 0
 		for i := len(st.World.Log) - 1; i >= 0; i-- {
 			e := st.World.Log[i]
-			if e.RevertedBy != "" || e.Reverts != "" {
+			if e.Hidden || e.RevertedBy != "" || e.Reverts != "" {
 				continue
 			}
 			name := g.pkg.EntityName(e.Target)

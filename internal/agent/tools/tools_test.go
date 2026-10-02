@@ -91,6 +91,86 @@ func TestScopeFiltering(t *testing.T) {
 	}
 }
 
+// 显式解锁的纯图鉴研究不属于 NPC 公共知识，也不继承玩家的解锁状态。
+func TestCodexResearchScopeFiltering(t *testing.T) {
+	for _, kind := range []string{"location", "tech", "faction", "item"} {
+		for _, unlock := range []string{"false", "true", "  false  "} {
+			t.Run(kind+"/"+unlock, func(t *testing.T) {
+				e := demoEnv(t)
+				const id = "test:codex/research"
+				const name = "夏宫研究卡"
+				const description = "独特全知研究描述标记"
+				const lore = "独特研究来历标记"
+				e.Pkg.Codex = append(e.Pkg.Codex, loader.CodexEntry{ID: id, Kind: kind, Name: name, Description: description, Lore: lore, Unlock: unlock})
+				check := func(sc tools.Scope, visible, knowsLore bool) {
+					t.Helper()
+					for _, ref := range []string{id, name} {
+						args, _ := json.Marshal(map[string]string{"id": ref})
+						out, err := call(t, e, sc, "pack.get_entity", string(args))
+						if !visible {
+							if !errors.Is(err, tools.ErrNotVisible) || strings.Contains(out, description) {
+								t.Errorf("%s get %s: out=%s err=%v", sc, ref, out, err)
+							}
+						} else if err != nil || !strings.Contains(out, description) || strings.Contains(out, lore) != knowsLore {
+							t.Errorf("%s get %s: out=%s err=%v", sc, ref, out, err)
+						}
+					}
+					for _, q := range []struct{ tool, args string }{
+						{"pack.search", `{"query":"夏宫研究卡"}`},
+						{"pack.search", `{"query":"独特全知研究描述标记"}`},
+						{"pack.list", `{"type":"` + kind + `"}`},
+					} {
+						out, err := call(t, e, sc, q.tool, q.args)
+						if err != nil || strings.Contains(out, id) != visible {
+							t.Errorf("%s %s: out=%s err=%v", sc, q.tool, out, err)
+						}
+					}
+					sec := tools.PrefetchSection(e, sc, name, 3000)
+					if strings.Contains(sec, description) != visible {
+						t.Errorf("%s prefetch: %s", sc, sec)
+					}
+					refs := tools.UnknownRefs(e, sc, name, nil)
+					if slices.Contains(refs, name) != visible {
+						t.Errorf("%s unknown refs: %v", sc, refs)
+					}
+				}
+				check(tools.Player(), false, false)
+				check(tools.NPC("demo:character/lena"), false, false)
+				check(tools.Director(), true, true)
+				// 玩家获取图鉴后可以读研究，但不能将玩家知识传播给 NPC。
+				e.State.R().Codex[id] = 1
+				check(tools.Player(), true, true)
+				check(tools.NPC("demo:character/lena"), false, false)
+				// 无显式条件的旧公开类别保持 NPC 可见，来历仍不可见。
+				e.Pkg.Codex[len(e.Pkg.Codex)-1].Unlock = ""
+				check(tools.NPC("demo:character/lena"), true, false)
+			})
+		}
+	}
+}
+
+func TestCodexUnlockDoesNotHideRealNPCPublicEntities(t *testing.T) {
+	e := demoEnv(t)
+	sc := tools.NPC("demo:character/lena")
+	for _, ids := range [][]string{e.Pkg.LocationIDs, e.Pkg.ItemIDs} {
+		if len(ids) == 0 {
+			t.Fatal("demo must contain real locations and items")
+		}
+		id := ids[0]
+		for i := range e.Pkg.Codex {
+			if e.Pkg.Codex[i].ID == id {
+				e.Pkg.Codex[i].Unlock = "false"
+			}
+		}
+		e.Pkg.Codex = append(e.Pkg.Codex, loader.CodexEntry{ID: id, Kind: "location", Name: "不应覆盖实体的研究卡", Description: "隐藏研究覆盖标记", Unlock: "false"})
+		args, _ := json.Marshal(map[string]string{"id": id})
+		out, err := call(t, e, sc, "pack.get_entity", string(args))
+		if err != nil || !strings.Contains(out, id) || strings.Contains(out, "隐藏研究覆盖标记") {
+			t.Errorf("real public entity %s: out=%s err=%v", id, out, err)
+		}
+	}
+}
+
 // 工具是只读、确定性的：同样的调用两次结果相同，且不改变状态。
 func TestDeterministicReadOnly(t *testing.T) {
 	e := demoEnv(t)
