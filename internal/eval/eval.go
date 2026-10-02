@@ -52,6 +52,9 @@ type Case struct {
 	Sensitivity *SensitivityCase `yaml:"sensitivity"`
 	Routing     *RoutingCase     `yaml:"routing"`
 	Audit       *AuditCase       `yaml:"audit"`
+	Sim         *SimCase         `yaml:"sim"`
+	Power       *PowerCase       `yaml:"power"`
+	Rewrite     *RewriteCase     `yaml:"rewrite"`
 }
 
 // LookupCase 是检索用例（retrieval 套件）：正确答案不在默认上下文里，必须用只读工具查到；
@@ -217,6 +220,15 @@ func (r *Runner) Run(ctx context.Context, cases []Case) []Result {
 		case c.Audit != nil:
 			out = append(out, runAudit(c))
 			continue
+		case c.Sim != nil:
+			out = append(out, runSim(c))
+			continue
+		case c.Power != nil:
+			out = append(out, runPower(c))
+			continue
+		case c.Rewrite != nil:
+			out = append(out, runRewrite(c))
+			continue
 		}
 		in := resolver.Input{Text: c.Input, Pkg: r.Pkg, State: r.state(c)}
 		if c.wants("offline") {
@@ -320,7 +332,7 @@ func (r *Runner) runGuard(c Case) Result {
 func (r *Runner) Synthesize(ctx context.Context, cases []Case) (int, error) {
 	n := 0
 	for _, c := range cases {
-		if c.Guard != nil || c.Lookup != nil || c.Merged != nil || c.Sensitivity != nil || c.Routing != nil || c.LLMOutput == nil || !c.wants("llm") {
+		if c.Guard != nil || c.Lookup != nil || c.Merged != nil || c.Sensitivity != nil || c.Routing != nil || c.Sim != nil || c.Power != nil || c.Rewrite != nil || c.LLMOutput == nil || !c.wants("llm") {
 			continue
 		}
 		content, err := json.Marshal(c.LLMOutput)

@@ -261,6 +261,8 @@ fun GenerationSettingsContent(
                     }
                     Switch(checked = g.auditEveryTurns >= 0, onCheckedChange = { onGen(g.copy(auditEveryTurns = if (it) 0 else -1)) })
                 }
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                WorldSimSettings(g, onGen)
                 Spacer(Modifier.size(if (inlineFitSheet && fit) 420.dp else 24.dp))
             }
             if (fit && inlineFitSheet) {
@@ -279,6 +281,47 @@ fun GenerationSettingsContent(
         ModalBottomSheet(onDismissRequest = { fit = false }, sheetState = sheet) {
             LocalFitContent(state.tasks, onImportLocal, onClose = { fit = false })
         }
+    }
+}
+
+/** 0.2.0-rc1：世界模拟（场外推进间隔 / 每日 AI 次数上限）与游戏内写入工具开关。 */
+@Composable
+fun WorldSimSettings(g: GenSettingsV1, onGen: (GenSettingsV1) -> Unit) {
+    val c = MaterialTheme.colorScheme
+    Text("世界模拟", style = MaterialTheme.typography.titleSmall)
+    Text(
+        "回合之间（或等待时）推进场外的势力、人物和事件；修改同样经过校验、写入世界日志，可以撤销。离线时按故事包规则推进。",
+        style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant,
+    )
+    val every = listOf(-1 to "关闭", 0 to "默认", 120 to "2 小时", 480 to "8 小时", 1440 to "每天")
+    Text("推进间隔（游戏时间）", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        every.forEachIndexed { i, (v, label) ->
+            SegmentedButton(selected = g.simEveryMinutes == v, onClick = { onGen(g.copy(simEveryMinutes = v)) }, shape = SegmentedButtonDefaults.itemShape(i, every.size)) {
+                Text(label, maxLines = 1)
+            }
+        }
+    }
+    val calls = listOf(-1 to "只用规则", 0 to "默认", 2 to "2 次", 8 to "8 次")
+    Text("每个游戏日最多调用 AI", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        calls.forEachIndexed { i, (v, label) ->
+            SegmentedButton(
+                selected = g.simAiCallsPerDay == v, enabled = g.simEveryMinutes >= 0,
+                onClick = { onGen(g.copy(simAiCallsPerDay = v)) }, shape = SegmentedButtonDefaults.itemShape(i, calls.size),
+            ) { Text(label, maxLines = 1) }
+        }
+    }
+    Text("超过上限后回退到规则推进；使用“世界模拟”任务分配的模型。", style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text("游戏内写入工具", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "支持函数调用的模型可以用 world_propose_change / entity_generate 修改世界（每次都经过校验）；关闭后只用 WORLD 段 JSON",
+                style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant,
+            )
+        }
+        Switch(checked = !g.worldToolsOff, onCheckedChange = { onGen(g.copy(worldToolsOff = !it)) })
     }
 }
 

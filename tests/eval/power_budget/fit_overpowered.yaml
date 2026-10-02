@@ -1,0 +1,8 @@
+description: 远超预算的数值被等比缩小到预算以内
+power:
+  ref: 20
+  kind: weapon
+  rarity: common
+  level: 1
+  stats: {atk: 400, def: 50, level: 1}
+  expect_fitted: true

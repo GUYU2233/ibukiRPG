@@ -1,0 +1,10 @@
+description: 世界模拟不新建实体、不让人物退场（这些交给叙事与玩家），只保留允许的操作
+sim:
+  raw: |
+    好的，下面是场外推进：
+    {"news":["行会关了半天门。"],"changes":[
+     {"op":"retire","target":"brass:character/tock","value":{"reason":"death"},"reason":"场外：托克失踪"},
+     {"op":"create","target":"brass:character/new_guy","kind":"character","value":{"fields":{"name":"新人"}},"reason":"场外：来了新人"},
+     {"op":"patch","target":"brass:character/orin","path":"location","value":"brass:location/plaza","reason":"场外：欧琳去了广场"}]}
+  expect_news: 1
+  expect_changes: 1

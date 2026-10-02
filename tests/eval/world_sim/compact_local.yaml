@@ -1,0 +1,9 @@
+description: 本地小模型的精简格式（edits / rel）被展开，并限制为最多 2 项
+sim:
+  compact: true
+  raw: |
+    {"news":["码头的人说议会要涨税。"],
+     "edits":[{"id":"brass:faction/council","field":"stance","text":"准备再涨一次码头税"},{"id":"brass:faction/guild","field":"mood","text":"人心惶惶"}],
+     "rel":[{"a":"brass:character/orin","b":"brass:character/tock","dim":"trust","delta":-3}]}
+  expect_news: 1
+  expect_changes: 2

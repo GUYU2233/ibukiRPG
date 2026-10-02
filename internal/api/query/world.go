@@ -326,7 +326,11 @@ func (q *Q) RevertPlan(s *state.State, id string) (dto.RevertPlanV1, error) {
 	case !ok:
 		p.SingleNote = why
 	case shadow != "":
-		p.SingleNote = fmt.Sprintf("这个值之后被 %s 改过，只撤销这一条时当前值不变；以后撤销 %s 会回到这条变更之前的值", shadow, shadow)
+		who := shadow
+		if se := s.World.Find(shadow); se != nil {
+			who = fmt.Sprintf("回合 %d 的变更", se.Turn)
+		}
+		p.SingleNote = fmt.Sprintf("这个值之后被%s改过：只撤销这一条时当前值不变，以后再撤销那条变更会回到这条之前的值", who)
 	case len(p.Dependents) > 0:
 		p.SingleNote = "之后的变更与它互不覆盖，可以只撤销这一条"
 	}

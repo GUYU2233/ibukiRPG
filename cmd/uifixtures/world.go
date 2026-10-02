@@ -8,6 +8,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+
+	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
+	"github.com/GUYU2233/ibukiRPG/internal/world/change"
 )
 
 // fakeAI 是一个本地的 OpenAI 兼容服务：按玩家输入里的关键词返回预先写好的“叙事 + 世界更新”，
@@ -74,6 +77,9 @@ func (f *fakeAI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		user = user[i:]
 	}
 	text := "铁闸后传来齿轮咬合的声音，空气里全是机油味。"
+	if strings.Contains(sys, "世界模拟者") {
+		text = simFixture
+	}
 	if strings.Contains(sys, "<<<WORLD>>>") {
 		text = f.reply(user)
 	}
@@ -105,6 +111,10 @@ func splitRunes(s string, n int) []string {
 func world(narr string, js string) string {
 	return narr + "\n<<<WORLD>>>\n" + js + "\n<<<END>>>"
 }
+
+// simFixture 是世界模拟（场外推进）的脚本回复。
+const simFixture = `{"news":["码头上的人都在传：煤烟帮连夜在北码头加了岗哨，每一辆煤车都要查。"],"changes":[` +
+	`{"op":"patch","target":"brass:faction/soot_gang","path":"fields.stance","value":"在北码头加了岗哨，盯着每一辆煤车","reason":"场外：煤烟帮加强码头控制"}]}`
 
 // worldReplies 是 0.2.0 截图脚本的 AI 回复（原创内容，锈钟镇）。
 var worldReplies = []fakeReply{
@@ -185,6 +195,31 @@ func runWorld(seed uint64, files map[string]json.RawMessage) {
 	for _, tab := range []string{"characters", "relations", "codex", "equipment", "map", "factions", "timeline", "log"} {
 		files["v02_world_"+tab+".json"] = call("get_world_panel", "", map[string]string{"tab": tab})
 	}
+	// 0.2.0-rc1：级联撤销（之后又改了同一字段）→ 撤销前检查
+	var chs []struct {
+		ID     string `json:"id"`
+		Target string `json:"target"`
+		Path   string `json:"path"`
+	}
+	_ = json.Unmarshal(call("search_world_changes", "", map[string]any{"query": "", "limit": 100}), &chs)
+	for _, c := range chs {
+		if c.Target == "brass:location/north_dock" && c.Path == "fields.description" {
+			var pv struct {
+				Token string `json:"preview_token"`
+			}
+			_ = json.Unmarshal(call("preview_change", "", map[string]any{"changes": []map[string]any{{"op": "patch", "target": c.Target, "path": c.Path,
+				"value": "三号仓的废墟被围了起来，议会贴出告示：任何人不得靠近。", "reason": "你的要求：火场封锁"}}}), &pv)
+			call("apply_preview", "", map[string]string{"preview_token": pv.Token})
+			files["v02_revert_plan.json"] = call("revert_plan", "", map[string]string{"id": c.ID})
+			break
+		}
+	}
+	// 0.2.0-rc1：等待半天 → 场外世界推进（假模型不回答世界模拟 → 按故事包规则推进）
+	call("wait", id(), map[string]string{"target": "8h"})
+	files["v02_sim.json"] = call("get_bundle", "", nil)
+	// “外部工具修改了 N 项设定”（MCP 写入只能从桌面端发起；夹具直接构造提示）
+	ext, _ := json.Marshal(dto.ExternalNoticeV1{Count: 3, Text: "外部工具修改了 3 项设定", Source: change.SourceMCP})
+	files["v02_external.json"] = ext
 	files["v02_tasks.json"] = call("get_tasks", "", nil)
 	files["v02_creation.json"] = call("get_creation", "", map[string]string{"pack_id": "brass_trial"})
 	files["v02_creation_review.json"] = call("review_creation", "", map[string]any{"pack_id": "brass_trial", "creation": map[string]any{

@@ -1,25 +1,9 @@
 {
   "scene": {
-    "branch": "主干",
-    "clock": "08:37",
+    "branch": "分支 A",
+    "clock": "16:40",
     "conditions": [],
     "day": 1,
-    "decision": {
-      "checkpoint": "回合 16 之前",
-      "id": "dec-16",
-      "lines": [
-        "托克 死亡",
-        "北码头：描述 → 三号仓只剩下焦黑的木桩，煤油味混着焦糊味。"
-      ],
-      "rollback_text": "回到回合 15",
-      "rollback_turn": 15,
-      "score": 60,
-      "sensitivity": "中",
-      "summary": "这是你关系网里的重要人物。接受这个结果，故事会照此继续；也可以回到上一回合重新选择。",
-      "title": "托克死了",
-      "type": "major_death",
-      "type_label": "重要角色死亡"
-    },
     "description": "驳船、吊臂和煤油味——三号仓的铁门上有一只黑手印。",
     "exits": [
       {
@@ -31,7 +15,7 @@
     "facts": [
       "三号仓门上刷着黑手印",
       "码头堆着成排的煤油桶",
-      "有人刚刚踹开仓库门，把油桶推进火里，逼他们出来"
+      "托克被救了出来"
     ],
     "gold": 16,
     "has_rpg": true,
@@ -99,7 +83,7 @@
     "location_name": "北码头",
     "pack_id": "brass_trial",
     "pack_name": "锈钟镇·黄铜试炼",
-    "period": "上午",
+    "period": "下午",
     "player_name": "阿砾",
     "present": [],
     "save_name": "阿砾的旅程",
@@ -111,8 +95,8 @@
       "id": "brass:story/trial",
       "title": "黄铜试炼"
     },
-    "time_text": "第1天 08:37 · 上午",
-    "turn": 16,
+    "time_text": "第1天 16:40 · 下午",
+    "turn": 18,
     "upcoming": [
       {
         "countdown": "进行中",
@@ -123,20 +107,20 @@
         "title": "学徒试炼日"
       },
       {
-        "countdown": "3 天后",
+        "countdown": "2 天 16 时后",
         "id": "brass:event/council_vote",
         "location": "钟楼广场",
-        "starts_in_min": 4343,
+        "starts_in_min": 3860,
         "status": "scheduled",
         "status_label": "未开始",
         "title": "议会投票"
       },
       {
-        "countdown": "3 天 12 时后",
+        "countdown": "3 天 4 时后",
         "id": "brass:event/clock_stop",
         "location": "北码头",
         "rumored": true,
-        "starts_in_min": 5063,
+        "starts_in_min": 4580,
         "status": "scheduled",
         "status_label": "未开始",
         "title": "钟停之时"
@@ -185,21 +169,21 @@
   ],
   "transcript": [
     {
-      "id": 76,
+      "id": 155,
       "kind": "intro",
       "text": "锈钟镇的钟楼已经三天没有敲响了。\n你背着一只旧工具箱走进行会工坊，炉火把墙上的齿轮映得通红。行会长欧琳从一台拆开的甲胄后面探出头来：“学徒试炼今天开始。先去竞技场，赢了再说话。”\n——你可以直接写下想做的事，也可以点开世界面板看看你目前知道些什么（大多数东西还是“未知”）。",
       "turn": 0
     },
     {
       "command_id": "w-1",
-      "id": 77,
+      "id": 156,
       "kind": "player",
       "text": "和欧琳聊聊",
       "turn": 1
     },
     {
       "command_id": "w-1",
-      "id": 80,
+      "id": 159,
       "kind": "narration",
       "source": "ai",
       "text": "风从钟楼那边吹过来，带着煤烟味。",
@@ -210,21 +194,21 @@
         "欧琳 信任 +2"
       ],
       "command_id": "w-1",
-      "id": 78,
+      "id": 157,
       "kind": "system",
       "text": "欧琳 信任 +2",
       "turn": 1
     },
     {
       "command_id": "w-1",
-      "id": 79,
+      "id": 158,
       "kind": "story",
       "text": "事件开始：《黄铜试炼》",
       "turn": 1
     },
     {
       "command_id": "w-1:usage",
-      "id": 81,
+      "id": 160,
       "kind": "usage",
       "text": "",
       "turn": 1,
@@ -259,14 +243,14 @@
     },
     {
       "command_id": "w-2",
-      "id": 82,
+      "id": 161,
       "kind": "player",
       "text": "去钟楼广场",
       "turn": 2
     },
     {
       "command_id": "w-2",
-      "id": 83,
+      "id": 162,
       "kind": "narration",
       "source": "ai",
       "text": "街角的煤气灯一盏接一盏亮了起来，齿轮在头顶的管道里咔哒作响。",
@@ -274,7 +258,7 @@
     },
     {
       "command_id": "w-2:usage",
-      "id": 84,
+      "id": 163,
       "kind": "usage",
       "text": "",
       "turn": 2,
@@ -309,14 +293,14 @@
     },
     {
       "command_id": "w-3",
-      "id": 85,
+      "id": 164,
       "kind": "player",
       "text": "去竞技场",
       "turn": 3
     },
     {
       "command_id": "w-3",
-      "id": 86,
+      "id": 165,
       "kind": "narration",
       "source": "ai",
       "text": "一队搬运工扛着木箱从你身边挤过去，嘴里骂着议会又涨了码头税。",
@@ -324,7 +308,7 @@
     },
     {
       "command_id": "w-3:usage",
-      "id": 87,
+      "id": 166,
       "kind": "usage",
       "text": "",
       "turn": 3,
@@ -359,14 +343,14 @@
     },
     {
       "command_id": "w-4",
-      "id": 88,
+      "id": 167,
       "kind": "player",
       "text": "走过去，问托克口袋里藏的是什么",
       "turn": 4
     },
     {
       "command_id": "w-4",
-      "id": 90,
+      "id": 169,
       "kind": "narration",
       "source": "ai",
       "text": "托克犹豫了一下，还是把传单抖开——上面印着一只被齿轮咬住的手，下面一行小字：『明晚，钟停之时。』\n“别声张，”他压低声音，“议会那帮人要是知道我替煤烟帮跑腿，行会的门我就再也进不去了。”",
@@ -377,14 +361,14 @@
         "托克 信任 +2"
       ],
       "command_id": "w-4",
-      "id": 89,
+      "id": 168,
       "kind": "system",
       "text": "托克 信任 +2",
       "turn": 4
     },
     {
       "command_id": "w-4:world",
-      "id": 91,
+      "id": 170,
       "kind": "world",
       "text": "",
       "turn": 4,
@@ -450,7 +434,7 @@
     },
     {
       "command_id": "w-4:usage",
-      "id": 92,
+      "id": 171,
       "kind": "usage",
       "text": "",
       "turn": 4,
@@ -485,7 +469,7 @@
     },
     {
       "command_id": "w-5",
-      "id": 93,
+      "id": 172,
       "kind": "player",
       "text": "迎战",
       "turn": 5
@@ -509,7 +493,7 @@
         "target": "阿砾"
       },
       "command_id": "w-5",
-      "id": 94,
+      "id": 173,
       "kind": "combat",
       "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
       "turn": 5
@@ -533,14 +517,14 @@
         "target": "阿砾"
       },
       "command_id": "w-5",
-      "id": 95,
+      "id": 174,
       "kind": "combat",
       "text": "发条鼠甲发动了攻击，击中了阿砾。 −3",
       "turn": 5
     },
     {
       "command_id": "w-5",
-      "id": 97,
+      "id": 176,
       "kind": "narration",
       "source": "ai",
       "text": "铁闸后传来齿轮咬合的声音，空气里全是机油味。",
@@ -548,14 +532,14 @@
     },
     {
       "command_id": "w-5",
-      "id": 96,
+      "id": 175,
       "kind": "story",
       "text": "战斗开始：试炼第一场：发条鼠",
       "turn": 5
     },
     {
       "command_id": "w-5:usage",
-      "id": 98,
+      "id": 177,
       "kind": "usage",
       "text": "",
       "turn": 5,
@@ -579,7 +563,7 @@
     },
     {
       "command_id": "w-6",
-      "id": 99,
+      "id": 178,
       "kind": "player",
       "text": "趁它扑过来的空档，扫腿绊倒发条鼠，再抡扳手砸它背上的发条钥匙",
       "turn": 6
@@ -608,7 +592,7 @@
         "total": 12
       },
       "command_id": "w-6",
-      "id": 100,
+      "id": 179,
       "kind": "adjudication",
       "text": "战技「绊倒」 · 发条鼠甲 · 发条钥匙 · 学徒扳手",
       "turn": 6
@@ -625,7 +609,7 @@
         "target": "发条鼠甲"
       },
       "command_id": "w-6",
-      "id": 101,
+      "id": 180,
       "kind": "combat",
       "text": "阿砾发动了攻击，被发条鼠甲躲开了。",
       "turn": 6
@@ -641,7 +625,7 @@
         "side": "party"
       },
       "command_id": "w-6",
-      "id": 102,
+      "id": 181,
       "kind": "combat",
       "text": "阿砾陷入失衡（1 回合）",
       "turn": 6
@@ -665,14 +649,14 @@
         "target": "阿砾"
       },
       "command_id": "w-6",
-      "id": 103,
+      "id": 182,
       "kind": "combat",
       "text": "发条鼠甲发动了攻击，击中了阿砾。 −4",
       "turn": 6
     },
     {
       "command_id": "w-6",
-      "id": 104,
+      "id": 183,
       "kind": "narration",
       "source": "template",
       "text": "你发动了攻击，被发条鼠甲躲开了。发条鼠甲发动了攻击，击中了你。",
@@ -680,7 +664,7 @@
     },
     {
       "command_id": "w-6:usage",
-      "id": 105,
+      "id": 184,
       "kind": "usage",
       "text": "",
       "turn": 6,
@@ -706,7 +690,7 @@
     },
     {
       "command_id": "w-7",
-      "id": 106,
+      "id": 185,
       "kind": "player",
       "text": "攻击",
       "turn": 7
@@ -725,7 +709,7 @@
         "target": "发条鼠甲"
       },
       "command_id": "w-7",
-      "id": 107,
+      "id": 186,
       "kind": "combat",
       "text": "阿砾发动了攻击，被发条鼠甲躲开了。",
       "turn": 7
@@ -744,7 +728,7 @@
         "target": "阿砾"
       },
       "command_id": "w-7",
-      "id": 108,
+      "id": 187,
       "kind": "combat",
       "text": "发条鼠乙发动了攻击，被阿砾躲开了。",
       "turn": 7
@@ -768,14 +752,14 @@
         "target": "阿砾"
       },
       "command_id": "w-7",
-      "id": 109,
+      "id": 188,
       "kind": "combat",
       "text": "发条鼠甲发动了攻击，击中了阿砾。 −4",
       "turn": 7
     },
     {
       "command_id": "w-7",
-      "id": 110,
+      "id": 189,
       "kind": "narration",
       "source": "template",
       "text": "你发动了攻击，被发条鼠甲躲开了。发条鼠乙发动了攻击，被你躲开了。发条鼠甲发动了攻击，击中了你。",
@@ -783,7 +767,7 @@
     },
     {
       "command_id": "w-8",
-      "id": 111,
+      "id": 190,
       "kind": "player",
       "text": "攻击",
       "turn": 8
@@ -807,7 +791,7 @@
         "target": "发条鼠甲"
       },
       "command_id": "w-8",
-      "id": 112,
+      "id": 191,
       "kind": "combat",
       "text": "阿砾发动了攻击，击中了发条鼠甲。 −14",
       "turn": 8
@@ -831,7 +815,7 @@
         "target": "阿砾"
       },
       "command_id": "w-8",
-      "id": 113,
+      "id": 192,
       "kind": "combat",
       "text": "发条鼠甲发动了攻击，击中了阿砾。 −3",
       "turn": 8
@@ -855,7 +839,7 @@
         "target": "阿砾"
       },
       "command_id": "w-8",
-      "id": 114,
+      "id": 193,
       "kind": "combat",
       "text": "发条鼠乙发动了攻击，击中了阿砾。 −3",
       "turn": 8
@@ -874,14 +858,14 @@
         "target": "阿砾"
       },
       "command_id": "w-8",
-      "id": 115,
+      "id": 194,
       "kind": "combat",
       "text": "发条鼠甲发动了攻击，被阿砾躲开了。",
       "turn": 8
     },
     {
       "command_id": "w-8",
-      "id": 116,
+      "id": 195,
       "kind": "narration",
       "source": "template",
       "text": "你发动了攻击，击中了发条鼠甲。发条鼠甲发动了攻击，击中了你。发条鼠乙发动了攻击，击中了你。",
@@ -889,7 +873,7 @@
     },
     {
       "command_id": "w-9",
-      "id": 117,
+      "id": 196,
       "kind": "player",
       "text": "攻击",
       "turn": 9
@@ -913,7 +897,7 @@
         "target": "发条鼠甲"
       },
       "command_id": "w-9",
-      "id": 118,
+      "id": 197,
       "kind": "combat",
       "text": "阿砾发动了攻击，击中了发条鼠甲。 −15",
       "turn": 9
@@ -926,7 +910,7 @@
         "side": "enemy"
       },
       "command_id": "w-9",
-      "id": 119,
+      "id": 198,
       "kind": "combat",
       "text": "发条鼠甲倒下了",
       "turn": 9
@@ -950,14 +934,14 @@
         "target": "阿砾"
       },
       "command_id": "w-9",
-      "id": 120,
+      "id": 199,
       "kind": "combat",
       "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
       "turn": 9
     },
     {
       "command_id": "w-9",
-      "id": 121,
+      "id": 200,
       "kind": "narration",
       "source": "template",
       "text": "你发动了攻击，击中了发条鼠甲。发条鼠甲倒下了。发条鼠乙发动了攻击，击中了你。",
@@ -965,7 +949,7 @@
     },
     {
       "command_id": "w-10",
-      "id": 122,
+      "id": 201,
       "kind": "player",
       "text": "攻击",
       "turn": 10
@@ -984,7 +968,7 @@
         "target": "发条鼠乙"
       },
       "command_id": "w-10",
-      "id": 123,
+      "id": 202,
       "kind": "combat",
       "text": "阿砾发动了攻击，被发条鼠乙躲开了。",
       "turn": 10
@@ -1008,7 +992,7 @@
         "target": "阿砾"
       },
       "command_id": "w-10",
-      "id": 124,
+      "id": 203,
       "kind": "combat",
       "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
       "turn": 10
@@ -1032,14 +1016,14 @@
         "target": "阿砾"
       },
       "command_id": "w-10",
-      "id": 125,
+      "id": 204,
       "kind": "combat",
       "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
       "turn": 10
     },
     {
       "command_id": "w-10",
-      "id": 126,
+      "id": 205,
       "kind": "narration",
       "source": "template",
       "text": "你发动了攻击，被发条鼠乙躲开了。发条鼠乙发动了攻击，击中了你。发条鼠乙发动了攻击，击中了你。",
@@ -1047,7 +1031,7 @@
     },
     {
       "command_id": "w-11",
-      "id": 127,
+      "id": 206,
       "kind": "player",
       "text": "攻击",
       "turn": 11
@@ -1066,14 +1050,14 @@
         "target": "发条鼠乙"
       },
       "command_id": "w-11",
-      "id": 128,
+      "id": 207,
       "kind": "combat",
       "text": "阿砾发动了攻击，被发条鼠乙躲开了。",
       "turn": 11
     },
     {
       "command_id": "w-11",
-      "id": 129,
+      "id": 208,
       "kind": "narration",
       "source": "template",
       "text": "你发动了攻击，被发条鼠乙躲开了。",
@@ -1081,7 +1065,7 @@
     },
     {
       "command_id": "w-12",
-      "id": 130,
+      "id": 209,
       "kind": "player",
       "text": "攻击",
       "turn": 12
@@ -1105,7 +1089,7 @@
         "target": "发条鼠乙"
       },
       "command_id": "w-12",
-      "id": 131,
+      "id": 210,
       "kind": "combat",
       "text": "阿砾发动了攻击，击中了发条鼠乙。 −12",
       "turn": 12
@@ -1129,7 +1113,7 @@
         "target": "阿砾"
       },
       "command_id": "w-12",
-      "id": 132,
+      "id": 211,
       "kind": "combat",
       "text": "发条鼠乙发动了攻击，击中了阿砾。 −4",
       "turn": 12
@@ -1148,14 +1132,14 @@
         "target": "阿砾"
       },
       "command_id": "w-12",
-      "id": 133,
+      "id": 212,
       "kind": "combat",
       "text": "发条鼠乙发动了攻击，被阿砾躲开了。",
       "turn": 12
     },
     {
       "command_id": "w-12",
-      "id": 134,
+      "id": 213,
       "kind": "narration",
       "source": "template",
       "text": "你发动了攻击，击中了发条鼠乙。发条鼠乙发动了攻击，击中了你。发条鼠乙发动了攻击，被你躲开了。",
@@ -1163,7 +1147,7 @@
     },
     {
       "command_id": "w-13",
-      "id": 135,
+      "id": 214,
       "kind": "player",
       "text": "攻击",
       "turn": 13
@@ -1187,7 +1171,7 @@
         "target": "发条鼠乙"
       },
       "command_id": "w-13",
-      "id": 136,
+      "id": 215,
       "kind": "combat",
       "text": "阿砾发动了攻击，击中了发条鼠乙。 −14",
       "turn": 13
@@ -1200,14 +1184,14 @@
         "side": "enemy"
       },
       "command_id": "w-13",
-      "id": 137,
+      "id": 216,
       "kind": "combat",
       "text": "发条鼠乙倒下了",
       "turn": 13
     },
     {
       "command_id": "w-13",
-      "id": 141,
+      "id": 220,
       "kind": "narration",
       "source": "ai",
       "text": "铁闸后传来齿轮咬合的声音，空气里全是机油味。",
@@ -1221,28 +1205,28 @@
         "欧琳→你 信任 +3"
       ],
       "command_id": "w-13",
-      "id": 138,
+      "id": 217,
       "kind": "system",
       "text": "生命 -37 · 铜币 +6 · 经验 +50 · 欧琳→你 信任 +3",
       "turn": 13
     },
     {
       "command_id": "w-13",
-      "id": 139,
+      "id": 218,
       "kind": "story",
       "text": "战斗胜利：试炼第一场：发条鼠",
       "turn": 13
     },
     {
       "command_id": "w-13",
-      "id": 140,
+      "id": 219,
       "kind": "story",
       "text": "事件进展：赢下了第一场试炼",
       "turn": 13
     },
     {
       "command_id": "w-13:usage",
-      "id": 142,
+      "id": 221,
       "kind": "usage",
       "text": "",
       "turn": 13,
@@ -1266,14 +1250,14 @@
     },
     {
       "command_id": "w-14",
-      "id": 143,
+      "id": 222,
       "kind": "player",
       "text": "去钟楼广场",
       "turn": 14
     },
     {
       "command_id": "w-14",
-      "id": 144,
+      "id": 223,
       "kind": "narration",
       "source": "ai",
       "text": "远处传来汽笛声，运煤驳船正慢吞吞地靠岸。",
@@ -1281,7 +1265,7 @@
     },
     {
       "command_id": "w-14:usage",
-      "id": 145,
+      "id": 224,
       "kind": "usage",
       "text": "",
       "turn": 14,
@@ -1316,14 +1300,14 @@
     },
     {
       "command_id": "w-15",
-      "id": 146,
+      "id": 225,
       "kind": "player",
       "text": "去北码头",
       "turn": 15
     },
     {
       "command_id": "w-15",
-      "id": 148,
+      "id": 227,
       "kind": "narration",
       "source": "ai",
       "text": "风从钟楼那边吹过来，带着煤烟味。",
@@ -1334,14 +1318,14 @@
         "时间 +15 分钟"
       ],
       "command_id": "w-15",
-      "id": 147,
+      "id": 226,
       "kind": "system",
       "text": "时间 +15 分钟",
       "turn": 15
     },
     {
       "command_id": "w-15:usage",
-      "id": 149,
+      "id": 228,
       "kind": "usage",
       "text": "",
       "turn": 15,
@@ -1375,90 +1359,67 @@
       }
     },
     {
-      "command_id": "w-16",
-      "id": 150,
+      "command_id": "w-17:fork",
+      "id": 229,
+      "kind": "branch",
+      "text": "从回合 15 分出 · 分支 A",
+      "turn": 15
+    },
+    {
+      "command_id": "w-17",
+      "id": 230,
       "kind": "player",
-      "text": "踹开仓库门，把油桶推进火里，逼他们出来",
+      "text": "冲进火场，把托克拖出来",
       "turn": 16
     },
     {
-      "command_id": "w-16",
-      "corrected": true,
-      "id": 152,
+      "command_id": "w-17",
+      "id": 231,
       "kind": "narration",
-      "source": "template(guard)",
-      "text": "你踹开仓库门，把油桶推进火里，逼他们出来。“砰”的一声，整个北码头都安静了一瞬，所有人都朝你看了过来。",
+      "source": "ai",
+      "text": "你扯下帆布裹住托克，在横梁塌下来之前把他拖出了仓库。他咳得直不起腰，却死死攥着那张传单。",
       "turn": 16
     },
     {
-      "chips": [
-        "引起了骚动"
-      ],
-      "command_id": "w-16",
-      "id": 151,
-      "kind": "system",
-      "text": "引起了骚动",
-      "turn": 16
-    },
-    {
-      "command_id": "w-16:world",
-      "id": 153,
+      "command_id": "w-17:world",
+      "id": 232,
       "kind": "world",
       "text": "",
       "turn": 16,
       "world": {
         "changes": [
           {
-            "after": "reason death，text 死于北码头三号仓的大火，turn 16",
-            "can_revert": true,
-            "id": "wc-16-2",
-            "impact": 47,
-            "mechanical": true,
-            "op": "retire",
-            "reason": "横梁塌落，托克没能逃出来",
-            "source": "narrate",
-            "source_label": "AI 叙事",
-            "summary": "托克 死亡",
-            "target": "brass:character/tock",
-            "target_name": "托克",
-            "time": "第1天 08:37 · 上午",
-            "turn": 16,
-            "types": [
-              "major_death"
-            ]
-          },
-          {
-            "after": "三号仓只剩下焦黑的木桩，煤油味混着焦糊味。",
+            "after": "三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
             "before": "运煤驳船挤在北码头的木桩之间，吊臂吱呀作响。三号仓的铁门上刷着煤烟帮的黑手印，门缝里飘出一股煤油味。",
             "can_revert": true,
-            "id": "wc-16-3",
+            "id": "wc-16-2",
             "impact": 25,
             "op": "patch",
             "path": "fields.description",
-            "reason": "仓库被烧毁",
+            "reason": "仓库失火，托克被救出",
             "source": "narrate",
             "source_label": "AI 叙事",
-            "summary": "北码头：描述 → 三号仓只剩下焦黑的木桩，煤油味混着焦糊味。",
+            "summary": "北码头：描述 → 三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
             "target": "brass:location/north_dock",
             "target_name": "北码头",
-            "time": "第1天 08:37 · 上午",
+            "time": "第1天 08:38 · 上午",
             "turn": 16
           }
         ],
-        "impact": 60
+        "impact": 30
       }
     },
     {
-      "command_id": "w-16:usage",
-      "id": 154,
+      "command_id": "w-17:usage",
+      "id": 233,
       "kind": "usage",
       "text": "",
       "turn": 16,
       "usage": {
         "calls": 3,
-        "completion_tokens": 802,
+        "completion_tokens": 748,
         "failed": 1,
-        "prompt_tokens": 4248,
+        "prompt_tokens": 4232,
         "tasks": [
           {
             "calls": 1,
@@ -1472,15 +1433,201 @@
           },
           {
             "calls": 2,
-            "completion_tokens": 802,
-            "latency_ms": 1,
+            "completion_tokens": 748,
+            "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
-            "prompt_tokens": 4248,
+            "prompt_tokens": 4232,
             "task": "narrate_world"
           }
         ],
         "turn": 16
+      }
+    },
+    {
+      "command_id": "w-18",
+      "id": 234,
+      "kind": "player",
+      "text": "把托克交给小铆钉照顾",
+      "turn": 17
+    },
+    {
+      "command_id": "w-18",
+      "id": 235,
+      "kind": "narration",
+      "source": "ai",
+      "text": "小铆钉二话不说，把托克架到了工坊后屋，翻出一卷干净绷带。“欠我一顿肉包子，”她冲托克眨眨眼。",
+      "turn": 17
+    },
+    {
+      "command_id": "w-18:world",
+      "id": 236,
+      "kind": "world",
+      "text": "",
+      "turn": 17,
+      "world": {
+        "changes": [
+          {
+            "after": "3",
+            "can_revert": true,
+            "id": "wc-17-3",
+            "impact": 10,
+            "op": "patch",
+            "path": "dims.trust",
+            "reason": "小铆钉照顾了受伤的托克",
+            "source": "narrate",
+            "source_label": "AI 叙事",
+            "summary": "小铆钉→托克 信任 +3",
+            "target": "brass:character/rivet\u003ebrass:character/tock",
+            "target_name": "brass:character/rivet\u003ebrass:character/tock",
+            "time": "第1天 08:40 · 上午",
+            "turn": 17
+          }
+        ],
+        "impact": 30
+      }
+    },
+    {
+      "command_id": "w-18:usage",
+      "id": 237,
+      "kind": "usage",
+      "text": "",
+      "turn": 17,
+      "usage": {
+        "calls": 3,
+        "completion_tokens": 751,
+        "failed": 1,
+        "prompt_tokens": 4230,
+        "tasks": [
+          {
+            "calls": 1,
+            "completion_tokens": 0,
+            "failed": 1,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "意图解析",
+            "prompt_tokens": 0,
+            "task": "parse_action"
+          },
+          {
+            "calls": 2,
+            "completion_tokens": 751,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "叙事 + 世界更新",
+            "prompt_tokens": 4230,
+            "task": "narrate_world"
+          }
+        ],
+        "turn": 17
+      }
+    },
+    {
+      "command_id": "apply-638782204f3334a4",
+      "id": 238,
+      "kind": "world",
+      "source": "user_request",
+      "text": "",
+      "turn": 17,
+      "world": {
+        "changes": [
+          {
+            "after": "三号仓的废墟被围了起来，议会贴出告示：任何人不得靠近。",
+            "before": "三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
+            "can_revert": true,
+            "id": "wc-17-4",
+            "impact": 25,
+            "op": "patch",
+            "path": "fields.description",
+            "reason": "你的要求：火场封锁",
+            "source": "user_request",
+            "source_label": "你的指令",
+            "summary": "北码头：描述 → 三号仓的废墟被围了起来，议会贴出告示：任何人不得靠近。",
+            "target": "brass:location/north_dock",
+            "target_name": "北码头",
+            "time": "第1天 08:40 · 上午",
+            "turn": 17
+          }
+        ],
+        "impact": 25
+      }
+    },
+    {
+      "command_id": "w-19",
+      "id": 239,
+      "kind": "player",
+      "text": "等待 8h",
+      "turn": 18
+    },
+    {
+      "command_id": "w-19",
+      "id": 241,
+      "kind": "narration",
+      "source": "template",
+      "text": "时间悄悄流过。",
+      "turn": 18
+    },
+    {
+      "chips": [
+        "时间 +480 分钟"
+      ],
+      "command_id": "w-19",
+      "id": 240,
+      "kind": "system",
+      "text": "时间 +480 分钟",
+      "turn": 18
+    },
+    {
+      "command_id": "w-19:sim",
+      "id": 242,
+      "kind": "sim",
+      "source": "world_sim:ai",
+      "text": "码头上的人都在传：煤烟帮连夜在北码头加了岗哨，每一辆煤车都要查。",
+      "turn": 18,
+      "world": {
+        "changes": [
+          {
+            "after": "在北码头加了岗哨，盯着每一辆煤车",
+            "can_revert": true,
+            "id": "wc-18-5",
+            "impact": 25,
+            "op": "patch",
+            "path": "fields.stance",
+            "reason": "场外：煤烟帮加强码头控制",
+            "source": "world_sim",
+            "source_label": "世界模拟",
+            "summary": "煤烟帮：态度 → 在北码头加了岗哨，盯着每一辆煤车",
+            "target": "brass:faction/soot_gang",
+            "target_name": "煤烟帮",
+            "time": "第1天 16:40 · 下午",
+            "turn": 18
+          }
+        ],
+        "impact": 25
+      }
+    },
+    {
+      "command_id": "w-19:usage",
+      "id": 243,
+      "kind": "usage",
+      "text": "",
+      "turn": 18,
+      "usage": {
+        "calls": 1,
+        "completion_tokens": 390,
+        "prompt_tokens": 2660,
+        "tasks": [
+          {
+            "calls": 1,
+            "completion_tokens": 390,
+            "latency_ms": 0,
+            "model": "custom:deepseek-chat",
+            "name": "世界模拟",
+            "prompt_tokens": 2660,
+            "task": "world_sim"
+          }
+        ],
+        "turn": 18
       }
     }
   ]

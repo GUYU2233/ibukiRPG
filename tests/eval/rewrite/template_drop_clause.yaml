@@ -1,0 +1,7 @@
+description: 没有改写词时删掉含禁用词的整个分句，并清理标点
+rewrite:
+  text: 从小跟着舅舅跑船，会一点魔法，力气很大。
+  forbidden: [魔法]
+  expect_source: template
+  expect_contains: [跑船, 力气很大]
+  expect_lacks: [会一点, "，，", "，。"]

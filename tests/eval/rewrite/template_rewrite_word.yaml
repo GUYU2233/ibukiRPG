@@ -1,0 +1,8 @@
+description: 没有 AI 时按故事包改写词替换（不再留下“会一点，”这样的残句）
+rewrite:
+  text: 在下水道长大，据说会一点魔法，能让齿轮自己转起来。
+  forbidden: [魔法]
+  rewrites: {魔法: 修理机械的诀窍}
+  expect_source: template
+  expect_contains: [修理机械的诀窍, 齿轮自己转起来]
+  expect_lacks: [会一点，]

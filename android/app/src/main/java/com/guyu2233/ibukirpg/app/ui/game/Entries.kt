@@ -64,6 +64,7 @@ fun EntryItem(
     when (entry.kind) {
         "audit" -> entry.audit?.let { AuditCard(it, enabled, onAudit) }
         "world" -> entry.world?.let { WorldEntry(it) }
+        "sim" -> SimEntry(entry)
         "adjudication" -> entry.adjudication?.let { AdjudicationCard(it) }
         "usage" -> entry.usage?.let { UsageLine(it, onRollback) }
         "combat" -> CombatEntry(entry, onCard)

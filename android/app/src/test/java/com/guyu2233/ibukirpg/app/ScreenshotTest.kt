@@ -14,6 +14,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
+import com.guyu2233.ibukirpg.app.data.DecisionV1
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.guyu2233.ibukirpg.app.data.AuditFindingV1
@@ -34,6 +40,10 @@ import com.guyu2233.ibukirpg.app.data.TasksV1
 import com.guyu2233.ibukirpg.app.data.TimelineV1
 import com.guyu2233.ibukirpg.app.data.WorldPanelV1
 import com.guyu2233.ibukirpg.app.ui.game.DecisionContent
+import com.guyu2233.ibukirpg.app.data.RevertPlanV1
+import com.guyu2233.ibukirpg.app.data.ExternalNoticeV1
+import com.guyu2233.ibukirpg.app.ui.game.RevertPlanContent
+import com.guyu2233.ibukirpg.app.ui.settings.WorldSimSettings
 import com.guyu2233.ibukirpg.app.ui.game.SensitivityContent
 import com.guyu2233.ibukirpg.app.ui.game.TimelineActions
 import com.guyu2233.ibukirpg.app.ui.game.TimelineContent
@@ -515,5 +525,67 @@ class ScreenshotTest {
                 story = "在下水道长大，据说会一点魔法，能让齿轮自己转起来。", attributes = mapOf("agility" to 4, "strength" to 3, "resolve" to 1),
             ),
         )
+    }
+
+    // ---------- 0.2.0-rc1 ----------
+
+    @Test fun rc1WorldSim() = shoot("50-rc1-world-sim.png") {
+        GameContent(rpgGame("v02_sim.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false)
+    }
+
+    @Test fun rc1RevertCascade() = shoot("51-rc1-revert-cascade.png") {
+        Box(Modifier.fillMaxSize()) {
+            GameContent(rpgGame("v02_after.json"), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false)
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.32f)))
+            Surface(Modifier.padding(24.dp).align(Alignment.Center), shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+                Column(Modifier.padding(24.dp)) {
+                    Text("撤销世界变更", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.height(16.dp))
+                    val p = fixture<RevertPlanV1>("v02_revert_plan.json")
+                    RevertPlanContent(p)
+                    Spacer(Modifier.height(16.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        OutlinedButton(onClick = {}, enabled = p.canSingle) { Text("只撤销这一条") }
+                        Spacer(Modifier.width(8.dp))
+                        Button(onClick = {}) { Text("连同撤销 ${p.dependents.size} 项") }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test fun rc1ExternalNotice() = shoot("52-rc1-external-notice.png") {
+        val g = rpgGame("v02_after.json")
+        GameContent(g.copy(external = fixture<ExternalNoticeV1>("v02_external.json")), "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false)
+    }
+
+    @Test fun rc1WorldLogMcp() = shoot("53-rc1-world-log-mcp.png") {
+        val log = fixture<WorldPanelV1>("v02_world_log.json")
+        val mcp = listOf(
+            WorldChangeV1(id = "wc-20-1", summary = "煤烟帮：立场 → 与议会暗中谈判", source = "mcp", sourceLabel = "外部工具", turn = 20, canRevert = true),
+            WorldChangeV1(id = "wc-20-2", summary = "欧琳：目标 → 在试炼前修好钟楼的主齿轮", source = "mcp", sourceLabel = "外部工具", turn = 20, canRevert = true),
+            WorldChangeV1(id = "wc-20-3", summary = "新地点：旧排水渠", source = "mcp", sourceLabel = "外部工具", turn = 20, canRevert = true),
+        )
+        val tabs = worldTabs.tabs + ("log" to log.copy(changes = mcp + log.changes))
+        WorldPanelContent(WorldState(tabs = tabs), busy = false, onTab = {}, onAction = { _, _ -> }, onRevert = {}, extras = WorldExtras(logSource = "mcp"))
+    }
+
+    @Test fun rc1GenerationSim() = shoot("54-rc1-generation-sim.png") {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            WorldSimSettings(GenSettingsV1(simEveryMinutes = 480, simAiCallsPerDay = 2), onGen = {})
+        }
+    }
+
+    @Test fun rc1SimDecision() = shoot("55-rc1-sim-decision.png") {
+        val d = DecisionV1(
+            id = "dec-sim-1", type = "story_impact", typeLabel = "剧情影响", sensitivity = "高", world = true,
+            title = "场外世界：行会与议会决裂", summary = "你不在的这段时间，场外发生了较大的变化。",
+            lines = listOf("行会：描述 → 已经与议会决裂，关上了工坊大门", "议会：描述 → 宣布接管钟楼", "试炼日 → 被议会叫停"),
+            score = 62, rollbackText = "撤掉这次场外推进",
+        )
+        val g = rpgGame("v02_after.json")
+        SheetOver({ GameContent(g, "", PanelsState(), {}, {}, {}, { _, _ -> }, {}, {}, {}, showDecisionSheet = false) }) {
+            DecisionContent(d, busy = false, onAccept = {}, onRollback = {}, onSensitivity = {})
+        }
     }
 }

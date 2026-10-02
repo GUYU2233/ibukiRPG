@@ -1,0 +1,8 @@
+description: AI 改写仍含禁用词 → 退回模板改写
+rewrite:
+  text: 据说会一点魔法，能让齿轮自己转起来。
+  forbidden: [魔法]
+  rewrites: {魔法: 修理机械的诀窍}
+  ai: 据说会一点小魔法。
+  expect_source: template
+  expect_contains: [修理机械的诀窍]

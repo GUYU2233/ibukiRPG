@@ -67,6 +67,26 @@ data class DecisionV1(
     val rollbackTurn: Int = 0,
     val rollbackText: String? = null,
     val checkpoint: String? = null,
+    /** 0.2.0-rc1：场外世界推进（世界模拟）引起的提示；回滚只撤掉这次场外推进。 */
+    val world: Boolean = false,
+)
+
+/** 撤销前检查（0.2.0-rc1）：之后依赖这条变更的变更（撤销顺序），以及能否只撤销这一条。 */
+@Immutable @Serializable
+data class RevertPlanV1(
+    val change: WorldChangeV1 = WorldChangeV1(),
+    val dependents: List<WorldChangeV1> = emptyList(),
+    val canSingle: Boolean = false,
+    val singleNote: String? = null,
+)
+
+/** “外部工具修改了 N 项设定”（0.2.0-rc1）。 */
+@Immutable @Serializable
+data class ExternalNoticeV1(
+    val count: Int = 0,
+    val text: String = "",
+    val ids: List<String> = emptyList(),
+    val source: String = "mcp",
 )
 
 @Immutable @Serializable
@@ -229,6 +249,12 @@ data class GenSettingsV1(
     val auditEveryTurns: Int = 0,
     val showTokenUsage: Boolean = true,
     val retryOnRefusal: Boolean = false,
+    /** 0.2.0-rc1 世界模拟：0 = 故事包默认间隔，-1 = 关闭，其它 = 每 N 游戏分钟。 */
+    val simEveryMinutes: Int = 0,
+    /** 每个游戏日最多几次 AI 世界模拟：0 = 故事包默认，-1 = 只用规则。 */
+    val simAiCallsPerDay: Int = 0,
+    /** 关闭游戏内写入工具（函数调用）：只用 WORLD 段 JSON。 */
+    val worldToolsOff: Boolean = false,
 )
 
 @Immutable @Serializable

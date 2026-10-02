@@ -95,6 +95,7 @@ fun DecisionContent(
             )
             Spacer(Modifier.width(12.dp))
             val label = buildString {
+                if (d.world) append("场外世界 · ")
                 append(d.typeLabel)
                 if (d.sensitivity.isNotBlank()) append(" · 灵敏度 ").append(d.sensitivity)
                 if (d.notify) append(" · 仅通知")

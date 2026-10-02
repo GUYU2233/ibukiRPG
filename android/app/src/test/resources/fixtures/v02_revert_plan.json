@@ -1,0 +1,40 @@
+{
+  "can_single": true,
+  "change": {
+    "after": "三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
+    "before": "运煤驳船挤在北码头的木桩之间，吊臂吱呀作响。三号仓的铁门上刷着煤烟帮的黑手印，门缝里飘出一股煤油味。",
+    "can_revert": true,
+    "id": "wc-16-2",
+    "impact": 25,
+    "op": "patch",
+    "path": "fields.description",
+    "reason": "仓库失火，托克被救出",
+    "source": "narrate",
+    "source_label": "AI 叙事",
+    "summary": "北码头：描述 → 三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
+    "target": "brass:location/north_dock",
+    "target_name": "北码头",
+    "time": "第1天 08:38 · 上午",
+    "turn": 16
+  },
+  "dependents": [
+    {
+      "after": "三号仓的废墟被围了起来，议会贴出告示：任何人不得靠近。",
+      "before": "三号仓的屋顶塌了一半，焦黑的横梁斜插在水里。",
+      "can_revert": true,
+      "id": "wc-17-4",
+      "impact": 25,
+      "op": "patch",
+      "path": "fields.description",
+      "reason": "你的要求：火场封锁",
+      "source": "user_request",
+      "source_label": "你的指令",
+      "summary": "北码头：描述 → 三号仓的废墟被围了起来，议会贴出告示：任何人不得靠近。",
+      "target": "brass:location/north_dock",
+      "target_name": "北码头",
+      "time": "第1天 08:40 · 上午",
+      "turn": 17
+    }
+  ],
+  "single_note": "这个值之后被回合 17 的变更改过：只撤销这一条时当前值不变，以后再撤销那条变更会回到这条之前的值"
+}

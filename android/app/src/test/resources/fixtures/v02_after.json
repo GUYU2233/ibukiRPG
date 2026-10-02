@@ -91,7 +91,7 @@
     "player_name": "阿砾",
     "present": [],
     "save_name": "阿砾的旅程",
-    "slot_id": "slot-1790874354510-99546cb6",
+    "slot_id": "slot-1790913206762-4d261484",
     "story": {
       "hints": [
         "去竞技场"
@@ -1420,10 +1420,10 @@
       "text": "",
       "turn": 16,
       "usage": {
-        "calls": 2,
-        "completion_tokens": 437,
+        "calls": 3,
+        "completion_tokens": 748,
         "failed": 1,
-        "prompt_tokens": 2116,
+        "prompt_tokens": 4232,
         "tasks": [
           {
             "calls": 1,
@@ -1436,12 +1436,12 @@
             "task": "parse_action"
           },
           {
-            "calls": 1,
-            "completion_tokens": 437,
+            "calls": 2,
+            "completion_tokens": 748,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
-            "prompt_tokens": 2116,
+            "prompt_tokens": 4232,
             "task": "narrate_world"
           }
         ],
@@ -1498,10 +1498,10 @@
       "text": "",
       "turn": 17,
       "usage": {
-        "calls": 2,
-        "completion_tokens": 440,
+        "calls": 3,
+        "completion_tokens": 751,
         "failed": 1,
-        "prompt_tokens": 2115,
+        "prompt_tokens": 4230,
         "tasks": [
           {
             "calls": 1,
@@ -1514,12 +1514,12 @@
             "task": "parse_action"
           },
           {
-            "calls": 1,
-            "completion_tokens": 440,
+            "calls": 2,
+            "completion_tokens": 751,
             "latency_ms": 0,
             "model": "custom:deepseek-chat",
             "name": "叙事 + 世界更新",
-            "prompt_tokens": 2115,
+            "prompt_tokens": 4230,
             "task": "narrate_world"
           }
         ],

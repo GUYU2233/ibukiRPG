@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.Undo
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.outlined.Edit
@@ -90,6 +91,8 @@ data class WorldExtras(
     val onNewCard: (() -> Unit)? = null,
     val onRunAudit: (() -> Unit)? = null,
     val auditBusy: Boolean = false,
+    /** 0.2.0-rc1：从“外部工具修改了 N 项设定”打开时直接进入日志页，并按来源筛选（mcp）。 */
+    val logSource: String? = null,
 )
 
 /** 手机：底部抽屉。 */
@@ -139,7 +142,8 @@ fun WorldPanelContent(
     onClose: (() -> Unit)? = null,
     extras: WorldExtras = WorldExtras(),
 ) {
-    var tab by rememberSaveable { mutableStateOf(initialTab) }
+    var tab by rememberSaveable(extras.logSource) { mutableStateOf(if (extras.logSource != null) WorldTab.Log.ordinal else initialTab) }
+    var onlySource by rememberSaveable(extras.logSource) { mutableStateOf(extras.logSource) }
     var focus by rememberSaveable { mutableStateOf<String?>(null) }
     var category by rememberSaveable { mutableStateOf<String?>(null) }
     val dialogs = rememberRpgDialogState()
@@ -194,7 +198,12 @@ fun WorldPanelContent(
                             }
                         }
                     }
-                    changes(data.changes, busy, onRevert)
+                    if (onlySource != null) {
+                        item(key = "source-filter") {
+                            FilterChip(selected = true, onClick = { onlySource = null }, label = { Text("只看外部工具的修改 ✕") })
+                        }
+                    }
+                    changes(onlySource?.let { src -> data.changes.filter { it.source == src } } ?: data.changes, busy, onRevert)
                 }
             }
             item {

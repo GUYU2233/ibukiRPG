@@ -164,6 +164,7 @@ data class GameBundle(
     val scene: SceneV1 = SceneV1(),
     val transcript: List<EntryV1> = emptyList(),
     val suggestions: List<SuggestionV1> = emptyList(),
+    val externalNotice: ExternalNoticeV1? = null,
 )
 
 @Immutable @Serializable

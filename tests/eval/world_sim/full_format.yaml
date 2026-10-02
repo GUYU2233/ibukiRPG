@@ -1,0 +1,10 @@
+description: 世界模拟（完整格式）：传闻 + 势力立场变化；针对玩家的修改被丢弃，原因加上“场外”前缀
+sim:
+  raw: |
+    {"news":["听说煤烟帮在北码头加了岗哨。"],"changes":[
+     {"op":"patch","target":"brass:faction/soot_gang","path":"fields.stance","value":"在北码头加了岗哨","reason":"加强码头控制"},
+     {"op":"patch","target":"player","path":"gold","value":500,"reason":"不应该被接受"},
+     {"op":"patch","target":"player>brass:character/tock","path":"dims.trust","value":5,"reason":"不应该被接受"}]}
+  expect_news: 1
+  expect_changes: 1
+  forbid_targets: [player]

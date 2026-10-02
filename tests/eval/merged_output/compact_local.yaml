@@ -1,0 +1,10 @@
+description: 本地模型精简格式的 WORLD 段（edits / moves / rel）展开为标准 changes
+merged:
+  raw: |
+    欧琳把扳手扔给你，转身去了广场。
+    <<<WORLD>>>
+    {"v":1,"edits":[{"id":"brass:location/workshop","field":"description","text":"炉火熄了一半"}],"moves":[{"id":"brass:character/orin","to":"brass:location/plaza"}],"rel":[{"a":"brass:character/orin","b":"player","dim":"trust","delta":2}]}
+    <<<END>>>
+  expect_world: true
+  expect_changes: 3
+  narration_lacks: ["<<<WORLD>>>"]

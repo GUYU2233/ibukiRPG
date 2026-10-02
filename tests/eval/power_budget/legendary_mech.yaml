@@ -1,0 +1,7 @@
+description: 传说机甲的预算高于史诗机甲
+power:
+  ref: 20
+  kind: mech
+  rarity: legendary
+  level: 1
+  higher_than: {kind: mech, rarity: epic, level: 1}

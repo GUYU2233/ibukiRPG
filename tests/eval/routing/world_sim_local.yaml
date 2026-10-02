@@ -1,0 +1,9 @@
+description: 世界模拟按任务分配给本地小模型：使用精简档位（reduced schema）
+routing:
+  providers:
+    - {id: ds, kind: deepseek, model: deepseek-chat, api_key: k}
+    - {id: phone, kind: llamacpp, model: Qwen2.5-3B Q4_K_M, base_url: "http://127.0.0.1:1/v1", api_key: t, size_b: 3}
+  settings: {mode: per_task, unified: {provider: ds}, tasks: {world_sim: {provider: phone}}, sim_ai_calls_per_day: 2}
+  task: world_sim
+  expect_provider: phone
+  expect_tier: limited

@@ -1,0 +1,7 @@
+description: 强度预算随稀有度与等级单调增加（稀有 3 级武器 > 普通 1 级武器）
+power:
+  ref: 20
+  kind: weapon
+  rarity: rare
+  level: 3
+  higher_than: {kind: weapon, rarity: common, level: 1}

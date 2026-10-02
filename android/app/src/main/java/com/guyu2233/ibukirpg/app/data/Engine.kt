@@ -177,7 +177,14 @@ class Engine(private val dataDir: String) {
     suspend fun worldPanel(tab: String): WorldPanelV1 = call("get_world_panel", buildJsonObject { put("tab", tab) }, decode = decoder())
     suspend fun worldChanges(query: String = "", limit: Int = 100): List<WorldChangeV1> =
         call("search_world_changes", buildJsonObject { put("query", query); put("limit", limit) }, decode = decoder())
-    suspend fun revertChange(id: String): WorldLogV1 = call("revert_change", buildJsonObject { put("id", id) }, decode = decoder())
+    suspend fun revertChange(id: String, mode: String = ""): WorldLogV1 =
+        call("revert_change", buildJsonObject { put("id", id); put("mode", mode) }, decode = decoder())
+    /** 撤销前检查：依赖这条变更的后续变更。 */
+    suspend fun revertPlan(id: String): RevertPlanV1 = call("revert_plan", buildJsonObject { put("id", id) }, decode = decoder())
+    /** 确认“外部工具修改了 N 项设定”。 */
+    suspend fun ackExternalChanges(): GameBundle = call("ack_external_changes", decode = decoder())
+    /** 立即推进一次场外世界（世界模拟）。 */
+    suspend fun runWorldSim() { call("run_world_sim") { } }
     /** 让 AI 按要求修改 / 新建卡片：返回预览，确认后 applyPreview。target 为空 = 新建。 */
     suspend fun requestEdit(target: String, instruction: String): ChangePreviewV1 =
         call("request_edit", buildJsonObject { put("target", target); put("instruction", instruction) }, decode = decoder())

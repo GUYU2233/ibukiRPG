@@ -54,6 +54,8 @@ data class GameState(
     /** 内存里只保留最近一段记录；更早的可以按需从存档分页读取。 */
     val hasEarlier: Boolean = false,
     val loadingEarlier: Boolean = false,
+    /** 0.2.0-rc1：外部工具（MCP）修改了设定的提示（确认后清空）。 */
+    val external: com.guyu2233.ibukirpg.app.data.ExternalNoticeV1? = null,
 )
 
 /** 聊天记录的内存窗口（纯函数，便于单元测试）。 */
@@ -164,7 +166,7 @@ class GameViewModel(
         val (entries, trimmed) = TranscriptWindow.append(emptyList(), b.transcript)
         _state.update {
             it.copy(
-                loading = false, scene = b.scene, entries = entries, suggestions = b.suggestions, fatal = null,
+                loading = false, scene = b.scene, entries = entries, suggestions = b.suggestions, fatal = null, external = b.externalNotice,
                 // get_bundle 只返回最近 300 条：满页说明可能还有更早的
                 hasEarlier = trimmed || b.transcript.size >= BUNDLE_PAGE,
             )
@@ -333,7 +335,31 @@ class GameViewModel(
 
     fun cancelEdit() { _edit.value = null }
 
-    fun revertChange(c: WorldChangeV1) = bundleOp { engine.revertChange(c.id); engine.bundle() }
+    /** 撤销前先检查依赖：没有依赖直接撤销；有依赖时弹出级联撤销确认（连同撤销 / 只撤销这一条）。 */
+    private val _revert = MutableStateFlow<com.guyu2233.ibukirpg.app.data.RevertPlanV1?>(null)
+    val revert: StateFlow<com.guyu2233.ibukirpg.app.data.RevertPlanV1?> = _revert.asStateFlow()
+
+    fun revertChange(c: WorldChangeV1) {
+        viewModelScope.launch {
+            runCatching { engine.revertPlan(c.id) }
+                .onSuccess { p -> if (p.dependents.isEmpty()) bundleOp { engine.revertChange(c.id); engine.bundle() } else _revert.value = p }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun confirmRevert(mode: String) {
+        val p = _revert.value ?: return
+        _revert.value = null
+        bundleOp { engine.revertChange(p.change.id, mode); engine.bundle() }
+    }
+
+    fun dismissRevert() { _revert.value = null }
+
+    /** 确认“外部工具修改了 N 项设定”。 */
+    fun ackExternal() {
+        _state.update { it.copy(external = null) }
+        viewModelScope.launch { runCatching { engine.ackExternalChanges() } }
+    }
 
     fun resolveDecision(accept: Boolean, notifyOnly: Boolean) {
         val d = _state.value.scene.decision ?: return

@@ -1,0 +1,7 @@
+description: AI 改写整句（保留意图）
+rewrite:
+  text: 据说会一点魔法，能让齿轮自己转起来。
+  forbidden: [魔法]
+  ai: 据说对机械有种天生的直觉，摸一摸就知道齿轮哪里卡住了。
+  expect_source: ai
+  expect_contains: [齿轮]

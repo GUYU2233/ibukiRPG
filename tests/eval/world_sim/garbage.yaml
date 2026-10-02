@@ -1,0 +1,4 @@
+description: 世界模拟输出完全不是 JSON：报错（调用方回退到故事包规则）
+sim:
+  raw: 抱歉，我不能完成这个请求。
+  expect_error: true

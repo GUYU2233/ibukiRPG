@@ -114,6 +114,7 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
     val prompts by vm.prompts.collectAsStateWithLifecycle()
     val edit by vm.edit.collectAsStateWithLifecycle()
     val auditBusy by vm.auditBusy.collectAsStateWithLifecycle()
+    val revert by vm.revert.collectAsStateWithLifecycle()
     val rpgData = remember(vm) { RpgData(portrait = vm::portrait, card = vm::card, mech = vm::mech) }
     CompositionLocalProvider(LocalRpgData provides rpgData) { GameContent(
         s = s,
@@ -133,9 +134,13 @@ fun GameScreen(vm: GameViewModel, onBack: () -> Unit) {
         prompts = prompts,
         edit = edit,
         auditBusy = auditBusy,
+        revert = revert,
         actions = WorldActions(
             onWorldTab = { vm.loadWorldTab(it) },
             onRevert = vm::revertChange,
+            onRevertMode = vm::confirmRevert,
+            onRevertDismiss = vm::dismissRevert,
+            onAckExternal = vm::ackExternal,
             onDecision = vm::resolveDecision,
             onSensitivity = vm::openPrompts,
             onSavePrompts = vm::savePrompts,
@@ -181,6 +186,10 @@ data class WorldActions(
     val onConfirmEdit: () -> Unit = {},
     val onCancelEdit: () -> Unit = {},
     val timeline: TimelineActions = TimelineActions(),
+    /** 0.2.0-rc1：级联撤销（chain / single）、确认外部工具修改提示。 */
+    val onRevertMode: (String) -> Unit = {},
+    val onRevertDismiss: () -> Unit = {},
+    val onAckExternal: () -> Unit = {},
 )
 
 /** 无状态的游戏界面（便于截图测试与预览）。 */
@@ -211,12 +220,15 @@ fun GameContent(
     showDecisionSheet: Boolean = true,
     edit: EditState? = null,
     auditBusy: Boolean = false,
+    revert: com.guyu2233.ibukirpg.app.data.RevertPlanV1? = null,
 ) {
+    var logSource by rememberSaveable { mutableStateOf<String?>(null) }
     val extras = WorldExtras(
         onEdit = actions.onRequestEdit?.let { f -> { e: com.guyu2233.ibukirpg.app.data.EntityViewV1 -> f(e.id, e.name) } },
         onNewCard = actions.onRequestEdit?.let { f -> { f("", "") } },
         onRunAudit = actions.onRunAudit,
         auditBusy = auditBusy,
+        logSource = logSource,
     )
     val snackbar = remember { SnackbarHostState() }
     val combat = s.scene.combat
@@ -328,6 +340,13 @@ fun GameContent(
     ) { pad ->
       Row(Modifier.fillMaxSize().padding(pad)) {
         Column(Modifier.weight(1f).fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        s.external?.takeIf { it.count > 0 && !s.loading }?.let { n ->
+            ExternalChangesBanner(
+                n, modifier = Modifier.widthIn(max = 720.dp),
+                onOpenLog = { logSource = n.source.ifBlank { "mcp" }; showWorld = true; actions.onAckExternal() },
+                onDismiss = actions.onAckExternal,
+            )
+        }
         if (combat != null && !s.loading) {
             CombatHeader(combat, Modifier.widthIn(max = 720.dp).padding(start = 12.dp, end = 12.dp, top = 8.dp))
         }
@@ -397,7 +416,7 @@ fun GameContent(
         }
         if (wide && showWorld) {
             WorldPanelPane(
-                world, busy = s.pending != null, onClose = { showWorld = false }, onTab = actions.onWorldTab, onAction = onQuick,
+                world, busy = s.pending != null, onClose = { showWorld = false; logSource = null }, onTab = actions.onWorldTab, onAction = onQuick,
                 onRevert = actions.onRevert, modifier = Modifier.width(400.dp), extras = extras,
             )
         }
@@ -405,11 +424,13 @@ fun GameContent(
     }
 
     if (showWorld && !wide) {
-        WorldPanelSheet(world, busy = s.pending != null, onDismiss = { showWorld = false }, onTab = actions.onWorldTab, onAction = { qa, label ->
+        WorldPanelSheet(world, busy = s.pending != null, onDismiss = { showWorld = false; logSource = null }, onTab = actions.onWorldTab, onAction = { qa, label ->
             if (qa.kind != "manage") showWorld = false
             onQuick(qa, label)
         }, onRevert = actions.onRevert, extras = extras)
     }
+
+    revert?.let { p -> RevertPlanDialog(p, onRevert = actions.onRevertMode, onDismiss = actions.onRevertDismiss) }
 
     edit?.let { e ->
         if (e.preview == null) EditRequestDialog(e, onSubmit = actions.onSubmitEdit, onDismiss = actions.onCancelEdit)

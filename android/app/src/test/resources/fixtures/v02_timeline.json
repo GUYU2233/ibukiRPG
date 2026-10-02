@@ -1,5 +1,5 @@
 {
-  "branch": "b-0c0f6b",
+  "branch": "b-583116",
   "branches": [
     {
       "fork_turn": 0,
@@ -12,7 +12,7 @@
       "current": true,
       "fork_turn": 15,
       "head_turn": 17,
-      "id": "b-0c0f6b",
+      "id": "b-583116",
       "name": "分支 A",
       "parent": "main",
       "status": "active"
@@ -21,7 +21,7 @@
   "checkpoints": [
     {
       "branch": "main",
-      "id": "cp-3c146528",
+      "id": "cp-860ff10e",
       "kind": "auto",
       "name": "回合 16 之前",
       "reason": "重要角色死亡前自动保存",
@@ -29,7 +29,7 @@
     },
     {
       "branch": "main",
-      "id": "cp-e3f43981",
+      "id": "cp-596ff021",
       "kind": "manual",
       "name": "进议会之前",
       "turn": 13

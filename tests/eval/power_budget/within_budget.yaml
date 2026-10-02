@@ -1,0 +1,8 @@
+description: 预算以内的数值保持不变
+power:
+  ref: 20
+  kind: enemy
+  rarity: epic
+  level: 5
+  stats: {atk: 2, def: 1}
+  expect_fitted: false
