@@ -14,7 +14,10 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/ai/structured"
 	"github.com/GUYU2233/ibukiRPG/internal/api/dto"
 	"github.com/GUYU2233/ibukiRPG/internal/core/engine"
+	"github.com/GUYU2233/ibukiRPG/internal/narrative/rewrite"
 	"github.com/GUYU2233/ibukiRPG/internal/package/loader"
+	"github.com/GUYU2233/ibukiRPG/internal/world/power"
+	"github.com/GUYU2233/ibukiRPG/internal/world/validate"
 )
 
 // CreationOptions 返回故事包的角色创建选项（预设主角 / 出身 / 属性点）。
@@ -41,10 +44,8 @@ func maxPower(p *loader.Package) int {
 	if p.Creation.MaxPower > 0 {
 		return p.Creation.MaxPower
 	}
-	if t := p.Balance.Tier(p.Balance.PlayerStartTier); t != nil {
-		return t.Power[1]
-	}
-	return 0
+	// 没有单独的开局上限时，使用卡片强度预算（人物 · 普通 · 1 级）
+	return power.Budget(validate.PowerRef(p), power.Params{Kind: "character"})
 }
 
 // creationPower 计算自建 / 预设角色的强度分。
@@ -89,18 +90,21 @@ func (s *Session) ReviewCreation(ctx context.Context, packID string, c engine.Cr
 	if rv.MaxPower > 0 && rv.Power > rv.MaxPower {
 		rv.Problems = append(rv.Problems, fmt.Sprintf("强度 %d 超过开局上限 %d", rv.Power, rv.MaxPower))
 	}
-	rec := fixCreation(p, c)
-	if c.Custom {
-		if pr, _, ok := s.providerFor(router.TaskCharReview); ok {
-			s.aiReview(ctx, pr, p, c, &rv, &rec)
-		}
+	var ai rewrite.AI
+	pr, _, online := s.providerFor(router.TaskCharReview)
+	if online {
+		ai = rewriter(pr, p)
+	}
+	rec := fixCreation(ctx, p, c, ai)
+	if c.Custom && online {
+		s.aiReview(ctx, pr, p, c, &rv, &rec, ai)
 	}
 	rv.OK = len(rv.Problems) == 0 && rv.LoreFit != "bad"
 	rv.Recommended, _ = json.Marshal(rec)
 	return rv, nil
 }
 
-func (s *Session) aiReview(ctx context.Context, pr provider.Provider, p *loader.Package, c engine.Creation, rv *dto.CreationReviewV1, rec *engine.Creation) {
+func (s *Session) aiReview(ctx context.Context, pr provider.Provider, p *loader.Package, c engine.Creation, rv *dto.CreationReviewV1, rec *engine.Creation, ai rewrite.AI) {
 	var bgs []string
 	for _, b := range p.Creation.Backgrounds {
 		bgs = append(bgs, b.ID+"="+b.Name+"："+b.Description)
@@ -152,12 +156,43 @@ func (s *Session) aiReview(ctx context.Context, pr provider.Provider, p *loader.
 		}
 	}
 	if len(engine.CheckCreation(p, *rec)) > 0 {
-		*rec = fixCreation(p, c)
+		*rec = fixCreation(ctx, p, *rec, ai)
 	}
 }
 
-// fixCreation 按规则修正角色（裁剪属性点、补出身、截断文字、去掉禁用词），作为推荐卡的底稿。
-func fixCreation(p *loader.Package, c engine.Creation) engine.Creation {
+const rewriteSystem = `你是文字 RPG 的设定编辑。玩家写的角色文字里出现了这个世界不允许的设定（[FORBIDDEN] 中的词或概念）。
+请改写整段文字：保留玩家想表达的性格、经历和特长，把违规的部分换成符合 [WORLD] 的说法，句子要通顺完整，不要留下残句。
+不要出现 [FORBIDDEN] 中的任何词。只输出一个 JSON：{"text":"改写后的文字"}。`
+
+// rewriter 返回用角色审查模型改写禁用词的函数（v0.2.0-rc1：不再直接删词）。
+func rewriter(pr provider.Provider, p *loader.Package) rewrite.AI {
+	return func(ctx context.Context, text string, forbidden []string) (string, error) {
+		cctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+		defer cancel()
+		user := fmt.Sprintf("[WORLD]\n%s：%s\n%s\n[FORBIDDEN]\n%s\n[TEXT]\n%s", p.Manifest.Name, p.Manifest.Description,
+			strings.Join(append(append([]string{}, p.Balance.AbilityLimits...), p.Creation.Rules...), "\n"), strings.Join(forbidden, "、"), text)
+		resp, err := pr.Generate(cctx, provider.Request{Messages: []provider.Message{{Role: "system", Content: rewriteSystem}, {Role: "user", Content: user}},
+			Temperature: 0.3, MaxTokens: 400, JSON: true})
+		if err != nil {
+			return "", err
+		}
+		raw := strings.TrimSpace(resp.Text)
+		if i, j := strings.Index(raw, "{"), strings.LastIndex(raw, "}"); i >= 0 && j > i {
+			raw = raw[i : j+1]
+		}
+		var out struct {
+			Text string `json:"text"`
+		}
+		if err := json.Unmarshal([]byte(raw), &out); err != nil {
+			return "", err
+		}
+		return out.Text, nil
+	}
+}
+
+// fixCreation 按规则修正角色（裁剪属性点、补出身、截断文字、改写禁用词），作为推荐卡的底稿。
+// 禁用词先请 AI 改写整句（ai 为空时跳过），不合格时用模板改写（替换为改写词或删去整个分句）。
+func fixCreation(ctx context.Context, p *loader.Package, c engine.Creation, ai rewrite.AI) engine.Creation {
 	r := c
 	if !c.Custom {
 		return r
@@ -184,16 +219,17 @@ func fixCreation(p *loader.Package, c engine.Creation) engine.Creation {
 	}
 	r.Attributes = attrs
 	cut := func(s string, n int) string {
-		for _, f := range cr.Forbidden {
-			if f != "" {
-				s = strings.ReplaceAll(s, f, "")
-			}
-		}
+		s, _ = rewrite.Rewrite(ctx, ai, s, cr.Forbidden, cr.Rewrites, n)
 		if rs := []rune(s); len(rs) > n {
 			return string(rs[:n])
 		}
 		return s
 	}
-	r.Name, r.Appearance, r.Personality, r.Story = cut(r.Name, 20), cut(r.Appearance, 200), cut(r.Personality, 200), cut(r.Story, 400)
+	// 名字不交给 AI：直接用模板（名字里出现禁用词通常是原作人名）
+	r.Name = rewrite.Template(r.Name, cr.Forbidden, cr.Rewrites)
+	if rs := []rune(r.Name); len(rs) > 20 {
+		r.Name = string(rs[:20])
+	}
+	r.Appearance, r.Personality, r.Story = cut(r.Appearance, 200), cut(r.Personality, 200), cut(r.Story, 400)
 	return r
 }

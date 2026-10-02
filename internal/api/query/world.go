@@ -304,3 +304,28 @@ func (q *Q) Upcoming(s *state.State, n int) []dto.WorldEventChipV1 {
 	}
 	return out
 }
+
+// RevertPlan 返回撤销 id 前的级联检查（依赖链 + 能否单独撤销）。
+func (q *Q) RevertPlan(s *state.State, id string) (dto.RevertPlanV1, error) {
+	e := s.World.Find(id)
+	if e == nil {
+		return dto.RevertPlanV1{}, fmt.Errorf("没有这条世界变更")
+	}
+	p := dto.RevertPlanV1{Change: q.ChangeView(s, *e)}
+	for _, d := range s.World.Chain(id) {
+		if de := s.World.Find(d); de != nil {
+			p.Dependents = append(p.Dependents, q.ChangeView(s, *de))
+		}
+	}
+	ok, shadow, why := s.World.SinglePlan(id)
+	p.CanSingle = ok && p.Change.CanRevert
+	switch {
+	case !ok:
+		p.SingleNote = why
+	case shadow != "":
+		p.SingleNote = fmt.Sprintf("这个值之后被 %s 改过，只撤销这一条时当前值不变；以后撤销 %s 会回到这条变更之前的值", shadow, shadow)
+	case len(p.Dependents) > 0:
+		p.SingleNote = "之后的变更与它互不覆盖，可以只撤销这一条"
+	}
+	return p, nil
+}

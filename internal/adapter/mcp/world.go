@@ -14,7 +14,8 @@ type World interface {
 	Knowledge(ctx context.Context, entity string) (any, error)
 	Preview(ctx context.Context, changes json.RawMessage) (any, error)
 	Apply(ctx context.Context, token string, acceptImpact bool) (any, error)
-	Revert(ctx context.Context, changeID string) (any, error)
+	Revert(ctx context.Context, changeID, mode string) (any, error)
+	RevertPlan(ctx context.Context, changeID string) (any, error)
 	Checkpoint(ctx context.Context, name string) (any, error)
 }
 
@@ -79,14 +80,25 @@ var worldTools = []worldTool{
 			_ = json.Unmarshal(a, &p)
 			return w.Apply(ctx, p.Token, p.Accept)
 		}},
-	{name: "world_revert_change", title: "撤销世界修改", write: true, desc: "单项撤销一条世界变更（之后的变更依赖它时会失败）。",
+	{name: "world_revert_plan", title: "撤销前检查", desc: "列出之后依赖这条变更的全部变更（撤销顺序），以及能否只撤销这一条。不会修改存档。",
 		schema: obj(map[string]any{"change_id": str("变更 ID，例如 wc-12-1")}, "change_id"),
 		call: func(ctx context.Context, w World, a json.RawMessage) (any, error) {
 			var p struct {
 				ID string `json:"change_id"`
 			}
 			_ = json.Unmarshal(a, &p)
-			return w.Revert(ctx, p.ID)
+			return w.RevertPlan(ctx, p.ID)
+		}},
+	{name: "world_revert_change", title: "撤销世界修改", write: true,
+		desc:   "撤销一条世界变更。之后有依赖它的变更时需要指定 mode：chain = 连同依赖一起撤销；single = 只撤销这一条（新建实体等不能单独撤销）。先用 world_revert_plan 查看依赖链。",
+		schema: obj(map[string]any{"change_id": str("变更 ID，例如 wc-12-1"), "mode": map[string]any{"type": "string", "enum": []string{"chain", "single"}, "description": "有依赖时的撤销方式"}}, "change_id"),
+		call: func(ctx context.Context, w World, a json.RawMessage) (any, error) {
+			var p struct {
+				ID   string `json:"change_id"`
+				Mode string `json:"mode"`
+			}
+			_ = json.Unmarshal(a, &p)
+			return w.Revert(ctx, p.ID, p.Mode)
 		}},
 	{name: "checkpoint_create", title: "新建检查点", write: true, desc: "在当前回合新建一个手动检查点。",
 		schema: obj(map[string]any{"name": str("检查点名字")}),

@@ -12,7 +12,7 @@ const worldHelp = `
 开放世界（0.2.0）：
   /world [角色|关系网|图鉴|装备|地图|势力|时间线|日志]  世界面板（只显示你已知的内容）
   /wait 10m|1h|dawn|event:<ID>  等待 / 时间跳跃     /usage [回合]  token 用量
-  /changes [关键词]  世界变更日志                  /revert <变更ID>  撤销一条变更
+  /changes [关键词]  世界变更日志                  /revert <变更ID> [chain|single]  撤销（有依赖时先列出）
   /decision accept|rollback|dismiss [notify]  处理偏离提示（notify = 以后同类只通知）
   /timeline  回合与分支        /rollback <回合>  回到某回合（继续行动将创建新分支）
   /cancel    取消回溯          /branch <分支ID>  切换分支
@@ -73,8 +73,32 @@ func (c *client) worldCommand(cmd, arg string) bool {
 			c.printf("  [%s] 第%d回合 %s · %s%s  〔%s〕\n", ch.ID, ch.Turn, ch.TargetName, ch.Summary, mark, ch.SourceLabel)
 		}
 	case "/revert":
+		mode := ""
+		if len(args) > 1 {
+			mode = args[1]
+		}
+		if mode == "" {
+			var plan dto.RevertPlanV1
+			if err := c.call("revert_plan", "", map[string]string{"id": first}, &plan); err != nil {
+				c.printf("无法撤销：%v\n", err)
+				return true
+			}
+			if len(plan.Dependents) > 0 {
+				c.printf("之后有 %d 项变更依赖它（撤销顺序）：\n", len(plan.Dependents))
+				for _, d := range plan.Dependents {
+					c.printf("  [%s] 第%d回合 %s · %s\n", d.ID, d.Turn, d.TargetName, d.Summary)
+				}
+				c.printf("/revert %s chain  连同撤销全部 %d 项\n", first, len(plan.Dependents)+1)
+				if plan.CanSingle {
+					c.printf("/revert %s single 只撤销这一条（%s）\n", first, plan.SingleNote)
+				} else {
+					c.printf("不能只撤销这一条：%s\n", plan.SingleNote)
+				}
+				return true
+			}
+		}
 		var log dto.WorldLogV1
-		if err := c.call("revert_change", "", map[string]string{"id": first}, &log); err != nil {
+		if err := c.call("revert_change", "", map[string]string{"id": first, "mode": mode}, &log); err != nil {
 			c.printf("无法撤销：%v\n", err)
 			return true
 		}

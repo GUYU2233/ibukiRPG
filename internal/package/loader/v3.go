@@ -125,6 +125,8 @@ type Creation struct {
 	MaxPower int `yaml:"max_power"`
 	// Forbidden 是自建角色设定里不允许出现的词（例如原作主角名）。
 	Forbidden []string `yaml:"forbidden"`
+	// Rewrites 是禁用词的模板改写（例如 魔法: 一手修理齿轮的手艺）；没有改写的禁用词整句删去。
+	Rewrites map[string]string `yaml:"rewrites"`
 }
 
 // Background 按 ID 查找出身。

@@ -87,11 +87,11 @@ func (w *mcpWorld) Apply(ctx context.Context, token string, accept bool) (any, e
 	return w.s.ApplyPreview(ctx, token, limit)
 }
 
-func (w *mcpWorld) Revert(ctx context.Context, id string) (any, error) {
+func (w *mcpWorld) Revert(ctx context.Context, id, mode string) (any, error) {
 	if err := w.write(ctx); err != nil {
 		return nil, err
 	}
-	return w.s.RevertChange(ctx, id)
+	return w.s.RevertChangeMode(ctx, id, mode)
 }
 
 func (w *mcpWorld) Checkpoint(ctx context.Context, name string) (any, error) {
@@ -102,4 +102,11 @@ func (w *mcpWorld) Checkpoint(ctx context.Context, name string) (any, error) {
 		name = "外部工具检查点"
 	}
 	return w.s.CreateCheckpoint(ctx, name, 0)
+}
+
+func (w *mcpWorld) RevertPlan(ctx context.Context, id string) (any, error) {
+	if err := w.read(ctx); err != nil {
+		return nil, err
+	}
+	return w.s.RevertPlan(id)
 }

@@ -368,3 +368,83 @@ func (o *Overlay) Dependents(id string) []string {
 	}
 	return out
 }
+
+// ---------- 级联撤销（v0.2.0-rc1） ----------
+
+// Chain 返回 id 的全部（传递）依赖变更，按撤销顺序排列（最新的在前），不含 id 本身。
+func (o *Overlay) Chain(id string) []string {
+	if o == nil {
+		return nil
+	}
+	seen := map[string]bool{id: true}
+	queue := []string{id}
+	for len(queue) > 0 {
+		cur := queue[0]
+		queue = queue[1:]
+		for _, d := range o.Dependents(cur) {
+			if !seen[d] {
+				seen[d] = true
+				queue = append(queue, d)
+			}
+		}
+	}
+	var out []string
+	for i := len(o.Log) - 1; i >= 0; i-- {
+		if e := o.Log[i]; e.ID != id && seen[e.ID] {
+			out = append(out, e.ID)
+		}
+	}
+	return out
+}
+
+// sameSlot 报告 d 是否覆盖了 base 写入的同一个值（同一实体同一路径的非增量修改、同一关系的 link / unlink、
+// 同一事件同一路径的 timeline_patch）。
+func sameSlot(base, d LogEntry) bool {
+	if d.Target != base.Target {
+		return false
+	}
+	switch base.Op {
+	case change.OpPatch:
+		return d.Op == change.OpPatch && d.Path == base.Path && !change.IsDeltaPath(base.Target, base.Path)
+	case change.OpLink, change.OpUnlink:
+		return d.Op == change.OpLink || d.Op == change.OpUnlink
+	case change.OpTimelinePatch:
+		return d.Op == change.OpTimelinePatch && d.Path == base.Path
+	}
+	return false
+}
+
+// SinglePlan 判断能否只撤销 id 而保留之后依赖它的变更。
+// ok=false 时 why 说明原因（新建 / 退场 / 取消事件之后还有依赖它的变更，只能连同撤销）；
+// shadow 是第一条覆盖了同一个值的后续变更：只撤销本条时当前值保持不变，并把那条变更的“撤销后恢复值”改指向本条之前的值。
+func (o *Overlay) SinglePlan(id string) (ok bool, shadow, why string) {
+	base := o.Find(id)
+	if base == nil {
+		return false, "", "没有这条变更"
+	}
+	deps := o.Dependents(id)
+	if len(deps) == 0 {
+		return true, "", ""
+	}
+	switch base.Op {
+	case change.OpCreate, change.OpTimelineAdd:
+		return false, "", "之后的变更依赖这个新建的实体，只能连同撤销"
+	case change.OpRetire, change.OpRestore, change.OpTimelineCancel:
+		return false, "", "之后还有修改同一对象的变更，只能连同撤销"
+	}
+	for _, d := range deps {
+		if e := o.Find(d); e != nil && sameSlot(*base, *e) {
+			return true, d, ""
+		}
+	}
+	return true, "", ""
+}
+
+// Repoint 在只撤销 orig 时调整覆盖它的后续变更 d：d 的“修改前”改为 orig 的“修改前”，这样以后撤销 d 会回到 orig 之前的值。
+func (o *Overlay) Repoint(origID, shadowID string) {
+	orig, d := o.Find(origID), o.Find(shadowID)
+	if orig == nil || d == nil {
+		return
+	}
+	d.Prev, d.Before = orig.Prev, orig.Before
+}

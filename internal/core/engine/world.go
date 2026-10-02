@@ -585,7 +585,7 @@ func (e *Engine) ValidationEnv(s *state.State, source, tier string) *validate.En
 func (w *work) execWorldChange(res *Result) error {
 	switch w.cmd.Action {
 	case "revert":
-		return w.revertChange(w.cmd.Target)
+		return w.revertMode(w.cmd.Target, w.cmd.Item)
 	case "failed":
 		// 世界更新失败（格式错误 / 内容审核拒绝）：只记录，审查时补上
 		return w.emit(event.WorldUpdateFailed, event.Data{Reason: w.cmd.Target})
@@ -691,7 +691,9 @@ func (w *work) applyNative(c change.Change, _ bool) error {
 }
 
 // revertChange 单项撤销（第 12.5 节）：写反向操作，不删除原事件；后续依赖它的变更需要先撤销。
-func (w *work) revertChange(id string) error {
+// revertMode 按模式撤销：""（默认，有依赖时拒绝）、chain（先按从新到旧撤销全部依赖，再撤销本条，同一条命令内完成）、
+// single（只撤销本条：被后续变更覆盖的值保持不变，只把覆盖它的那条变更改指向本条之前的值；见 overlay.SinglePlan）。
+func (w *work) revertMode(id, mode string) error {
 	o := w.s.World
 	e := o.Find(id)
 	if e == nil {
@@ -700,8 +702,35 @@ func (w *work) revertChange(id string) error {
 	if e.RevertedBy != "" || e.Reverts != "" {
 		return reject("这条变更已经撤销过了。")
 	}
-	if deps := o.Dependents(id); len(deps) > 0 {
-		return reject("之后还有依赖它的变更（%s），请先撤销它们。", strings.Join(deps, "、"))
+	deps := o.Dependents(id)
+	var tags []string
+	switch {
+	case len(deps) == 0:
+	case mode == "chain":
+		for _, d := range o.Chain(id) {
+			if err := w.revertOne(d, nil); err != nil {
+				return err
+			}
+		}
+	case mode == "single":
+		ok, shadow, why := o.SinglePlan(id)
+		if !ok {
+			return reject("不能只撤销这一条：%s。", why)
+		}
+		if shadow != "" {
+			tags = []string{"noop", "repoint:" + shadow}
+		}
+	default:
+		return reject("之后还有依赖它的变更（%s），请选择连同撤销或只撤销这一条。", strings.Join(deps, "、"))
+	}
+	return w.revertOne(id, tags)
+}
+
+func (w *work) revertOne(id string, tags []string) error {
+	o := w.s.World
+	e := o.Find(id)
+	if e == nil || e.RevertedBy != "" || e.Reverts != "" {
+		return nil
 	}
 	inv, err := e.Inverse()
 	if err != nil {
@@ -713,10 +742,14 @@ func (w *work) revertChange(id string) error {
 		inv.Source = change.SourceUserRequest
 	}
 	inv.Summary = "撤销：" + e.Summary
-	if err := w.applyNative(inv, true); err != nil {
-		return err
+	if len(tags) == 0 {
+		if err := w.applyNative(inv, true); err != nil {
+			return err
+		}
+	} else {
+		inv.Summary += "（已被后续变更覆盖，当前值不变）"
 	}
-	return w.emit(event.WorldChangeReverted, event.Data{Change: &inv, Key: id})
+	return w.emit(event.WorldChangeReverted, event.Data{Change: &inv, Key: id, Tags: tags})
 }
 
 // ---------- 偏离提示 ----------

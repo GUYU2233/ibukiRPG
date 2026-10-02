@@ -638,13 +638,32 @@ func (s *Session) WorldChanges(query, source string, limit int) ([]dto.WorldChan
 
 // RevertChange 撤销一条世界变更（写反向操作；后续依赖它的变更需要先撤销）。
 func (s *Session) RevertChange(ctx context.Context, id string) (dto.WorldLogV1, error) {
+	return s.RevertChangeMode(ctx, id, "")
+}
+
+// RevertPlan 返回撤销前的级联检查：依赖链（新的在前）与能否只撤销这一条。
+func (s *Session) RevertPlan(id string) (dto.RevertPlanV1, error) {
+	_, st, g, err := s.current()
+	if err != nil {
+		return dto.RevertPlanV1{}, err
+	}
+	return g.q.RevertPlan(st, id)
+}
+
+// RevertChangeMode 按模式撤销：""（有依赖时失败）、chain（连同依赖一起撤销）、single（只撤销这一条）。
+func (s *Session) RevertChangeMode(ctx context.Context, id, mode string) (dto.WorldLogV1, error) {
+	switch mode {
+	case "", "chain", "single":
+	default:
+		return dto.WorldLogV1{}, fmt.Errorf("未知的撤销模式 %q（chain / single）", mode)
+	}
 	s.turnMu.Lock()
 	defer s.turnMu.Unlock()
 	slot, st, g, err := s.current()
 	if err != nil {
 		return dto.WorldLogV1{}, err
 	}
-	cmd := command.Command{ID: NewCommandID(), Kind: command.KindWorldChange, Action: "revert", Target: id, Source: change.SourceUserRequest}
+	cmd := command.Command{ID: NewCommandID(), Kind: command.KindWorldChange, Action: "revert", Target: id, Item: mode, Source: change.SourceUserRequest}
 	res, after, err := g.eng.Execute(st, cmd)
 	if err != nil {
 		return dto.WorldLogV1{}, err

@@ -16,6 +16,7 @@ import (
 	"github.com/GUYU2233/ibukiRPG/internal/package/loader"
 	"github.com/GUYU2233/ibukiRPG/internal/world/change"
 	"github.com/GUYU2233/ibukiRPG/internal/world/overlay"
+	"github.com/GUYU2233/ibukiRPG/internal/world/power"
 	"github.com/GUYU2233/ibukiRPG/internal/world/timeline"
 )
 
@@ -385,7 +386,7 @@ func (e *Env) checkCreate(c *change.Change) error {
 		d.Canon = "flavor"
 	}
 	if len(d.Stats) > 0 {
-		e.clampStats(d.Stats, c)
+		e.clampStats(&d, c)
 	}
 	if len(d.Public) == 0 {
 		d.Public = []string{"name"}
@@ -395,25 +396,27 @@ func (e *Env) checkCreate(c *change.Change) error {
 	return nil
 }
 
-// clampStats 按强度档位夹紧新实体的战斗数值（第 5.3 节“数值上限”）。
-func (e *Env) clampStats(st map[string]int, c *change.Change) {
-	tier := e.Pkg.Balance.Tier(e.Pkg.Balance.PlayerStartTier)
-	if tier == nil {
-		return
+// PowerRef 返回强度预算的参考强度（玩家起始档位上限，第 5.3 节“数值上限”；没有档位时为 power.DefaultRef）。
+func PowerRef(p *loader.Package) int {
+	if t := p.Balance.Tier(p.Balance.PlayerStartTier); t != nil && t.Power[1] > 0 {
+		return t.Power[1]
 	}
-	limit := tier.Power[1]
-	clamped := false
-	for k, v := range st {
-		if v > limit {
-			st[k] = limit
-			clamped = true
-		}
-		if v < 0 {
-			st[k] = 0
-		}
-	}
-	if clamped {
-		c.Reason += "（已按世界强度上限调整）"
+	return power.DefaultRef
+}
+
+// DocBudget 返回卡片的强度预算参数与预算值（没有数值预算的种类返回 0）。
+func DocBudget(p *loader.Package, d *overlay.EntityDoc) (power.Params, int) {
+	pp := power.ParamsFrom(d.Kind, d.Tags, d.Meta, d.Fields, d.Stats)
+	return pp, power.Budget(PowerRef(p), pp)
+}
+
+// clampStats 按强度预算（种类 × 稀有度 × 等级）等比缩小新实体的数值。
+func (e *Env) clampStats(d *overlay.EntityDoc, c *change.Change) {
+	_, budget := DocBudget(e.Pkg, d)
+	fit, changed := power.Fit(d.Stats, budget)
+	d.Stats = fit
+	if changed {
+		c.Reason += fmt.Sprintf("（已按强度预算 %d 调整）", budget)
 	}
 }
 
@@ -501,6 +504,9 @@ func (e *Env) checkPatch(c *change.Change) error {
 		}
 		return nil
 	}
+	if strings.HasPrefix(c.Path, "stats.") {
+		c.Path = "combat." + c.Path
+	}
 	if !overlay.PatchablePath(c.Path) {
 		return fmt.Errorf("路径 %s 不可修改", c.Path)
 	}
@@ -537,6 +543,17 @@ func (e *Env) checkPatch(c *change.Change) error {
 		if nv > cur+width/2 {
 			nv = cur + width/2
 			c.Reason += "（已按世界强度上限调整）"
+		}
+		// 强度预算：修改后整张卡的强度分不能超过预算
+		stat := strings.TrimPrefix(c.Path, "combat.stats.")
+		if _, budget := DocBudget(p, d); budget > 0 && nv > cur {
+			if m := power.MaxFor(d.Stats, stat, budget); nv > max(m, cur) {
+				nv = max(m, cur)
+				c.Reason += fmt.Sprintf("（已按强度预算 %d 调整）", budget)
+			}
+		}
+		if nv == cur {
+			return fmt.Errorf("%s 已达到强度预算上限", d.Name())
 		}
 		c.Value, _ = json.Marshal(max(nv, 0))
 	}

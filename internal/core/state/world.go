@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/GUYU2233/ibukiRPG/internal/core/event"
@@ -176,10 +177,18 @@ func applyWorld(s *State, e event.Event) (bool, error) {
 		if d.Change == nil {
 			return true, fmt.Errorf("WorldChangeReverted without change")
 		}
-		if err := applyChange(s, *d.Change, e.Turn); err != nil {
-			return true, err
+		noop := slices.Contains(d.Tags, "noop")
+		if !noop {
+			if err := applyChange(s, *d.Change, e.Turn); err != nil {
+				return true, err
+			}
 		}
 		w := s.W()
+		for _, t := range d.Tags {
+			if sh, ok := strings.CutPrefix(t, "repoint:"); ok {
+				w.Repoint(d.Key, sh)
+			}
+		}
 		if orig := w.Find(d.Key); orig != nil {
 			orig.RevertedBy = d.Change.ID
 		}

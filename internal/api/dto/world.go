@@ -293,3 +293,13 @@ type AuditSuggestionV1 struct {
 	Status  string          `json:"status"`
 	Changes json.RawMessage `json:"changes,omitempty"`
 }
+
+// RevertPlanV1 是撤销前的级联检查（v0.2.0-rc1）：之后依赖这条变更的全部变更（撤销顺序，新的在前），
+// 以及能否只撤销这一条。
+type RevertPlanV1 struct {
+	Change     WorldChangeV1   `json:"change"`
+	Dependents []WorldChangeV1 `json:"dependents,omitempty"`
+	CanSingle  bool            `json:"can_single"`
+	// SingleNote 说明只撤销这一条的效果（例如“当前值被后续变更覆盖，保持不变”）或不能单独撤销的原因。
+	SingleNote string `json:"single_note,omitempty"`
+}
