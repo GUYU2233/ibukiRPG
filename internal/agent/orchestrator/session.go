@@ -62,6 +62,9 @@ type Options struct {
 	NoSlotLock bool
 	// AuditSync 让一致性审查同步运行（测试用）。
 	AuditSync bool
+	// ReadOnly：以只读方式打开存档库（MCP 只读工具）。载入存档时不补写叙事、不持有存档锁，
+	// 缺失的叙事只在内存里用模板补上；任何写操作都会失败。
+	ReadOnly bool
 }
 
 // Session 是一局游戏的编排器（Critical Path，第 38 节）：
@@ -103,6 +106,8 @@ type Session struct {
 	lockFile  string
 	ownerOnce sync.Once
 	owner     string
+	// memNarr 是只读载入时在内存里补上的模板叙事（不写存档）。
+	memNarr []eventstore.Entry
 	// 一致性审查
 	auditWG     sync.WaitGroup
 	auditMu     sync.Mutex
@@ -140,7 +145,16 @@ func Open(ctx context.Context, opts Options) (*Session, error) {
 	if _, err := reg.Load(reg.DefaultID()); err != nil {
 		return nil, fmt.Errorf("load package: %w", err)
 	}
-	st, err := eventstore.Open(ctx, opts.DBPath)
+	var st *eventstore.Store
+	if opts.ReadOnly {
+		st, err = eventstore.OpenReadOnly(ctx, opts.DBPath)
+		if err != nil && !errors.Is(err, eventstore.ErrLegacyDatabase) {
+			// 某些文件系统不支持只读打开 WAL 库：退回普通连接，但会话仍按只读处理（不补写、不占锁、拒绝写入）。
+			st, err = eventstore.Open(ctx, opts.DBPath)
+		}
+	} else {
+		st, err = eventstore.Open(ctx, opts.DBPath)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -413,6 +427,11 @@ func (s *Session) NewGameWith(ctx context.Context, packID, saveName string, seed
 
 // LoadGame 读取存档（快照 + 事件），并为缺失叙事的回合补上模板叙事。
 func (s *Session) LoadGame(ctx context.Context, slotID string) error {
+	return s.loadGame(ctx, slotID, s.opts.ReadOnly)
+}
+
+// loadGame 载入存档；readOnly 时不写存档、不持有存档锁（MCP 读工具）。
+func (s *Session) loadGame(ctx context.Context, slotID string, readOnly bool) error {
 	s.turnMu.Lock()
 	defer s.turnMu.Unlock()
 	sl, err := s.store.GetSlot(ctx, slotID)
@@ -427,8 +446,26 @@ func (s *Session) LoadGame(ctx context.Context, slotID string) error {
 	if err != nil {
 		return err
 	}
+	if readOnly {
+		// 只读载入：不写存档、不占锁；缺失的叙事只在内存里补上（Transcript 读取时合并）。
+		recs, err := s.recoverNarrations(ctx, slotID, g)
+		if err != nil {
+			return err
+		}
+		mem := make([]eventstore.Entry, 0, len(recs))
+		for _, r := range recs {
+			e := r.entry
+			e.Text = r.text
+			e.CommandID = r.cmdID
+			mem = append(mem, e)
+		}
+		s.mu.Lock()
+		s.slot, s.st, s.g, s.memNarr = slotID, st, g, mem
+		s.mu.Unlock()
+		return nil
+	}
 	s.mu.Lock()
-	s.slot, s.st, s.g = slotID, st, g
+	s.slot, s.st, s.g, s.memNarr = slotID, st, g, nil
 	s.mu.Unlock()
 	s.holdSlot(slotID)
 	return s.repairNarrations(ctx, slotID, g)
@@ -468,26 +505,47 @@ func (s *Session) gameForSlot(sl eventstore.Slot) (*game, error) {
 	return s.gameFor(ref.ID)
 }
 
+// recoveredNarration 是为“事件已提交但叙事未写入”的回合用模板补上的叙事。
+type recoveredNarration struct {
+	cmdID, text string
+	entry       eventstore.Entry
+}
+
 // repairNarrations 处理“事件已提交但叙事未写入”（例如叙事中途退出）：用模板补写，绝不重新执行命令。
 func (s *Session) repairNarrations(ctx context.Context, slotID string, g *game) error {
-	pend, err := s.store.PendingNarrations(ctx, slotID)
+	recs, err := s.recoverNarrations(ctx, slotID, g)
 	if err != nil {
 		return err
 	}
+	for _, r := range recs {
+		if err := s.store.SetNarration(ctx, slotID, r.cmdID, r.text, r.entry); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// recoverNarrations 只计算补写内容，不写存档（只读载入与补写共用）。
+func (s *Session) recoverNarrations(ctx context.Context, slotID string, g *game) ([]recoveredNarration, error) {
+	pend, err := s.store.PendingNarrations(ctx, slotID)
+	if err != nil {
+		return nil, err
+	}
+	var out []recoveredNarration
 	for _, rec := range pend {
 		var res engine.Result
 		if err := json.Unmarshal(rec.Result, &res); err != nil || !res.Accepted || len(res.Events) == 0 {
-			_ = s.store.SetNarration(ctx, slotID, rec.CommandID, "（这一回合没有留下叙事记录。）", eventstore.Entry{Kind: "narration", Turn: res.Turn})
+			out = append(out, recoveredNarration{rec.CommandID, "（这一回合没有留下叙事记录。）", eventstore.Entry{Kind: "narration", Turn: res.Turn}})
 			continue
 		}
 		first, last := res.Events[0].Seq, res.Events[len(res.Events)-1].Seq
 		before, err := s.store.StateAt(ctx, slotID, first-1)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		after, err := s.store.StateAt(ctx, slotID, last)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		var cmd command.Command
 		cmd.ID = rec.CommandID
@@ -498,11 +556,9 @@ func (s *Session) repairNarrations(ctx context.Context, slotID string, g *game) 
 		}
 		b := narrator.Build(g.pkg, before, after, cmd, &res)
 		meta, _ := json.Marshal(map[string]any{"source": "template(recovered)"})
-		if err := s.store.SetNarration(ctx, slotID, rec.CommandID, b.Base, eventstore.Entry{Kind: "narration", Turn: res.Turn, Meta: meta}); err != nil {
-			return err
-		}
+		out = append(out, recoveredNarration{rec.CommandID, b.Base, eventstore.Entry{Kind: "narration", Turn: res.Turn, Meta: meta}})
 	}
-	return nil
+	return out, nil
 }
 
 // ListSaves 列出存档。
@@ -662,6 +718,11 @@ func (s *Session) Transcript(ctx context.Context, limit int, beforeID int64) ([]
 	es, err := s.store.Transcript(ctx, slot, limit, beforeID)
 	if err != nil {
 		return nil, err
+	}
+	if beforeID == 0 {
+		s.mu.RLock()
+		es = append(es, s.memNarr...)
+		s.mu.RUnlock()
 	}
 	return toEntries(es), nil
 }

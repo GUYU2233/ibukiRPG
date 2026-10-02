@@ -28,6 +28,9 @@ var ErrPreviewStale = errors.New("存档在预览之后发生了变化，请重�
 // ErrSlotBusy 表示存档正被另一个游戏进程使用（slot_lock）。
 var ErrSlotBusy = errors.New("存档正在被游戏使用，请先退出游戏或只读查询")
 
+// ErrReadOnly 表示会话以只读方式打开存档库（MCP 未开放写入），不能写入。
+var ErrReadOnly = errors.New("当前以只读方式打开存档，不能写入")
+
 // MCPImpactLimit 是 MCP 写入不带 accept_impact 时允许的最大影响分（超过即拒绝）。
 const MCPImpactLimit = 50
 
@@ -285,6 +288,9 @@ func (s *Session) openExternal(ctx context.Context, slotID string, write bool) (
 		}
 		slotID = slots[0].ID
 	}
+	if write && s.opts.ReadOnly {
+		return "", ErrReadOnly
+	}
 	if write && s.SlotBusy(slotID) {
 		return "", ErrSlotBusy
 	}
@@ -300,5 +306,5 @@ func (s *Session) openExternal(ctx context.Context, slotID string, write bool) (
 			return slotID, nil
 		}
 	}
-	return slotID, s.LoadGame(ctx, slotID)
+	return slotID, s.loadGame(ctx, slotID, !write || s.opts.ReadOnly)
 }

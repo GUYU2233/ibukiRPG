@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	// 纯 Go SQLite 驱动（无 CGO），便于 Android / Windows 交叉编译。
@@ -71,4 +72,26 @@ func WithTx(ctx context.Context, db *sql.DB, fn func(*sql.Tx) error) (err error)
 		err = tx.Commit()
 	}()
 	return fn(tx)
+}
+
+// OpenReadOnly 以只读方式打开文件数据库（MCP 只读工具等外部查询）：任何写语句都会被 SQLite 拒绝。
+func OpenReadOnly(ctx context.Context, path string) (*sql.DB, error) {
+	if path == MemoryDSN || strings.Contains(path, "?") {
+		return nil, fmt.Errorf("open sqlite read-only: unsupported dsn %q", path)
+	}
+	uri := filepath.ToSlash(path)
+	if filepath.VolumeName(path) != "" {
+		uri = "/" + uri // Windows：file:///C:/...
+	}
+	uri = strings.NewReplacer("%", "%25", "?", "%3f", "#", "%23").Replace(uri)
+	db, err := sql.Open(DriverName, "file:"+uri+"?mode=ro&_pragma=busy_timeout(5000)")
+	if err != nil {
+		return nil, fmt.Errorf("open sqlite read-only: %w", err)
+	}
+	db.SetMaxOpenConns(1)
+	if err := db.PingContext(ctx); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("open sqlite read-only: %w", err)
+	}
+	return db, nil
 }

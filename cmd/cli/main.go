@@ -451,11 +451,7 @@ func (c *client) showSuggestions() {
 	c.printf("建议：%s\n", strings.Join(parts, "  "))
 }
 
-func (c *client) showBundle(b struct {
-	Scene       dto.SceneV1        `json:"scene"`
-	Transcript  []dto.EntryV1      `json:"transcript"`
-	Suggestions []dto.SuggestionV1 `json:"suggestions"`
-}) {
+func (c *client) showBundle(b bundleT) {
 	start := 0
 	if len(b.Transcript) > 12 {
 		start = len(b.Transcript) - 12
@@ -477,13 +473,19 @@ func (c *client) showBundle(b struct {
 	}
 	c.sugg = b.Suggestions
 	c.printf("\n%s\n", hudLine(b.Scene))
+	if b.External != nil && b.External.Count > 0 {
+		// 打开游戏 / 载入存档时提示一次（/changes 外部 查看详情），随即确认
+		c.printf("⚠ %s（/changes 外部 查看世界日志）\n", b.External.Text)
+		_ = c.call("ack_external_changes", "", nil, nil)
+	}
 	c.showSuggestions()
 }
 
 type bundleT = struct {
-	Scene       dto.SceneV1        `json:"scene"`
-	Transcript  []dto.EntryV1      `json:"transcript"`
-	Suggestions []dto.SuggestionV1 `json:"suggestions"`
+	Scene       dto.SceneV1           `json:"scene"`
+	Transcript  []dto.EntryV1         `json:"transcript"`
+	Suggestions []dto.SuggestionV1    `json:"suggestions"`
+	External    *dto.ExternalNoticeV1 `json:"external_notice"`
 }
 
 func (c *client) newGame(name string, seed uint64, pack string) {

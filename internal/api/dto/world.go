@@ -303,3 +303,13 @@ type RevertPlanV1 struct {
 	// SingleNote 说明只撤销这一条的效果（例如“当前值被后续变更覆盖，保持不变”）或不能单独撤销的原因。
 	SingleNote string `json:"single_note,omitempty"`
 }
+
+// ExternalNoticeV1 是“外部工具修改了 N 项设定”的提示（v0.2.0-rc1）：上次确认之后，MCP 等外部工具提交且未撤销的世界变更。
+// 打开游戏 / 载入存档时显示，链接到世界变更日志（source=mcp 筛选）；确认后调用 ack_external_changes。
+type ExternalNoticeV1 struct {
+	Count int      `json:"count"`
+	Text  string   `json:"text"`
+	IDs   []string `json:"ids,omitempty"`
+	// Source 是日志页的来源筛选值。
+	Source string `json:"source"`
+}

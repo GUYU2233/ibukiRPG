@@ -12,7 +12,7 @@ const worldHelp = `
 开放世界（0.2.0）：
   /world [角色|关系网|图鉴|装备|地图|势力|时间线|日志]  世界面板（只显示你已知的内容）
   /wait 10m|1h|dawn|event:<ID>  等待 / 时间跳跃     /usage [回合]  token 用量
-  /changes [关键词]  世界变更日志                  /revert <变更ID> [chain|single]  撤销（有依赖时先列出）
+  /changes [关键词|外部]  世界变更日志                  /revert <变更ID> [chain|single]  撤销（有依赖时先列出）
   /decision accept|rollback|dismiss [notify]  处理偏离提示（notify = 以后同类只通知）
   /timeline  回合与分支        /rollback <回合>  回到某回合（继续行动将创建新分支）
   /cancel    取消回溯          /branch <分支ID>  切换分支
@@ -58,7 +58,11 @@ func (c *client) worldCommand(cmd, arg string) bool {
 		}
 	case "/changes":
 		var list []dto.WorldChangeV1
-		if err := c.call("search_world_changes", "", map[string]any{"query": arg, "limit": 30}, &list); err != nil {
+		q, src := arg, ""
+		if arg == "外部" || arg == "mcp" {
+			q, src = "", "mcp"
+		}
+		if err := c.call("search_world_changes", "", map[string]any{"query": q, "source": src, "limit": 30}, &list); err != nil {
 			c.printf("%v\n", err)
 			return true
 		}

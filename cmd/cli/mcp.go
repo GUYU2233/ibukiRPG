@@ -51,7 +51,9 @@ func runMCP(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
-	s, err := orchestrator.Open(ctx, orchestrator.Options{DBPath: path, Packs: packages.Builtin(), PackDir: packDir, NoSlotLock: true})
+	// 没有开放写入时以只读方式打开存档库：读工具绝不写存档（缺失的叙事只在内存里补上）。
+	writable := *allowWrite && sc.Kind == tools.ScopeDirector
+	s, err := orchestrator.Open(ctx, orchestrator.Options{DBPath: path, Packs: packages.Builtin(), PackDir: packDir, NoSlotLock: true, ReadOnly: !writable})
 	if err != nil {
 		return err
 	}
@@ -66,7 +68,7 @@ func runMCP(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	}
 	mode := "只读"
 	if *allowWrite {
-		if sc.Kind == tools.ScopeDirector {
+		if writable {
 			mode = "可写"
 		} else {
 			fmt.Fprintf(stderr, "ibukirpg mcp: --allow-write 只对 director / author 范围有效，%s 范围保持只读\n", sc)

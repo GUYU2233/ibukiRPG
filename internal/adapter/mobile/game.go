@@ -118,6 +118,8 @@ type gameBundle struct {
 	Scene       dto.SceneV1        `json:"scene"`
 	Transcript  []dto.EntryV1      `json:"transcript"`
 	Suggestions []dto.SuggestionV1 `json:"suggestions"`
+	// ExternalNotice：上次确认之后外部工具（MCP）修改了设定（v0.2.0-rc1）。
+	ExternalNotice *dto.ExternalNoticeV1 `json:"external_notice,omitempty"`
 }
 
 func bundle(ctx context.Context, s *orchestrator.Session) (any, error) {
@@ -133,7 +135,8 @@ func bundle(ctx context.Context, s *orchestrator.Session) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return gameBundle{Scene: scene, Transcript: tr, Suggestions: sug}, nil
+	ext, _ := s.ExternalNotice(ctx)
+	return gameBundle{Scene: scene, Transcript: tr, Suggestions: sug, ExternalNotice: ext}, nil
 }
 
 func decode[T any](raw json.RawMessage) (T, error) {

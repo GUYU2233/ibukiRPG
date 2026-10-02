@@ -40,8 +40,9 @@ var ErrNotFound = errors.New("save slot not found")
 // Store 是基于 SQLite 的 Event Store + Snapshot + Save 元数据。
 // 事件表只追加；唯一的删除是删除整个存档。
 type Store struct {
-	db  *sql.DB
-	now func() time.Time
+	db       *sql.DB
+	now      func() time.Time
+	readOnly bool
 }
 
 // PackageRef 记录存档依赖的内容包版本（第 44 节）。
@@ -116,6 +117,32 @@ func Open(ctx context.Context, dsn string) (*Store, error) {
 	}
 	return s, nil
 }
+
+// OpenReadOnly 以只读方式打开已有的存档数据库（不迁移、不写入；任何写操作都会失败）。
+func OpenReadOnly(ctx context.Context, path string) (*Store, error) {
+	db, err := sqlite.OpenReadOnly(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	s := &Store{db: db, now: time.Now, readOnly: true}
+	var v int
+	if err := db.QueryRowContext(ctx, `SELECT CAST(value AS INTEGER) FROM meta WHERE key='schema_version'`).Scan(&v); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("open read-only: %w", err)
+	}
+	if v < schemaVersion {
+		_ = db.Close()
+		return nil, ErrLegacyDatabase
+	}
+	if v > schemaVersion {
+		_ = db.Close()
+		return nil, fmt.Errorf("save database schema %d is newer than this app (%d)", v, schemaVersion)
+	}
+	return s, nil
+}
+
+// ReadOnly 报告存档库是否以只读方式打开。
+func (s *Store) ReadOnly() bool { return s.readOnly }
 
 // Close 关闭数据库。
 func (s *Store) Close() error { return s.db.Close() }
