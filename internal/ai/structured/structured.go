@@ -42,6 +42,71 @@ type World struct {
 	Impact      Impact             `json:"impact,omitempty"`
 	Suggestions []string           `json:"suggestions,omitempty"`
 	Minutes     int                `json:"minutes,omitempty"`
+	// 精简格式（本地小模型，v0.2.0-rc1）：解析后由 Expand 转成 changes。
+	Edits []Edit `json:"edits,omitempty"`
+	Moves []Move `json:"moves,omitempty"`
+	Rel   []Rel  `json:"rel,omitempty"`
+}
+
+// Edit 是精简格式的文字字段修改：{"id":实体ID,"field":"description","text":"新内容"}。
+type Edit struct {
+	ID    string `json:"id"`
+	Field string `json:"field"`
+	Text  string `json:"text"`
+	Why   string `json:"why,omitempty"`
+}
+
+// Move 是精简格式的人物移动：{"id":角色ID,"to":地点ID}。
+type Move struct {
+	ID  string `json:"id"`
+	To  string `json:"to"`
+	Why string `json:"why,omitempty"`
+}
+
+// Rel 是精简格式的关系变化：{"a":ID,"b":ID,"dim":"trust","delta":5}。
+type Rel struct {
+	A     string `json:"a"`
+	B     string `json:"b"`
+	Dim   string `json:"dim"`
+	Delta int    `json:"delta"`
+	Why   string `json:"why,omitempty"`
+}
+
+// Expand 把精简格式（edits / moves / rel）转成标准变更并清空精简字段。字段名只取简单标识符。
+func (w *World) Expand() {
+	if w == nil {
+		return
+	}
+	why := func(s, def string) string {
+		if strings.TrimSpace(s) != "" {
+			return s
+		}
+		return def
+	}
+	for _, e := range w.Edits {
+		f := strings.TrimPrefix(strings.TrimSpace(e.Field), "fields.")
+		if e.ID == "" || f == "" || strings.TrimSpace(e.Text) == "" || strings.ContainsAny(f, ". ") {
+			continue
+		}
+		v, _ := json.Marshal(strings.TrimSpace(e.Text))
+		w.Changes = append(w.Changes, change.Change{Op: change.OpPatch, Target: e.ID, Path: "fields." + f, Value: v, Reason: why(e.Why, "叙事细节")})
+	}
+	for _, m := range w.Moves {
+		if m.ID == "" || m.To == "" {
+			continue
+		}
+		v, _ := json.Marshal(m.To)
+		w.Changes = append(w.Changes, change.Change{Op: change.OpPatch, Target: m.ID, Path: "location", Value: v, Reason: why(m.Why, "人物移动")})
+	}
+	for _, r := range w.Rel {
+		dim := strings.TrimPrefix(strings.TrimSpace(r.Dim), "dims.")
+		if r.A == "" || r.B == "" || dim == "" || r.Delta == 0 || strings.ContainsAny(dim, ". ") {
+			continue
+		}
+		v, _ := json.Marshal(r.Delta)
+		w.Changes = append(w.Changes, change.Change{Op: change.OpPatch, Target: r.A + ">" + r.B, Path: "dims." + dim, Value: v, Reason: why(r.Why, "关系变化")})
+	}
+	w.Edits, w.Moves, w.Rel = nil, nil, nil
 }
 
 // AllChanges 返回 changes + timeline。
@@ -87,6 +152,7 @@ func Parse(raw string) (w *World, repaired bool, err error) {
 	}
 	w = &World{}
 	if err = json.Unmarshal([]byte(raw), w); err == nil {
+		w.Expand()
 		return w, false, nil
 	}
 	fixed := Repair(raw)
@@ -95,6 +161,7 @@ func Parse(raw string) (w *World, repaired bool, err error) {
 		return nil, true, fmt.Errorf("parse WORLD: %w", err)
 	}
 	// 截断修复可能留下空元素（{"op":"crea → {}），丢弃
+	w.Expand()
 	w.Changes = dropEmpty(w.Changes)
 	w.Timeline = dropEmpty(w.Timeline)
 	return w, true, nil

@@ -155,7 +155,7 @@ func (s *Session) commitWorld(ctx context.Context, slot, branch string, g *game,
 	if p == nil {
 		return wr, nil
 	}
-	d, after2, err := s.requestDecision(ctx, slot, branch, g, cmdID, before, after, *res.Impact, p, settings, wr.log)
+	d, after2, err := s.requestDecision(ctx, slot, branch, g, cmdID, before, after, *res.Impact, p, settings, wr.log, false)
 	if err != nil {
 		return wr, err
 	}
@@ -165,14 +165,23 @@ func (s *Session) commitWorld(ctx context.Context, slot, branch string, g *game,
 
 // requestDecision 创建自动检查点（指向本回合之前）并提交 DecisionRequested。
 func (s *Session) requestDecision(ctx context.Context, slot, branch string, g *game, cmdID string, before, after *state.State, imp change.TurnImpact, p *change.Prompt,
-	settings change.Settings, log *dto.WorldLogV1) (*change.Decision, *state.State, error) {
+	settings change.Settings, log *dto.WorldLogV1, world bool) (*change.Decision, *state.State, error) {
 	prevTurn := before.Turn
-	seq, err := s.store.SeqAtTurnEnd(ctx, slot, branch, prevTurn)
-	if err != nil {
-		return nil, after, err
+	var seq int64
+	if world {
+		// 场外世界模拟：回到模拟之前（本回合已经结束，只撤掉模拟的提交）
+		seq = before.LastSeq
+	} else {
+		var err error
+		if seq, err = s.store.SeqAtTurnEnd(ctx, slot, branch, prevTurn); err != nil {
+			return nil, after, err
+		}
 	}
 	d := &change.Decision{ID: fmt.Sprintf("dec-%d", after.Turn), Type: p.Type, Score: p.Score, Changes: imp.Changes, Notify: p.Notify,
-		Rollback: change.Ref{Branch: branch, Seq: seq, Turn: prevTurn}}
+		Rollback: change.Ref{Branch: branch, Seq: seq, Turn: prevTurn}, World: world}
+	if world {
+		d.ID = fmt.Sprintf("dec-sim-%d", after.Turn)
+	}
 	var lines []string
 	if log != nil {
 		for _, c := range log.Changes {
@@ -205,6 +214,10 @@ func (s *Session) requestDecision(ctx context.Context, slot, branch string, g *g
 	default:
 		d.Title = "这一回合对故事影响很大"
 		d.Summary = fmt.Sprintf("影响分 %d。接受这个结果继续，或者回到上一回合。", p.Score)
+	}
+	if world {
+		d.Title = "场外世界：" + d.Title
+		d.Summary = fmt.Sprintf("你不在场时，世界自己发生了变化（影响分 %d）。接受它，或者撤掉这次场外推进。", p.Score)
 	}
 	if settings.AutoCheckpointOn() {
 		cp, err := s.store.CreateCheckpoint(ctx, slot, eventstore.Checkpoint{Branch: branch, Seq: seq, Turn: prevTurn, Name: fmt.Sprintf("回合 %d 之前", after.Turn),
@@ -289,6 +302,18 @@ func (s *Session) ResolveDecision(ctx context.Context, id, action string, notify
 	s.st = after
 	s.mu.Unlock()
 	s.turnMu.Unlock()
+	if action == "rollback" && d.World {
+		// 场外世界模拟：玩家的回合保留，只撤掉这次场外推进（连同之后依赖它的变更，从新到旧）
+		for i := len(d.Changes) - 1; i >= 0; i-- {
+			if e := after.World.Find(d.Changes[i]); e == nil || e.RevertedBy != "" {
+				continue
+			}
+			if _, err := s.RevertChangeMode(ctx, d.Changes[i], "chain"); err != nil {
+				return dto.SceneV1{}, err
+			}
+		}
+		return s.Scene(ctx)
+	}
 	if action == "rollback" {
 		if err := s.RollbackTo(ctx, d.Rollback.Turn); err != nil {
 			return dto.SceneV1{}, err

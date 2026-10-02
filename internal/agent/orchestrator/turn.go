@@ -239,6 +239,12 @@ func (s *Session) turn(ctx context.Context, cmdID, input string, quick *command.
 	} else {
 		s.setAISuggestions(slot, nil)
 	}
+	// 场外世界模拟：游戏时间跨过模拟间隔或玩家等待时推进场外势力 / NPC / 事件（离线时按规则）
+	if trig, period, ok := s.simDue(g, st, final, cmd); ok {
+		if f2, err := s.simulate(context.WithoutCancel(ctx), slot, branch, g, cmdID, final, trig, period); err == nil {
+			final = f2
+		}
+	}
 	s.mu.Lock()
 	if s.slot == slot {
 		s.st = final

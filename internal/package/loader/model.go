@@ -343,6 +343,7 @@ type Package struct {
 	Timeline   map[string]*timeline.Event
 	Balance    Balance
 	Creation   Creation
+	Simulation Simulation
 	// Docs 是全部实体的通用文档（静态设定）。
 	Docs map[string]*overlay.EntityDoc
 }

@@ -1,0 +1,47 @@
+# 场外世界模拟（v0.2.0-rc1）：玩家不在场时，势力与 NPC 也在推进自己的目标。
+# 联网时由“世界模拟”Agent（生成设置 → 世界模拟）提出变更；离线、超出每日 AI 次数上限或 AI 输出无效时按下面的规则推进。
+# 每次触发按条件筛出可用规则，再按时间段轮流选一条（确定性，同一存档同一时刻结果相同）。
+every_minutes: 240
+max_ai_calls_per_day: 4
+rules:
+  - id: scavengers_scrap
+    on: [time, wait]
+    when: '!("golem_down" in world.flags)'
+    news: 管道里的拾荒者趁钟楼停摆，又拖出一批铜件，在下水道口堆成了小山。
+    changes:
+      - op: patch
+        target: brass:faction/scavengers
+        path: fields.stance
+        value: 趁钟楼停摆大肆收集铜件，越来越大胆
+        reason: 场外：拾荒者在钟楼停摆期间扩大搜刮
+  - id: council_vote
+    on: [time, wait]
+    when: 'world.day >= 2'
+    once: true
+    news: 钟楼议会连夜开会，修缮款的投票被推迟到了下周——码头代表坚持要先谈税。
+    changes:
+      - op: patch
+        target: brass:faction/council
+        path: fields.stance
+        value: 修缮款投票被推迟，码头代表在拖延
+        reason: 场外：议会投票推迟
+  - id: soot_pressure
+    on: [time, wait]
+    when: 'world.hour >= 18 || world.hour < 6'
+    news: 夜里北码头的煤车比平时多了一倍，车上都刷着黑手印。
+    changes:
+      - op: patch
+        target: brass:faction/soot_gang
+        path: fields.stance
+        value: 夜里加紧运煤，想在议会投票前垄断燃料
+        reason: 场外：煤烟帮夜里加紧运煤
+  - id: orin_tock_strain
+    on: [wait]
+    when: 'world.day >= 1'
+    news: 有人看见欧琳在工坊里训斥托克，托克摔门而去。
+    changes:
+      - op: patch
+        target: brass:character/orin>brass:character/tock
+        path: dims.hostility
+        value: 5
+        reason: 场外：欧琳与托克又起了争执

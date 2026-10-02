@@ -64,6 +64,8 @@ type DecisionV1 struct {
 	RollbackTurn int      `json:"rollback_turn"`
 	RollbackText string   `json:"rollback_text,omitempty"`
 	Checkpoint   string   `json:"checkpoint,omitempty"`
+	// World：由场外世界模拟产生（v0.2.0-rc1）。
+	World bool `json:"world,omitempty"`
 }
 
 // UsageV1 是 token 用量（回合或存档累计）。

@@ -402,7 +402,7 @@ func (c *client) showTurn(v dto.TurnV1) {
 			c.opts = append(c.opts, e.Options...)
 		case "story":
 			c.printf("\n  【%s】\n", e.Text)
-		case "adjudication", "world":
+		case "adjudication", "world", "sim":
 			c.showWorldEntry(e)
 		case "combat":
 			chips := e.Chips

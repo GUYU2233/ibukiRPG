@@ -112,7 +112,9 @@ type Session struct {
 	auditWG     sync.WaitGroup
 	auditMu     sync.Mutex
 	corrections map[string][]string
-	lastAudit   map[string]int
+	// simCalls 是世界模拟每个游戏日的 AI 调用计数（成本上限；键 slot#day）。
+	simCalls  map[string]int
+	lastAudit map[string]int
 }
 
 type memJob struct {

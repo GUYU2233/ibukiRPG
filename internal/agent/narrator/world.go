@@ -32,8 +32,20 @@ func worldRules(tier string) string {
 - "impact"：{"level":"none|minor|major|break","why":"一句话"}，诚实自评这回合对世界的影响。
 - "suggestions"：给玩家的 2–3 个下一步行动建议（短句）。
 `)
-	if tier == "minimal" {
-		sb.WriteString(`- 你只能输出 reveals（仅 witness）、scene_facts、impact、suggestions。不要输出 changes。`)
+	switch tier {
+	case "minimal", "limited":
+		// 本地小模型：精简格式（引擎转换成标准变更，校验规则相同）
+		sb.WriteString(`- 世界修改用精简格式（可省略）：
+  "edits":[{"id":实体ID,"field":"description|appearance|mood|status","text":"新的描述","why":"原因"}]
+  "rel":[{"a":人物ID,"b":人物ID,"dim":"trust|affection|hostility|fear","delta":-10到10,"why":"原因"}]
+`)
+		if tier == "limited" {
+			sb.WriteString(`  "moves":[{"id":角色ID,"to":地点ID,"why":"原因"}]
+- 你是本地模型：每回合最多 3 项修改，只修改重要度低的实体，不要杀死重要人物，不要新建实体，不要改玩家的金钱和物品。
+`)
+		} else {
+			sb.WriteString("- 你是本地小模型：每回合最多 2 项修改（只用 edits / rel），只写叙事里确实发生的小变化。\n")
+		}
 		return sb.String()
 	}
 	sb.WriteString(`- "changes"：世界设定的修改。格式 {"op":"create|patch|retire|restore|link|unlink|timeline_add|timeline_patch|timeline_cancel","target":ID,"path":"fields.<字段>","value":值,"reason":"原因","evidence":"叙事原句"}。
@@ -41,9 +53,6 @@ func worldRules(tier string) string {
   人物死亡 / 离开用 {"op":"retire","target":ID,"value":{"reason":"death|left|lost|destroyed","text":"经过"}}。
   新实体的 target 用 "<命名空间>.gen:<种类>/<英文短名>"。数值修改会被引擎封顶；不合规的修改会被拒绝。
 `)
-	if tier == "limited" {
-		sb.WriteString("- 你是本地模型：每回合最多 3 项修改，只修改重要度低的实体，不要杀死重要人物。\n")
-	}
 	return sb.String()
 }
 

@@ -176,7 +176,7 @@ func (q *Q) DecisionView(s *state.State, settings change.Settings) *dto.Decision
 		return nil
 	}
 	v := &dto.DecisionV1{ID: d.ID, Type: d.Type, TypeLabel: change.TypeLabel(d.Type), Title: d.Title, Summary: d.Summary, Score: d.Score,
-		Notify: d.Notify, RollbackTurn: d.Rollback.Turn, Checkpoint: d.Checkpoint}
+		Notify: d.Notify, RollbackTurn: d.Rollback.Turn, Checkpoint: d.Checkpoint, World: d.World}
 	v.Sensitivity = sensLabel(settings.For(d.Type).Level)
 	lines := d.Lines
 	if len(lines) > 3 {
@@ -185,6 +185,9 @@ func (q *Q) DecisionView(s *state.State, settings change.Settings) *dto.Decision
 	}
 	v.Lines = lines
 	v.RollbackText = fmt.Sprintf("回到回合 %d", d.Rollback.Turn)
+	if d.World {
+		v.RollbackText = "撤掉这次场外推进"
+	}
 	return v
 }
 

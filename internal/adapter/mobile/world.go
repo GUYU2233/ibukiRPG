@@ -25,7 +25,7 @@ var worldTypes = map[string]bool{
 	"get_tasks": true, "set_prompt_settings": true, "get_prompt_settings": true,
 	"get_creation": true, "review_creation": true,
 	"get_pending_decision": true, "resolve_decision": true,
-	"search_world_changes": true, "revert_change": true, "revert_plan": true, "ack_external_changes": true,
+	"search_world_changes": true, "revert_change": true, "revert_plan": true, "ack_external_changes": true, "run_world_sim": true,
 	"get_timeline": true, "rollback_to": true, "cancel_rollback": true, "switch_branch": true, "rename_branch": true, "delete_branch": true,
 	"create_checkpoint": true, "restore_checkpoint": true, "rename_checkpoint": true, "delete_checkpoint": true,
 	"export_save": true, "inspect_save": true, "import_save": true,
@@ -148,6 +148,8 @@ func worldRequest(ctx context.Context, s *orchestrator.Session, req dto.RequestV
 			return nil, err
 		}
 		return s.WorldChanges(p.Query, p.Source, p.Limit)
+	case "run_world_sim":
+		return s.SimulateNow(ctx)
 	case "ack_external_changes":
 		if err := s.AckExternalChanges(ctx); err != nil {
 			return nil, err

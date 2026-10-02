@@ -99,6 +99,36 @@ func (b *Balance) TierFor(power int) *PowerTier {
 	return nil
 }
 
+// Simulation 是场外世界模拟的规则（rules/simulation.yaml，v0.2.0-rc1）：AI 世界模拟不可用（离线 / 超出成本上限 /
+// 输出无效）时，按这些规则推进场外势力、NPC 与事件。
+type Simulation struct {
+	// EveryMinutes 是模拟间隔（游戏内分钟，默认 240）；生成设置可以覆盖。
+	EveryMinutes int `yaml:"every_minutes"`
+	// MaxAICallsPerDay 是每个游戏日最多调用 AI 世界模拟的次数（默认 4），超出后改用规则。
+	MaxAICallsPerDay int       `yaml:"max_ai_calls_per_day"`
+	Rules            []SimRule `yaml:"rules"`
+}
+
+// SimRule 是一条场外模拟规则：触发时机（time = 时间流逝 / wait = 玩家等待）、CEL 条件、传闻文字与世界变更。
+type SimRule struct {
+	ID      string      `yaml:"id"`
+	On      []string    `yaml:"on"`
+	When    string      `yaml:"when"`
+	Once    bool        `yaml:"once"`
+	News    string      `yaml:"news"`
+	Changes []SimChange `yaml:"changes"`
+}
+
+// SimChange 是规则里的一项世界变更（格式同 WORLD 段）。
+type SimChange struct {
+	Op     string `yaml:"op"`
+	Target string `yaml:"target"`
+	Kind   string `yaml:"kind"`
+	Path   string `yaml:"path"`
+	Value  any    `yaml:"value"`
+	Reason string `yaml:"reason"`
+}
+
 // Background 是角色创建的出身（rules/creation.yaml）。
 type Background struct {
 	ID          string         `yaml:"id" json:"id"`
@@ -233,6 +263,24 @@ func (p *Package) loadV3(fsys fs.FS, m *manifest.Manifest) error {
 	if p.Creation.AttributePoints == 0 {
 		p.Creation.AttributePoints = 6
 	}
+	for _, f := range m.Content["simulation"] {
+		if err := readYAML(fsys, f, &p.Simulation); err != nil {
+			return err
+		}
+	}
+	if p.Simulation.EveryMinutes <= 0 {
+		p.Simulation.EveryMinutes = 240
+	}
+	if p.Simulation.MaxAICallsPerDay == 0 {
+		p.Simulation.MaxAICallsPerDay = 4
+	}
+	for i := range p.Simulation.Rules {
+		r := &p.Simulation.Rules[i]
+		if len(r.On) == 0 {
+			r.On = []string{"time", "wait"}
+		}
+		r.News = JoinCJK(r.News)
+	}
 	if p.Creation.AttrMax == 0 {
 		p.Creation.AttrMax = 5
 	}
@@ -293,6 +341,25 @@ func (p *Package) validateV3(compile func(where, expr string)) []error {
 		}
 		if d.Importance < 0 || d.Importance > 5 {
 			bad("%s：importance 应在 1–5", d.ID)
+		}
+	}
+	seenSim := map[string]bool{}
+	for _, r := range p.Simulation.Rules {
+		if r.ID == "" || seenSim[r.ID] {
+			bad("场外模拟规则：id 为空或重复（%q）", r.ID)
+		}
+		seenSim[r.ID] = true
+		compile("simulation "+r.ID, r.When)
+		for _, on := range r.On {
+			if on != "time" && on != "wait" {
+				bad("场外模拟规则 %s：on 只能是 time / wait", r.ID)
+			}
+		}
+		for _, c := range r.Changes {
+			t := strings.SplitN(c.Target, ">", 2)[0]
+			if c.Op != "create" && c.Op != "timeline_add" && !exists(t) && p.Timeline[t] == nil {
+				bad("场外模拟规则 %s：目标 %s 不存在", r.ID, c.Target)
+			}
 		}
 	}
 	for _, bg := range p.Creation.Backgrounds {

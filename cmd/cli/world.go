@@ -392,6 +392,18 @@ func (c *client) showWorldEntry(e dto.EntryV1) {
 			c.printf(" · %s", a.Result)
 		}
 		c.printf("\n")
+	case "sim":
+		// 场外世界模拟：传闻 + 变更
+		for _, l := range strings.Split(e.Text, "\n") {
+			if strings.TrimSpace(l) != "" {
+				c.printf("  〔场外〕%s\n", l)
+			}
+		}
+		if e.World != nil {
+			for _, ch := range e.World.Changes {
+				c.printf("  🌐 %s（世界模拟，/revert %s 撤销）\n", ch.Summary, ch.ID)
+			}
+		}
 	case "world":
 		w := e.World
 		if w == nil {

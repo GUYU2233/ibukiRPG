@@ -63,6 +63,8 @@ content:
     - rules/balance.yaml
   creation:
     - rules/creation.yaml
+  simulation:
+    - rules/simulation.yaml
   hud:
     - rules/hud.yaml
   prompts:
