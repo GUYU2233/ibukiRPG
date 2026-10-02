@@ -1,0 +1,16 @@
+# LLM Eval 示例：意图解析（见架构文档第 39 节）
+id: intent/deceive_king_envoy
+description: 玩家在仅伯林在场的广场冒充国王使者，应识别为欺骗伯林而非拒绝。
+setup:
+  location: demo:location/town_square
+  npc_locations:
+    demo:character/borin: demo:location/town_square
+input: "我假装自己是国王派来的使者"
+
+expected:
+  action: deceive
+  reject: false
+  target: borin
+
+forbidden:
+  - knowledge_violation

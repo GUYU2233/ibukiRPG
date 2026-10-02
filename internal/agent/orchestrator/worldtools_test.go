@@ -145,7 +145,7 @@ func TestCardGenViaTools(t *testing.T) {
 	f := &toolLLM{calls: [][2]string{
 		{"rules_power_budget", `{"kind":"weapon","rarity":"rare","level":3}`},
 		{"entity_generate", `{"kind":"weapon","slug":"storm_hammer","name":"风暴锤","description":"齿轮城的老式蒸汽锤，锤头里装着压力阀。","rarity":"rare","level":3,"stats":{"atk":999},"reason":"玩家要求"}`},
-	}, answer: "做了一把稀有的蒸汽锤"}
+	}, answer: "CARDGEN_TOOLS_HIDDEN_NOTE_MARKER"}
 	s := openPacks(t, f)
 	s.ConfigureProviders([]router.Provider{{ID: "ds", Kind: provider.KindDeepSeek, APIKey: "sk-test"}}, router.Settings{Mode: router.ModeUnified, Unified: router.Route{Provider: "ds"}})
 	if _, err := s.NewGameIn(ctx, "brass_trial", "", "阿砾", 7); err != nil {
@@ -155,7 +155,7 @@ func TestCardGenViaTools(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pv.Via != "tools" || pv.Token == "" || len(pv.Changes) != 1 || pv.Note != "做了一把稀有的蒸汽锤" {
+	if pv.Via != "tools" || pv.Token == "" || len(pv.Changes) != 1 || pv.Note != "修改预览已生成；请核对可见差异，确认后才会生效。" || strings.Contains(pv.Note, "CARDGEN_TOOLS_HIDDEN_NOTE_MARKER") {
 		t.Fatalf("preview %+v (results %v)", pv, f.results)
 	}
 	if !strings.Contains(f.results[0], "budget") {

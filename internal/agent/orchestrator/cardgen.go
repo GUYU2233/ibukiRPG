@@ -92,9 +92,8 @@ func (s *Session) RequestEdit(ctx context.Context, target, instruction string) (
 				}
 			}
 			pv, err := s.PreviewChanges(ctx, change.SourceUserRequest, cs)
-			if o.Answer != nil {
-				pv.Note = strings.TrimSpace(o.Answer.Text)
-			}
+			// 编辑器可接触全知设定；自由生成的说明不能直接进入玩家预览。
+			pv.Note = cardPreviewNote(pv)
 			pv.Via = "tools"
 			return pv, err
 		}
@@ -135,7 +134,15 @@ func (s *Session) RequestEdit(ctx context.Context, target, instruction string) (
 		}
 	}
 	pv, err := s.PreviewChanges(ctx, change.SourceUserRequest, out.Changes)
-	pv.Note = out.Note
+	pv.Note = cardPreviewNote(pv)
 	pv.Via = "json"
 	return pv, err
+}
+
+// cardPreviewNote 不复述模型输出或隐藏提案，只提示确认流程。
+func cardPreviewNote(pv dto.ChangePreviewV1) string {
+	if pv.Token == "" {
+		return "没有可确认的修改；请查看拒绝原因或调整要求。"
+	}
+	return "修改预览已生成；请核对可见差异，确认后才会生效。"
 }

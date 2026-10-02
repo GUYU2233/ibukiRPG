@@ -250,7 +250,7 @@ func (f *cardLLM) RoundTrip(r *http.Request) (*http.Response, error) {
 // TestRequestEdit：玩家要求修改卡片 → card_gen 提案 → 预览（不提交）→ 确认后才写入，来源为“你的指令”。
 func TestRequestEdit(t *testing.T) {
 	ctx := context.Background()
-	f := &cardLLM{reply: `{"changes":[{"op":"patch","target":"brass:item/wrench","path":"fields.description","value":"一把改装过的扳手，握柄里藏着一块小电池，敲上去会冒蓝色电火花。"}],"note":"加了电击效果"}`}
+	f := &cardLLM{reply: `{"changes":[{"op":"patch","target":"brass:item/wrench","path":"fields.description","value":"一把改装过的扳手，握柄里藏着一块小电池，敲上去会冒蓝色电火花。"}],"note":"CARDGEN_HIDDEN_NOTE_MARKER"}`}
 	s := openPacks(t, f)
 	s.ConfigureProviders([]router.Provider{{ID: "ds", Kind: provider.KindDeepSeek, APIKey: "sk-test"}}, router.Settings{Mode: router.ModeUnified, Unified: router.Route{Provider: "ds"}})
 	if _, err := s.NewGameIn(ctx, "brass_trial", "", "阿砾", 7); err != nil {
@@ -262,6 +262,9 @@ func TestRequestEdit(t *testing.T) {
 	}
 	if pv.Token == "" || len(pv.Changes) != 1 || pv.Note == "" || !strings.HasPrefix(pv.Changes[0].Reason, "你的要求") {
 		t.Fatalf("preview %+v", pv)
+	}
+	if strings.Contains(pv.Note, "CARDGEN_HIDDEN_NOTE_MARKER") || pv.Note != "修改预览已生成；请核对可见差异，确认后才会生效。" {
+		t.Fatalf("model note crossed preview boundary: %q", pv.Note)
 	}
 	if chs, _ := s.WorldChanges("", "", 0); len(chs) != 0 {
 		t.Fatal("request_edit must not commit before confirmation")
